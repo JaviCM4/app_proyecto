@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --azul: #1B3A6B;
+  --azul-oscuro: #12294D;
+  --cafe: #6B4A2F;
+  --cafe-oscuro: #4E3421;
+  --menta: #5ED3A7;
+  --menta-oscuro: #2FA67E;
+  --crema: #FAF3E7;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(94, 211, 167, 0.22) 0%, rgba(94, 211, 167, 0) 34%),
+    radial-gradient(circle at 92% 94%, rgba(27, 58, 107, 0.16) 0%, rgba(27, 58, 107, 0) 36%),
+    var(--crema);
+  color: var(--azul-oscuro);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+@layer components {
+  /* ===== Sistema único de botones (misma forma en todo el proyecto, solo cambia el color) ===== */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold
+      transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+      disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98];
+  }
+  .btn-primary { @apply btn bg-azul text-white hover:bg-azul-oscuro focus-visible:ring-azul; }
+  .btn-cafe { @apply btn bg-cafe text-white hover:bg-cafe-oscuro focus-visible:ring-cafe; }
+  .btn-menta { @apply btn bg-menta text-azul-oscuro hover:bg-menta-oscuro hover:text-white focus-visible:ring-menta-oscuro; }
+  .btn-crema { @apply btn bg-white text-azul border border-azul/25 hover:bg-crema-oscuro focus-visible:ring-azul; }
+  .btn-ghost { @apply btn bg-transparent text-azul hover:bg-azul/10 focus-visible:ring-azul; }
+  .btn-danger { @apply btn bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-700; }
+  .btn-sm { @apply px-3.5 py-1.5 text-xs; }
+
+  /* ===== Formularios ===== */
+  .field { @apply mb-4 flex flex-col gap-1.5; }
+  .label { @apply text-sm font-semibold text-azul; }
+  .input {
+    @apply w-full rounded-xl border border-azul/25 bg-white px-4 py-2.5 text-sm text-azul-oscuro
+      placeholder:text-azul-oscuro/40 focus:border-menta-oscuro focus:outline-none focus:ring-2 focus:ring-menta-oscuro/40;
+  }
+  .input-error { @apply border-red-600 focus:border-red-600 focus:ring-red-600/30; }
+  .hint { @apply text-xs text-cafe; }
+  .error-text { @apply text-xs font-semibold text-red-700; }
+
+  /* ===== Superficies ===== */
+  .card { @apply rounded-2xl border border-azul/15 bg-white p-6 shadow-[0_10px_30px_rgba(27,58,107,0.10)]; }
+  .page-title { @apply text-2xl font-bold text-azul; }
+  .page-subtitle { @apply mt-1 text-sm text-cafe; }
+  .badge { @apply inline-flex items-center rounded-full px-3 py-0.5 text-xs font-semibold; }
+  .badge-activo { @apply badge bg-menta-claro text-azul-oscuro; }
+  .badge-inactivo { @apply badge bg-crema-oscuro text-cafe; }
+  .badge-bloqueado { @apply badge bg-red-100 text-red-800; }
+  .table-wrap { @apply overflow-x-auto rounded-2xl border border-azul/15 bg-white; }
+  .table { @apply w-full text-left text-sm; }
+  .table thead th { @apply bg-azul px-4 py-3 font-semibold text-white; }
+  .table tbody td { @apply border-t border-azul/10 px-4 py-2.5; }
+  .table tbody tr:nth-child(even) { @apply bg-crema/60; }
+}
