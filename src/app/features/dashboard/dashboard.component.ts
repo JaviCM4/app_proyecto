@@ -41,6 +41,11 @@ import { AuthService } from '../../core/services/auth.service';
             <p class="text-sm text-cafe">Listar, vigente en fecha y crear.</p>
             <span class="btn-crema btn-sm mt-3">Abrir</span>
           </a>
+          <a routerLink="/dashboard/reportes" class="card hover:shadow-lg">
+            <p class="font-bold text-azul">Reportes</p>
+            <p class="text-sm text-cafe">Globales y por sucursal, en pantalla o PDF.</p>
+            <span class="btn-crema btn-sm mt-3">Abrir</span>
+          </a>
         }
       </div>
     </section>

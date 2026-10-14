@@ -27,6 +27,7 @@ import { AuthService } from '../core/services/auth.service';
             }
             @if (auth.tieneRol('ADMIN_SISTEMA', 'ADMIN_SUCURSAL')) {
               <a routerLink="/dashboard/tarifas" class="rounded-lg px-3 py-1.5 hover:bg-white/10">Tarifas</a>
+              <a routerLink="/dashboard/reportes" class="rounded-lg px-3 py-1.5 hover:bg-white/10">Reportes</a>
             }
             <div class="relative">
               <button type="button" (click)="menuAbierto = !menuAbierto" class="flex items-center gap-2 rounded-full bg-white/15 py-1 pl-1 pr-3 hover:bg-white/25" aria-haspopup="menu" [attr.aria-expanded]="menuAbierto">
