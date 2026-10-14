@@ -28,7 +28,7 @@ npm run build    # build de producción a dist/
 | trips | `/trips/**` → `:8083` | ⬜ Carpeta `features/trips` lista |
 | sales | `/sales/**` → `:8084` | ⬜ Carpeta `features/sales` lista |
 | maintenance | `/maintenance/**` → `:8085` | ⬜ Carpeta `features/maintenance` lista |
-| reports | `/reports/**` → `:8086` | ⬜ Carpeta `features/reports` lista (ojo: el prefijo es `/reports`, no `/reporting`) |
+| reports | `/reports/**` → `:8086` | ✅ Completo (pestañas por rol: RG1–RG6 ADMIN_SISTEMA, RS1–RS6 ADMIN_SUCURSAL con su sucursal; JSON en pantalla + PDF + mapa Leaflet en RG6) |
 | notifications | `/notifications/**` → `:8087` | ⬜ Carpeta `features/notifications` lista |
 
 Roles del sistema (los mismos del backend): `ADMIN_SISTEMA` · `ADMIN_SUCURSAL` · `CAJERO` · `CHOFER` · `CLIENTE` (+ `SERVICIO`, solo interno entre servicios).
@@ -155,4 +155,4 @@ Reglas:
 | Tarifas (ADMIN_SISTEMA / ADMIN_SUCURSAL) | `GET /identity/tarifas-depreciacion`, `GET ?vigenteEn=YYYY-MM-DD`, `POST` crear |
 | Internos (rol SERVICIO) | `InternoService`: `POST /identity/interno/cuentas-personal`, `GET /identity/interno/sucursales/:id/administradores`, `GET /identity/interno/usuarios/:id/contacto` |
 
-Rutas UI: `/`, `/login`, `/registro`, `/verificar-2fa`, `/recuperar`, `/restablecer`, `/dashboard`, `/dashboard/perfil`, `/dashboard/seguridad`, `/dashboard/cartera` (CLIENTE), `/dashboard/usuarios` (ADMIN_SISTEMA), `/dashboard/tarifas` (ADMIN_SISTEMA, ADMIN_SUCURSAL).
+Rutas UI: `/`, `/login`, `/registro`, `/verificar-2fa`, `/recuperar`, `/restablecer`, `/dashboard`, `/dashboard/perfil`, `/dashboard/seguridad`, `/dashboard/cartera` (CLIENTE), `/dashboard/usuarios` (ADMIN_SISTEMA), `/dashboard/tarifas` (ADMIN_SISTEMA, ADMIN_SUCURSAL), `/dashboard/reportes` (pestañas: RG1–RG6 solo ADMIN_SISTEMA, RS1–RS6 con sucursal de la sesión para ADMIN_SUCURSAL).

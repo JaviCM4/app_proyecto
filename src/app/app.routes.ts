@@ -31,5 +31,11 @@ export const routes: Routes = [
     data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
     loadComponent: () => import('./features/dashboard/tarifas.component').then((m) => m.TarifasComponent),
   },
+  {
+    path: 'dashboard/reportes',
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+    loadComponent: () => import('./features/reports/reportes.component').then((m) => m.ReportesComponent),
+  },
   { path: '**', redirectTo: '' },
 ];
