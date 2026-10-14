@@ -10,6 +10,7 @@ export const routes: Routes = [
   { path: 'verificar-2fa', canActivate: [guestGuard], loadComponent: () => import('./features/auth/verify-2fa.component').then((m) => m.Verify2faComponent) },
   { path: 'recuperar', canActivate: [guestGuard], loadComponent: () => import('./features/auth/forgot-password.component').then((m) => m.ForgotPasswordComponent) },
   { path: 'restablecer', loadComponent: () => import('./features/auth/reset-password.component').then((m) => m.ResetPasswordComponent) },
+  { path: 'oauth/google/callback', loadComponent: () => import('./features/auth/oauth-callback.component').then((m) => m.OAuthCallbackComponent) },
   { path: 'dashboard', canActivate: [authGuard], loadComponent: () => import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent) },
   { path: 'dashboard/perfil', canActivate: [authGuard], loadComponent: () => import('./features/dashboard/perfil.component').then((m) => m.PerfilComponent) },
   { path: 'dashboard/seguridad', canActivate: [authGuard], loadComponent: () => import('./features/dashboard/seguridad.component').then((m) => m.SeguridadComponent) },

@@ -68,6 +68,34 @@ export class AuthService {
       .pipe(tap((res) => this.guardarSesion(res)));
   }
 
+  // ---------- Google OAuth2 ----------
+
+  /** Pide la URL de autorización de Google (el navegador debe redirigir a ella). */
+  urlGoogle(): Observable<{ url: string; state: string }> {
+    return this.http.get<{ url: string; state: string }>(`${this.base}/oauth2/google/url`);
+  }
+
+  /**
+   * Canjea el ticket que dejó el callback (?ticket=). Igual que el login:
+   * 200 sesión completa o 202 reto 2FA (verificar-2fa).
+   */
+  canjearTicketGoogle(ticket: string): Observable<ResultadoLogin> {
+    return this.http
+      .post<SesionBackend | DesafioDobleFactor>(`${this.base}/oauth2/canjear`, { ticket })
+      .pipe(
+        tap((res) => {
+          if (esDesafio(res)) {
+            this.desafioPendiente = res;
+          } else {
+            this.guardarSesion(res);
+          }
+        }),
+        map((res): ResultadoLogin =>
+          esDesafio(res) ? { tipoResultado: 'DOBLE_FACTOR', ...res } : { tipoResultado: 'SESION', ...res },
+        ),
+      );
+  }
+
   refrescar(): Observable<SesionResponse> {
     const tokenRefresco = localStorage.getItem('refreshToken') ?? '';
     return this.http

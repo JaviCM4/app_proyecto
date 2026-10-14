@@ -149,10 +149,11 @@ Reglas:
 | Verificar 2FA | `POST /identity/auth/login/verificar` |
 | Recuperar / Restablecer | `POST /identity/auth/recuperar`, `POST /identity/auth/restablecer` |
 | Seguridad | `PUT /identity/auth/contrasena`, `PUT /identity/auth/doble-factor`, `POST /identity/auth/cerrar-sesion`, `POST /identity/auth/refrescar` (auto en interceptor) |
+| Google OAuth2 | `GET /identity/auth/oauth2/google/url` → redirigir el navegador · `GET /identity/auth/oauth2/google/callback` (la llama Google, 302 al frontend con `?ticket=` o `?error=`) · `POST /identity/auth/oauth2/canjear` → sesión o reto 2FA |
 | Mi perfil + foto | `GET/PUT /identity/perfil`, `POST /identity/archivos/fotos` (multipart `archivo`) |
 | Mi cartera (CLIENTE) | `GET /identity/cartera`, `POST /identity/cartera/recargas`, `GET /identity/cartera/movimientos?desde&hasta` |
 | Usuarios (ADMIN_SISTEMA) | `GET /identity/usuarios?rol&estado&q`, `POST /identity/usuarios/administradores-sistema`, `GET /identity/usuarios/:id`, `PATCH /identity/usuarios/:id/estado` |
 | Tarifas (ADMIN_SISTEMA / ADMIN_SUCURSAL) | `GET /identity/tarifas-depreciacion`, `GET ?vigenteEn=YYYY-MM-DD`, `POST` crear |
 | Internos (rol SERVICIO) | `InternoService`: `POST /identity/interno/cuentas-personal`, `GET /identity/interno/sucursales/:id/administradores`, `GET /identity/interno/usuarios/:id/contacto` |
 
-Rutas UI: `/`, `/login`, `/registro`, `/verificar-2fa`, `/recuperar`, `/restablecer`, `/dashboard`, `/dashboard/perfil`, `/dashboard/seguridad`, `/dashboard/cartera` (CLIENTE), `/dashboard/usuarios` (ADMIN_SISTEMA), `/dashboard/tarifas` (ADMIN_SISTEMA, ADMIN_SUCURSAL), `/dashboard/reportes` (pestañas: RG1–RG6 solo ADMIN_SISTEMA, RS1–RS6 con sucursal de la sesión para ADMIN_SUCURSAL).
+Rutas UI: `/`, `/login`, `/registro`, `/verificar-2fa`, `/recuperar`, `/restablecer`, `/oauth/google/callback` (retorno de Google, canjea `?ticket=` o muestra `?error=`), `/dashboard`, `/dashboard/perfil`, `/dashboard/seguridad`, `/dashboard/cartera` (CLIENTE), `/dashboard/usuarios` (ADMIN_SISTEMA), `/dashboard/tarifas` (ADMIN_SISTEMA, ADMIN_SUCURSAL), `/dashboard/reportes` (pestañas: RG1–RG6 solo ADMIN_SISTEMA, RS1–RS6 con sucursal de la sesión para ADMIN_SUCURSAL).
