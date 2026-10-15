@@ -1,0 +1,29 @@
+<div class="tarjeta caja-acceso">
+  <h1>Crear contraseña</h1>
+
+  @if (!token()) {
+    <p class="descripcion">El enlace está incompleto. Ábrelo de nuevo desde el correo o solicita uno nuevo.</p>
+    <a routerLink="/recuperar" class="btn bloque">Solicitar enlace</a>
+  } @else {
+    <p class="descripcion">Elige la contraseña con la que vas a entrar.</p>
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="campo">
+        <label for="nueva">Contraseña nueva</label>
+        <input id="nueva" type="password" class="control" formControlName="nueva" autocomplete="new-password"
+               [class.invalido]="form.controls.nueva.touched && form.controls.nueva.invalid" />
+        <span class="ayuda">Mínimo 8 caracteres.</span>
+      </div>
+      <div class="campo">
+        <label for="confirmacion">Repite la contraseña</label>
+        <input id="confirmacion" type="password" class="control" formControlName="confirmacion" autocomplete="new-password"
+               [class.invalido]="form.controls.confirmacion.touched && form.hasError('distintas')" />
+        @if (form.controls.confirmacion.touched && form.hasError('distintas')) {
+          <span class="error">Las contraseñas no coinciden.</span>
+        }
+      </div>
+      <button type="submit" class="btn primario bloque" [disabled]="enviando()">
+        {{ enviando() ? 'Guardando…' : 'Guardar contraseña' }}
+      </button>
+    </form>
+  }
+</div>

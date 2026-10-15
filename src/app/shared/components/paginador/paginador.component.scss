@@ -1,0 +1,38 @@
+.paginador {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0 0;
+}
+
+.resumen { color: var(--texto-suave); font-size: 13px; }
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tamano {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+  font-size: 13px;
+  color: var(--texto-suave);
+
+  .control { width: 70px; height: 30px; }
+}
+
+.numero { min-width: 32px; }
+
+.actual {
+  background: var(--primario);
+  border-color: var(--primario);
+  color: #fff;
+
+  &:hover:not(:disabled) { background: var(--primario); }
+}

@@ -1,0 +1,62 @@
+.formulario-grilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+
+  .completo { grid-column: 1 / -1; }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formulario-seccion {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--borde);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--texto-suave);
+  }
+
+  .ayuda { font-size: 12px; color: var(--texto-tenue); }
+  .error { font-size: 12px; color: var(--peligro); }
+}
+
+.control {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+
+  &:focus { outline: none; border-color: var(--primario); box-shadow: 0 0 0 3px var(--primario-suave); }
+  &.invalido { border-color: var(--peligro); }
+  &:disabled { background: var(--fondo); color: var(--texto-tenue); }
+}
+
+textarea.control { height: auto; min-height: 72px; padding: 8px 10px; }
+
+/* Formulario en columna (modales chicos) */
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}

@@ -1,0 +1,16 @@
+:host { display: block; }
+
+.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--superficie, #fff);
+  font-weight: 500;
+}
+
+.logo {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}

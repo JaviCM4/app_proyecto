@@ -2,52 +2,52 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import {
-  AdministradorSistemaRequest,
-  PerfilResponse,
-  UpdateProfileRequest,
-  UsuarioDetalleResponse,
-  UsuarioListaResponse,
-} from '../models/identity.model';
+import { ActualizarPerfil, EstadoUsuario, FiltroUsuarios, NuevoAdministradorSistema, Perfil, UsuarioDetalle, UsuarioResumen } from '../models/usuario.model';
 
-/**
- * Endpoints de perfil propio y administración de usuarios.
- * - GET/PUT /identity/perfil
- * - GET /identity/usuarios · POST /identity/usuarios/administradores-sistema
- * - GET/PATCH /identity/usuarios/{id}[/estado]
- */
+/** Perfil propio y administración de usuarios (Identity). */
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
   private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiBaseUrl}/identity`;
+  private readonly api = `${environment.apiUrl}/identity`;
 
-  // ----- Perfil propio -----
-  verPerfil(): Observable<PerfilResponse> {
-    return this.http.get<PerfilResponse>(`${this.base}/perfil`);
+  // ---------- Perfil propio (cualquier usuario con sesión) ----------
+
+  perfil(): Observable<Perfil> {
+    return this.http.get<Perfil>(`${this.api}/perfil`);
   }
 
-  actualizarPerfil(payload: UpdateProfileRequest): Observable<PerfilResponse> {
-    return this.http.put<PerfilResponse>(`${this.base}/perfil`, payload);
+  actualizarPerfil(datos: ActualizarPerfil): Observable<Perfil> {
+    return this.http.put<Perfil>(`${this.api}/perfil`, datos);
   }
 
-  // ----- Administración (ADMIN_SISTEMA / ADMIN_SUCURSAL) -----
-  listar(rol?: string, estado?: string, q?: string): Observable<UsuarioListaResponse[]> {
-    let params = new HttpParams();
-    if (rol) params = params.set('rol', rol);
-    if (estado) params = params.set('estado', estado);
-    if (q) params = params.set('q', q);
-    return this.http.get<UsuarioListaResponse[]>(`${this.base}/usuarios`, { params });
+  /** Sube la foto (JPG, PNG o WEBP, máx. 2 MB) y devuelve su URL para guardarla en el perfil. */
+  subirFoto(archivo: File): Observable<{ fotoUrl: string }> {
+    const form = new FormData();
+    form.append('archivo', archivo);
+    return this.http.post<{ fotoUrl: string }>(`${this.api}/archivos/fotos`, form);
   }
 
-  detalle(id: string): Observable<UsuarioDetalleResponse> {
-    return this.http.get<UsuarioDetalleResponse>(`${this.base}/usuarios/${id}`);
+  // ---------- Administración (administrador del sistema) ----------
+
+  /** El servidor pagina por su cuenta; aquí se pide una página grande y se pagina en pantalla. */
+  listar(filtro: FiltroUsuarios = {}): Observable<UsuarioResumen[]> {
+    let params = new HttpParams().set('size', 2000).set('sort', 'correo,asc');
+    for (const [clave, valor] of Object.entries(filtro)) {
+      if (valor) params = params.set(clave, valor);
+    }
+    return this.http.get<UsuarioResumen[]>(`${this.api}/usuarios`, { params });
   }
 
-  crearAdministrador(payload: AdministradorSistemaRequest): Observable<UsuarioDetalleResponse> {
-    return this.http.post<UsuarioDetalleResponse>(`${this.base}/usuarios/administradores-sistema`, payload);
+  detalle(id: string): Observable<UsuarioDetalle> {
+    return this.http.get<UsuarioDetalle>(`${this.api}/usuarios/${id}`);
   }
 
-  cambiarEstado(id: string, estado: 'ACTIVO' | 'INACTIVO' | 'BLOQUEADO'): Observable<UsuarioDetalleResponse> {
-    return this.http.patch<UsuarioDetalleResponse>(`${this.base}/usuarios/${id}/estado`, { estado });
+  /** Crea otro administrador del sistema; le llega un correo para activar su cuenta. */
+  crearAdministrador(datos: NuevoAdministradorSistema): Observable<UsuarioDetalle> {
+    return this.http.post<UsuarioDetalle>(`${this.api}/usuarios/administradores-sistema`, datos);
+  }
+
+  cambiarEstado(id: string, estado: EstadoUsuario): Observable<UsuarioDetalle> {
+    return this.http.patch<UsuarioDetalle>(`${this.api}/usuarios/${id}/estado`, { estado });
   }
 }

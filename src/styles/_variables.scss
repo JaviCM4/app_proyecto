@@ -1,0 +1,43 @@
+/*
+ * Paleta "verde azulado suave": un color principal tranquilo, fondos claros y estados en tonos pastel.
+ * Para cambiar el color del sistema basta con tocar las variables --primario*.
+ */
+:root {
+  --fondo: #f3f7f8;
+  --superficie: #ffffff;
+  --superficie-alterna: #f8fbfb;
+  --borde: #e2eaec;
+  --borde-fuerte: #c9d6d9;
+
+  --texto: #23383d;
+  --texto-suave: #5b7176;
+  --texto-tenue: #8fa2a6;
+
+  --primario: #3a7f8c;
+  --primario-hover: #2f6974;
+  --primario-suave: #e4f1f3;
+  --primario-medio: #b9dbe0;
+
+  --acento: #e8a87c;          /* toque cálido para detalles (avatar, saldo) */
+  --acento-suave: #fbeee4;
+
+  --exito: #2f7d55;
+  --exito-suave: #e3f3ea;
+  --peligro: #b5483f;
+  --peligro-suave: #fbebe9;
+  --aviso: #9a6a12;
+  --aviso-suave: #fcf3df;
+  --info: #3d6fa3;
+  --info-suave: #e7eff8;
+
+  --radio: 10px;
+  --radio-sm: 7px;
+  --sombra: 0 1px 3px rgba(35, 56, 61, 0.06);
+  --sombra-modal: 0 16px 40px rgba(35, 56, 61, 0.18);
+
+  --menu-ancho: 248px;
+  --menu-ancho-plegado: 68px;
+  --barra-alto: 60px;
+
+  --fuente: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}

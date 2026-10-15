@@ -1,0 +1,94 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Sucursales</h1>
+    <p>Terminales de la empresa y su administrador.</p>
+  </div>
+  <button type="button" class="btn primario" (click)="enFormulario.set(null)">+ Nueva sucursal</button>
+</div>
+
+<div class="filtros">
+  <div class="campo crece">
+    <label for="buscar">Buscar</label>
+    <input id="buscar" class="control" placeholder="Código, nombre, municipio o departamento"
+           [ngModel]="texto()" (ngModelChange)="filtrar($event)" />
+  </div>
+  <div class="campo">
+    <label for="estado">Estado</label>
+    <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="cambiarFiltroEstado($event)">
+      <option value="todas">Todas</option>
+      <option value="activas">Activas</option>
+      <option value="inactivas">Inactivas</option>
+    </select>
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Ubicación</th>
+        <th>Teléfono</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (s of paginaActual().elementos; track s.sucursalId) {
+        <tr>
+          <td><strong>{{ s.codigo }}</strong></td>
+          <td>
+            {{ s.nombre }}
+            <div class="secundario">{{ s.direccion }}</div>
+          </td>
+          <td>{{ s.municipio }}, {{ s.departamento }}</td>
+          <td>{{ s.telefono || '—' }}</td>
+          <td>
+            <span class="insignia" [class.exito]="s.activa">{{ s.activa ? 'Activa' : 'Inactiva' }}</span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="enDetalle.set(s)">Ver</button>
+            <button type="button" class="btn chico" (click)="enFormulario.set(s)">Editar</button>
+            <button type="button" class="btn chico" [class.peligro]="s.activa" (click)="porCambiar.set(s)">
+              {{ s.activa ? 'Desactivar' : 'Activar' }}
+            </button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando sucursales…' : 'No hay sucursales que coincidan con la búsqueda.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-sucursal-formulario
+  [abierto]="enFormulario() !== undefined"
+  [sucursal]="enFormulario() ?? null"
+  (guardada)="alGuardar()"
+  (cerrar)="enFormulario.set(undefined)" />
+
+<app-sucursal-detalle [sucursal]="enDetalle()" (editar)="editarDesdeDetalle($event)" (cerrar)="enDetalle.set(null)" />
+
+<app-confirmacion
+  [abierto]="porCambiar() !== null"
+  [titulo]="porCambiar()?.activa ? 'Desactivar sucursal' : 'Activar sucursal'"
+  [mensaje]="porCambiar()?.activa
+    ? 'La sucursal ' + porCambiar()?.nombre + ' dejará de aparecer para programar viajes. Solo se puede desactivar si todos sus buses están inactivos.'
+    : 'La sucursal ' + porCambiar()?.nombre + ' volverá a estar disponible.'"
+  [textoAceptar]="porCambiar()?.activa ? 'Desactivar' : 'Activar'"
+  [peligro]="!!porCambiar()?.activa"
+  [procesando]="cambiando()"
+  (aceptar)="confirmarCambioEstado()"
+  (cancelar)="porCambiar.set(null)" />

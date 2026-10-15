@@ -1,0 +1,21 @@
+@if (abierto()) {
+  <div class="modal-fondo" (click)="cerrar.emit()">
+    <div class="modal" [class]="ancho()" role="dialog" aria-modal="true" [attr.aria-label]="titulo()" (click)="$event.stopPropagation()">
+      <header class="modal-encabezado">
+        <div>
+          <h2>{{ titulo() }}</h2>
+          @if (subtitulo()) {
+            <p>{{ subtitulo() }}</p>
+          }
+        </div>
+        <button type="button" class="btn texto cerrar" aria-label="Cerrar" (click)="cerrar.emit()">✕</button>
+      </header>
+      <div class="modal-cuerpo">
+        <ng-content />
+      </div>
+      <footer class="modal-pie">
+        <ng-content select="[pie]" />
+      </footer>
+    </div>
+  </div>
+}

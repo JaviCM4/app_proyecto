@@ -1,0 +1,78 @@
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--barra-alto);
+  padding: 0 16px;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borde);
+}
+
+.alternar { height: 36px; width: 36px; padding: 0; }
+
+.enlace-viajes { color: var(--texto-suave); }
+
+.usuario {
+  position: relative;
+  margin-left: auto;
+}
+
+.quien { height: 44px; gap: 10px; }
+
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.25;
+
+  small { color: var(--texto-suave); font-weight: 400; }
+}
+
+.flecha { color: var(--texto-tenue); font-size: 12px; }
+
+.desplegable {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 240px;
+  padding: 6px;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-modal);
+
+  .cabecera {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 10px 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--borde);
+
+    span { color: var(--texto-suave); font-size: 13px; }
+  }
+
+  hr { border: none; border-top: 1px solid var(--borde); margin: 4px 0; }
+
+  .opcion {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    border-radius: var(--radio-sm);
+    background: none;
+    color: var(--texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { background: var(--primario-suave); text-decoration: none; }
+  }
+
+  .salir { color: var(--peligro); }
+}

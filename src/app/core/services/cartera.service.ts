@@ -2,26 +2,26 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { WalletMovementResponse, WalletResponse } from '../models/identity.model';
+import { Cartera, MovimientoCartera } from '../models/cartera.model';
 
-/** Endpoints de cartera propia (rol CLIENTE): GET /identity/cartera, POST recargas, GET movimientos. */
+/** Cartera digital del usuario (todas las cuentas tienen una). */
 @Injectable({ providedIn: 'root' })
 export class CarteraService {
   private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiBaseUrl}/identity/cartera`;
+  private readonly url = `${environment.apiUrl}/identity/cartera`;
 
-  saldo(): Observable<WalletResponse> {
-    return this.http.get<WalletResponse>(this.base);
+  consultar(): Observable<Cartera> {
+    return this.http.get<Cartera>(this.url);
   }
 
-  recargar(monto: number, fechaMovimiento?: string): Observable<WalletMovementResponse> {
-    return this.http.post<WalletMovementResponse>(`${this.base}/recargas`, { monto, fechaMovimiento });
+  recargar(monto: number, fechaMovimiento: string): Observable<MovimientoCartera> {
+    return this.http.post<MovimientoCartera>(`${this.url}/recargas`, { monto, fechaMovimiento });
   }
 
-  movimientos(desde?: string, hasta?: string): Observable<WalletMovementResponse[]> {
-    let params = new HttpParams();
+  movimientos(desde?: string, hasta?: string): Observable<MovimientoCartera[]> {
+    let params = new HttpParams().set('size', 2000);
     if (desde) params = params.set('desde', desde);
     if (hasta) params = params.set('hasta', hasta);
-    return this.http.get<WalletMovementResponse[]>(`${this.base}/movimientos`, { params });
+    return this.http.get<MovimientoCartera[]>(`${this.url}/movimientos`, { params });
   }
 }

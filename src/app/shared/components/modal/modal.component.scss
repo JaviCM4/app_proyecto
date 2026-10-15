@@ -1,0 +1,53 @@
+.modal-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  background: rgba(17, 24, 39, 0.45);
+}
+
+.modal {
+  width: 100%;
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  background: var(--superficie);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-modal);
+
+  &.chico { max-width: 420px; }
+  &.mediano { max-width: 640px; }
+  &.grande { max-width: 860px; }
+}
+
+.modal-encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--borde);
+
+  p { color: var(--texto-suave); font-size: 13px; margin-top: 2px; }
+  .cerrar { font-size: 16px; color: var(--texto-suave); }
+}
+
+.modal-cuerpo {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--borde);
+  background: var(--fondo);
+  border-radius: 0 0 var(--radio) var(--radio);
+
+  &:empty { display: none; }
+}

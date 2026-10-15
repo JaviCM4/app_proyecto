@@ -1,0 +1,24 @@
+<aside class="menu" [class.plegado]="layout.plegado()" [class.abierto]="layout.abiertoMovil()">
+  <div class="marca">
+    <app-icono nombre="bus" [tamano]="22" />
+    <span class="texto">{{ appNombre }}</span>
+  </div>
+
+  <nav>
+    @for (grupo of grupos(); track grupo.titulo) {
+      <p class="grupo texto">{{ grupo.titulo }}</p>
+      @for (opcion of grupo.opciones; track opcion.ruta) {
+        <a class="opcion" [routerLink]="opcion.ruta" routerLinkActive="activa"
+           [routerLinkActiveOptions]="{ exact: opcion.ruta === '/panel' }"
+           [attr.title]="layout.plegado() ? opcion.texto : null" (click)="layout.cerrarMovil()">
+          <app-icono [nombre]="opcion.icono" />
+          <span class="texto">{{ opcion.texto }}</span>
+        </a>
+      }
+    }
+  </nav>
+</aside>
+
+@if (layout.abiertoMovil()) {
+  <div class="velo" (click)="layout.cerrarMovil()"></div>
+}

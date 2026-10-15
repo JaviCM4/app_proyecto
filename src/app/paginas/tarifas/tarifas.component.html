@@ -1,0 +1,79 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Tarifas de depreciación</h1>
+    <p>Costo de desgaste por kilómetro que se carga a cada viaje completado.</p>
+  </div>
+  @if (puedeCrear) {
+    <button type="button" class="btn primario" (click)="abrirNueva()">+ Nueva tarifa</button>
+  }
+</div>
+
+<div class="tarjeta vigente">
+  @if (vigente(); as t) {
+    <span>Tarifa vigente hoy</span>
+    <strong>{{ t.montoPorKm | currency: 'GTQ' : 'symbol-narrow' : '1.2-4' }} por km</strong>
+    <small>Desde el {{ t.vigenteDesde | date: "d 'de' MMMM 'de' y" : 'UTC' }}</small>
+  } @else {
+    <span>Todavía no hay una tarifa vigente. Sin tarifa no se puede registrar la llegada de los viajes.</span>
+  }
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Vigente desde</th>
+        <th class="numero">Monto por km</th>
+        <th>Registrada</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of paginaActual().elementos; track t.tarifaId) {
+        <tr>
+          <td>{{ t.vigenteDesde | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+          <td class="numero">{{ t.montoPorKm | currency: 'GTQ' : 'symbol-narrow' : '1.2-4' }}</td>
+          <td class="secundario">{{ t.fechaCreacion | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="acciones">
+            @if (t.tarifaId === vigente()?.tarifaId) {
+              <span class="insignia exito">En uso</span>
+            } @else if (t.vigenteDesde > (vigente()?.vigenteDesde ?? '')) {
+              <span class="insignia info">Programada</span>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="tabla-vacia">{{ cargando() ? 'Cargando tarifas…' : 'No hay tarifas registradas.' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador [pagina]="paginaActual().pagina" [tamano]="tamano()" [total]="paginaActual().total"
+               (cambioPagina)="pagina.set($event)" (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-modal [abierto]="creando()" titulo="Nueva tarifa" ancho="chico" (cerrar)="creando.set(false)"
+           subtitulo="Se aplica a los viajes que lleguen desde la fecha indicada.">
+  <form id="form-tarifa" [formGroup]="form" (ngSubmit)="crear()" class="formulario">
+    <div class="campo">
+      <label for="monto">Monto por km (Q)</label>
+      <input id="monto" type="number" min="0.0001" step="0.0001" class="control" formControlName="montoPorKm"
+             [class.invalido]="form.controls.montoPorKm.touched && form.controls.montoPorKm.invalid" />
+      @if (form.controls.montoPorKm.touched && form.controls.montoPorKm.invalid) {
+        <span class="error">Escribe un monto mayor que cero.</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="desde">Vigente desde</label>
+      <input id="desde" type="date" class="control" formControlName="vigenteDesde" />
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="creando.set(false)">Cancelar</button>
+    <button type="submit" form="form-tarifa" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Guardar tarifa' }}
+    </button>
+  </div>
+</app-modal>
