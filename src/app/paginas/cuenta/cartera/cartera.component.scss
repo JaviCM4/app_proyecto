@@ -1,0 +1,30 @@
+.resumen {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+
+  @media (max-width: 900px) { grid-template-columns: 1fr 1fr; }
+
+  .tarjeta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    span { color: var(--texto-suave); font-size: 13px; }
+    strong { font-size: 22px; font-weight: 600; }
+    small { color: var(--texto-tenue); font-size: 12px; }
+  }
+
+  .saldo {
+    background: var(--primario-suave);
+    border-color: var(--primario-medio);
+
+    strong { font-size: 30px; color: var(--primario-hover); }
+  }
+}
+
+.titulo { margin-bottom: 12px; }
+
+.monto { color: var(--exito); font-weight: 500; }
+.monto.negativo { color: var(--peligro); }

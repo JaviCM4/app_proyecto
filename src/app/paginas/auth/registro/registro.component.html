@@ -1,0 +1,64 @@
+<div class="tarjeta caja-acceso ancha">
+  <h1>Crear cuenta</h1>
+  <p class="descripcion">Con tu cuenta puedes comprar boletos, recargar tu cartera y ver tu historial.</p>
+
+  <app-boton-google texto="Crear cuenta con Google" />
+  <p class="ayuda-google">Usamos tu nombre, correo y foto de Google. Después completas tu NIT, teléfono y dirección en Mi perfil.</p>
+  <div class="separador">o llena tus datos</div>
+
+  <form [formGroup]="form" (ngSubmit)="registrar()">
+    <div class="formulario-grilla">
+      <div class="campo">
+        <label for="nombres">Nombres</label>
+        <input id="nombres" class="control" formControlName="nombres" [class.invalido]="invalido('nombres')" />
+      </div>
+      <div class="campo">
+        <label for="apellidos">Apellidos</label>
+        <input id="apellidos" class="control" formControlName="apellidos" [class.invalido]="invalido('apellidos')" />
+      </div>
+      <div class="campo">
+        <label for="correo">Correo</label>
+        <input id="correo" type="email" class="control" formControlName="correo" [class.invalido]="invalido('correo')" />
+        @if (form.controls.correo.errors?.['servidor']) {
+          <span class="error">{{ form.controls.correo.errors?.['servidor'] }}</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" type="password" class="control" formControlName="contrasena" autocomplete="new-password"
+               [class.invalido]="invalido('contrasena')" />
+        <span class="ayuda">Mínimo 8 caracteres.</span>
+      </div>
+      <div class="campo">
+        <label for="dpi">DPI</label>
+        <input id="dpi" class="control" formControlName="dpi" inputmode="numeric" maxlength="13" [class.invalido]="invalido('dpi')" />
+        @if (invalido('dpi')) {
+          <span class="error">Debe tener 13 dígitos.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="nit">NIT</label>
+        <input id="nit" class="control" formControlName="nit" [class.invalido]="invalido('nit')" />
+      </div>
+      <div class="campo">
+        <label for="telefono">Teléfono</label>
+        <input id="telefono" class="control" formControlName="telefono" inputmode="numeric" [class.invalido]="invalido('telefono')" />
+        @if (invalido('telefono')) {
+          <span class="error">Solo números, mínimo 8.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="direccion">Dirección</label>
+        <input id="direccion" class="control" formControlName="direccion" [class.invalido]="invalido('direccion')" />
+      </div>
+    </div>
+
+    <button type="submit" class="btn primario bloque" [disabled]="enviando()">
+      {{ enviando() ? 'Creando cuenta…' : 'Crear cuenta' }}
+    </button>
+  </form>
+
+  <div class="enlaces">
+    <span>¿Ya tienes cuenta? <a routerLink="/login">Entrar</a></span>
+  </div>
+</div>

@@ -1,0 +1,25 @@
+<div class="tarjeta caja-acceso">
+  <h1>Recuperar contraseña</h1>
+
+  @if (enviado()) {
+    <p class="descripcion">
+      Si el correo está registrado, te llegará un enlace para crear una contraseña nueva. El enlace vence en 30 minutos.
+    </p>
+    <a routerLink="/login" class="btn bloque">Volver a entrar</a>
+  } @else {
+    <p class="descripcion">Escribe tu correo y te enviaremos un enlace para crear una contraseña nueva.</p>
+    <form [formGroup]="form" (ngSubmit)="enviar()">
+      <div class="campo">
+        <label for="correo">Correo</label>
+        <input id="correo" type="email" class="control" formControlName="correo"
+               [class.invalido]="form.controls.correo.touched && form.controls.correo.invalid" />
+      </div>
+      <button type="submit" class="btn primario bloque" [disabled]="enviando()">
+        {{ enviando() ? 'Enviando…' : 'Enviar enlace' }}
+      </button>
+    </form>
+    <div class="enlaces">
+      <a routerLink="/login">Volver a entrar</a>
+    </div>
+  }
+</div>

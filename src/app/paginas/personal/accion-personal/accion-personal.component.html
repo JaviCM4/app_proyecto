@@ -1,0 +1,57 @@
+<app-modal [abierto]="!!personal()" ancho="chico" (cerrar)="cerrar.emit()"
+           [titulo]="titulo()"
+           [subtitulo]="personal() ? personal()!.nombreCompleto + ' · ' + puesto() : ''">
+  <form id="form-accion-personal" [formGroup]="form" (ngSubmit)="confirmar()" class="formulario">
+    @if (accion() === 'reintegrar') {
+      <p class="suave">
+        Vuelve a trabajar con su misma cuenta (no se crea otra). Puede regresar a la misma sucursal o a otra,
+        y con el mismo puesto u otro. No debe estar trabajando en otra sucursal.
+      </p>
+      <div class="campo">
+        <label for="a-sucursal">Sucursal</label>
+        <select id="a-sucursal" class="control" formControlName="sucursalDestinoId"
+                [class.invalido]="form.controls.sucursalDestinoId.touched && form.controls.sucursalDestinoId.invalid">
+          <option value="" disabled>Elige una sucursal…</option>
+          @for (s of destinos(); track s.sucursalId) {
+            <option [value]="s.sucursalId">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="a-rol">Puesto</label>
+        <select id="a-rol" class="control" formControlName="rol">
+          <option value="ADMIN_SUCURSAL">Administrador de sucursal</option>
+          <option value="CAJERO">Cajero</option>
+        </select>
+      </div>
+    } @else if (accion() === 'trasladar') {
+      <p class="suave">Seguirá con el mismo puesto en la sucursal nueva. Su sucursal actual debe quedar con al menos un administrador.</p>
+      <div class="campo">
+        <label for="a-destino">Sucursal destino</label>
+        <select id="a-destino" class="control" formControlName="sucursalDestinoId"
+                [class.invalido]="form.controls.sucursalDestinoId.touched && form.controls.sucursalDestinoId.invalid">
+          <option value="" disabled>Elige una sucursal…</option>
+          @for (s of destinos(); track s.sucursalId) {
+            <option [value]="s.sucursalId">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+    } @else {
+      <p class="suave">
+        Deja de tener acceso a la sucursal y pierde el puesto. Su cuenta queda como cliente.
+        La sucursal debe quedar con al menos un administrador activo.
+      </p>
+    }
+    <div class="campo">
+      <label for="a-fecha">{{ accion() === 'trasladar' ? 'Fecha del traslado' : accion() === 'reintegrar' ? 'Fecha de reintegro' : 'Fecha de retiro' }}</label>
+      <input id="a-fecha" type="date" class="control" formControlName="fecha" />
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="cerrar.emit()">Cancelar</button>
+    <button type="submit" form="form-accion-personal" class="btn" [class.peligro]="accion() === 'desactivar'"
+            [class.primario]="accion() !== 'desactivar'" [disabled]="enviando()">
+      {{ enviando() ? 'Procesando…' : titulo() }}
+    </button>
+  </div>
+</app-modal>

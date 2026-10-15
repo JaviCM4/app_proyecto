@@ -1,0 +1,23 @@
+<header class="encabezado">
+  <div class="interior">
+    <a routerLink="/" class="marca">
+      <app-icono nombre="bus" [tamano]="22" />
+      <span>{{ appNombre }}</span>
+    </a>
+
+    <nav class="acciones">
+      @if (auth.autenticado()) {
+        <a routerLink="/panel" class="btn primario">Ir a mi panel</a>
+      } @else {
+        <a routerLink="/login" class="btn">Entrar</a>
+        <a routerLink="/registro" class="btn primario">Crear cuenta</a>
+      }
+    </nav>
+  </div>
+</header>
+
+<main class="interior contenido">
+  <router-outlet />
+</main>
+
+<footer class="pie">{{ appNombre }} · {{ anio }}</footer>

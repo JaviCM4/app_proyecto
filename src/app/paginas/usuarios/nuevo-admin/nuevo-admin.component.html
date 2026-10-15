@@ -1,0 +1,48 @@
+<app-modal [abierto]="abierto()" titulo="Nuevo administrador del sistema" ancho="mediano" (cerrar)="cerrar.emit()"
+           subtitulo="Tendrá acceso a toda la administración. Le llegará un correo para crear su contraseña.">
+  <form id="form-admin" [formGroup]="form" (ngSubmit)="crear()" class="formulario-grilla">
+    <div class="campo">
+      <label for="n-nombres">Nombres</label>
+      <input id="n-nombres" class="control" formControlName="nombres" [class.invalido]="invalido('nombres')" />
+    </div>
+    <div class="campo">
+      <label for="n-apellidos">Apellidos</label>
+      <input id="n-apellidos" class="control" formControlName="apellidos" [class.invalido]="invalido('apellidos')" />
+    </div>
+    <div class="campo completo">
+      <label for="n-correo">Correo</label>
+      <input id="n-correo" type="email" class="control" formControlName="correo" [class.invalido]="invalido('correo')" />
+      @if (invalido('correo')) {
+        <span class="error">{{ errorServidor('correo') ?? 'Escribe un correo válido.' }}</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="n-dpi">DPI</label>
+      <input id="n-dpi" class="control" formControlName="dpi" inputmode="numeric" maxlength="13" [class.invalido]="invalido('dpi')" />
+      @if (invalido('dpi')) {
+        <span class="error">{{ errorServidor('dpi') ?? 'Debe tener 13 dígitos.' }}</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="n-nit">NIT</label>
+      <input id="n-nit" class="control" formControlName="nit" [class.invalido]="invalido('nit')" />
+    </div>
+    <div class="campo">
+      <label for="n-telefono">Teléfono</label>
+      <input id="n-telefono" class="control" formControlName="telefono" inputmode="numeric" [class.invalido]="invalido('telefono')" />
+      @if (invalido('telefono')) {
+        <span class="error">Solo números, mínimo 8.</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="n-direccion">Dirección</label>
+      <input id="n-direccion" class="control" formControlName="direccion" [class.invalido]="invalido('direccion')" />
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="cerrar.emit()">Cancelar</button>
+    <button type="submit" form="form-admin" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Creando…' : 'Crear administrador' }}
+    </button>
+  </div>
+</app-modal>

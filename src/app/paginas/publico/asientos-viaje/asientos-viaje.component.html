@@ -1,0 +1,32 @@
+<app-modal [abierto]="!!viaje()" titulo="Asientos del viaje" ancho="mediano" (cerrar)="cerrar.emit()"
+           [subtitulo]="viaje() ? viaje()!.origenNombre + ' → ' + viaje()!.destinoNombre : ''">
+  @if (cargando()) {
+    <p class="suave">Cargando asientos…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+  @if (mapa(); as m) {
+    <div class="resumen">
+      <span>{{ m.fechaSalida | date: "EEEE d 'de' MMMM, HH:mm" : zona }}</span>
+      <span><strong>{{ m.disponibles }}</strong> de {{ m.capacidad }} disponibles</span>
+      <span>{{ m.precioBoleto | currency: 'GTQ' : 'symbol-narrow' }} por asiento</span>
+    </div>
+
+    <div class="leyenda">
+      <span><i class="asiento libre"></i> Disponible</span>
+      <span><i class="asiento ocupado"></i> Ocupado</span>
+    </div>
+
+    <div class="bus">
+      @for (a of m.asientos; track a.numero) {
+        <span class="asiento" [class.libre]="a.estado === 'DISPONIBLE'" [class.ocupado]="a.estado === 'OCUPADO'">
+          {{ a.numero }}
+        </span>
+      }
+    </div>
+  }
+
+  <div pie>
+    <button type="button" class="btn" (click)="cerrar.emit()">Cerrar</button>
+  </div>
+</app-modal>

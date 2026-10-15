@@ -1,0 +1,78 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Usuarios</h1>
+    <p>Cuentas registradas en el sistema.</p>
+  </div>
+  <div class="fila">
+    <button type="button" class="btn" (click)="agregandoPersonal.set(true)">+ Administrador de sucursal</button>
+    <button type="button" class="btn primario" (click)="creando.set(true)">+ Administrador del sistema</button>
+  </div>
+</div>
+
+<div class="filtros">
+  <div class="campo crece">
+    <label for="buscar">Buscar</label>
+    <input id="buscar" class="control" placeholder="Nombre, correo o NIT" [ngModel]="texto()" (ngModelChange)="buscar($event)" />
+  </div>
+  <div class="campo">
+    <label for="rol">Rol</label>
+    <select id="rol" class="control" [ngModel]="rol()" (ngModelChange)="cambiarRol($event)">
+      <option value="">Todos</option>
+      @for (r of roles; track r.valor) {
+        <option [value]="r.valor">{{ r.texto }}</option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="estado">Estado</label>
+    <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="cambiarEstado($event)">
+      <option value="">Todos</option>
+      <option value="ACTIVO">Activos</option>
+      <option value="INACTIVO">Inactivos</option>
+      <option value="BLOQUEADO">Bloqueados</option>
+    </select>
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>NIT</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Último acceso</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of paginaActual().elementos; track u.usuarioId) {
+        <tr>
+          <td>
+            {{ u.nombre }}
+            <div class="secundario">{{ u.correo }}</div>
+          </td>
+          <td>{{ u.nit || '—' }}</td>
+          <td>{{ u.roles | rolTexto }}</td>
+          <td><span [class]="'insignia ' + estados[u.estado].clase">{{ estados[u.estado].texto }}</span></td>
+          <td class="secundario">{{ u.ultimoAcceso ? (u.ultimoAcceso | date: 'dd/MM/yyyy HH:mm') : 'Nunca' }}</td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="seleccionado.set(u.usuarioId)">Ver</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">{{ cargando() ? 'Cargando usuarios…' : 'No hay usuarios con esos filtros.' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador [pagina]="paginaActual().pagina" [tamano]="tamano()" [total]="paginaActual().total"
+               (cambioPagina)="pagina.set($event)" (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-usuario-detalle [usuarioId]="seleccionado()" (cambiado)="cargar()" (cerrar)="seleccionado.set(null)" />
+<app-nuevo-admin [abierto]="creando()" (creado)="alCrear()" (cerrar)="creando.set(false)" />
+<app-agregar-personal [abierto]="agregandoPersonal()" (agregado)="alCrear()" (cerrar)="agregandoPersonal.set(false)" />

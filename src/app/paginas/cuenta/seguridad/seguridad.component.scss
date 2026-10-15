@@ -1,0 +1,31 @@
+.secciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.descripcion {
+  margin: 4px 0 16px;
+  color: var(--texto-suave);
+}
+
+.nota {
+  margin: -8px 0 16px;
+  font-size: 12px;
+  color: var(--texto-tenue);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.estado { margin-bottom: 12px; }
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

@@ -1,0 +1,86 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Billetera digital</h1>
+    <p>Tu saldo para comprar boletos y pagar alquileres.</p>
+  </div>
+  <button type="button" class="btn primario" (click)="recargando.set(true)">+ Recargar saldo</button>
+</div>
+
+<div class="resumen">
+  <div class="tarjeta saldo">
+    <span>Saldo disponible</span>
+    <strong>{{ (cartera()?.saldo ?? 0) | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+    @if (cartera(); as c) {
+      <small>Actualizado {{ c.fechaActualizacion | date: "d 'de' MMMM, HH:mm" }}</small>
+    }
+  </div>
+  <div class="tarjeta dato">
+    <span>Recargas</span>
+    <strong>{{ resumen().recargas | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+  </div>
+  <div class="tarjeta dato">
+    <span>Pagos</span>
+    <strong>{{ resumen().pagos | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+  </div>
+  <div class="tarjeta dato">
+    <span>Reembolsos</span>
+    <strong>{{ resumen().reembolsos | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+  </div>
+</div>
+
+<h2 class="titulo">Movimientos</h2>
+<div class="filtros">
+  <div class="campo">
+    <label for="desde">Desde</label>
+    <input id="desde" type="date" class="control" [(ngModel)]="desde" />
+  </div>
+  <div class="campo">
+    <label for="hasta">Hasta</label>
+    <input id="hasta" type="date" class="control" [(ngModel)]="hasta" [min]="desde" />
+  </div>
+  <div class="campo">
+    <label for="tipo">Tipo</label>
+    <select id="tipo" class="control" [ngModel]="tipo()" (ngModelChange)="tipo.set($event); pagina.set(1)">
+      <option value="">Todos</option>
+      <option value="RECARGA">Recargas</option>
+      <option value="DEBITO">Pagos</option>
+      <option value="REEMBOLSO">Reembolsos</option>
+    </select>
+  </div>
+  <button type="button" class="btn primario" (click)="cargar()">Consultar</button>
+  <button type="button" class="btn" (click)="limpiarFechas()">Limpiar</button>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Movimiento</th>
+        <th class="numero">Monto</th>
+        <th class="numero">Saldo después</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of paginaActual().elementos; track m.id) {
+        <tr>
+          <td>{{ m.fechaMovimiento | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+          <td>{{ descripcion(m) }}</td>
+          <td class="numero monto" [class.negativo]="signo(m) < 0">
+            {{ signo(m) < 0 ? '−' : '+' }} {{ m.monto | currency: 'GTQ' : 'symbol-narrow' }}
+          </td>
+          <td class="numero">{{ m.saldoResultante | currency: 'GTQ' : 'symbol-narrow' }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="tabla-vacia">{{ cargando() ? 'Cargando movimientos…' : 'No hay movimientos en ese rango.' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador [pagina]="paginaActual().pagina" [tamano]="tamano()" [total]="paginaActual().total"
+               (cambioPagina)="pagina.set($event)" (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-recarga [abierto]="recargando()" (recargada)="alRecargar()" (cerrar)="recargando.set(false)" />

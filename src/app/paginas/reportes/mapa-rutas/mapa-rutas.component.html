@@ -1,0 +1,35 @@
+<div class="tarjeta mapa-tarjeta">
+  <div #contenedor class="mapa"></div>
+</div>
+
+@if (datos(); as d) {
+  <h2 class="titulo">Rutas ({{ d.rutas.length }})</h2>
+  <div class="tabla-contenedor">
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Origen</th>
+          <th>Destino</th>
+          <th class="numero">Distancia</th>
+          <th class="numero">Precio del boleto</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of d.rutas; track r.rutaId) {
+          @if (!resaltar() || r.sucursalOrigenId === resaltar()) {
+            <tr>
+              <td>{{ r.origen ?? nombre(r.sucursalOrigenId) }}</td>
+              <td>{{ r.destino ?? nombre(r.sucursalDestinoId) }}</td>
+              <td class="numero">{{ r.distanciaKm | number: '1.0-2' }} km</td>
+              <td class="numero">Q{{ r.precioBoleto | number: '1.2-2' }}</td>
+              <td><span class="insignia" [class.exito]="r.activa">{{ r.activa ? 'Activa' : 'Inactiva' }}</span></td>
+            </tr>
+          }
+        } @empty {
+          <tr><td colspan="5" class="tabla-vacia">Todavía no hay rutas.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

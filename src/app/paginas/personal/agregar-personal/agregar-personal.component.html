@@ -1,0 +1,37 @@
+<app-modal [abierto]="abierto()" titulo="Agregar administrador de sucursal" ancho="grande" (cerrar)="cerrar.emit()"
+           subtitulo="Se crea su cuenta y le llega un correo para crear su contraseña.">
+  <form id="form-personal" [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="formulario-grilla">
+      <p class="formulario-seccion">Asignación</p>
+      <div class="campo">
+        <label for="p-sucursal">Sucursal</label>
+        <select id="p-sucursal" class="control" formControlName="sucursalId"
+                [class.invalido]="form.controls.sucursalId.touched && form.controls.sucursalId.invalid">
+          <option value="" disabled>Elige una sucursal…</option>
+          @for (s of sucursales(); track s.sucursalId) {
+            <option [value]="s.sucursalId">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="p-rol">Puesto</label>
+        <select id="p-rol" class="control" formControlName="rol">
+          <option value="ADMIN_SUCURSAL">Administrador de sucursal</option>
+          <option value="CAJERO">Cajero</option>
+        </select>
+      </div>
+      <div class="campo">
+        <label for="p-fecha">Fecha de asignación</label>
+        <input id="p-fecha" type="date" class="control" formControlName="fechaAsignacion" />
+      </div>
+      <p class="formulario-seccion">Datos de la persona</p>
+    </div>
+    <app-datos-cuenta [grupo]="form.controls.cuenta" prefijo="p" />
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="cerrar.emit()">Cancelar</button>
+    <button type="submit" form="form-personal" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Agregar' }}
+    </button>
+  </div>
+</app-modal>

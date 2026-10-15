@@ -1,0 +1,10 @@
+.encabezado-personal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0 10px;
+
+  label { gap: 6px; font-size: 13px; cursor: pointer; }
+}
+
+.acciones .btn + .btn { margin-left: 6px; }

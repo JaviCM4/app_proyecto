@@ -1,0 +1,172 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Reportes</h1>
+    <p>{{ ambito() === 'sistema' ? 'Resultados de toda la empresa.' : 'Resultados de una sucursal.' }}</p>
+  </div>
+  @if (esSistema) {
+    <div class="selector-ambito">
+      <button type="button" class="btn" [class.primario]="ambito() === 'sistema'" (click)="cambiarAmbito('sistema')">Del sistema</button>
+      <button type="button" class="btn" [class.primario]="ambito() === 'sucursal'" (click)="cambiarAmbito('sucursal')">Por sucursal</button>
+    </div>
+  }
+</div>
+
+<nav class="pestanas">
+  @for (r of pestanas(); track r.codigo) {
+    <button type="button" [class.activa]="r.codigo === codigo()" (click)="elegir(r.codigo)">{{ r.nombre }}</button>
+  }
+</nav>
+
+@if (reporte(); as r) {
+  <div class="tarjeta panel-filtros">
+    <p class="descripcion">{{ r.descripcion }}</p>
+
+    <div class="filtros">
+      @if (r.ambito === 'sucursal' && esSistema) {
+        <div class="campo">
+          <label for="sucursal-reporte">Sucursal</label>
+          <select id="sucursal-reporte" class="control" [ngModel]="sucursalReporte()" (ngModelChange)="cambiarSucursalReporte($event)">
+            <option value="" disabled>Elige una sucursal…</option>
+            @for (s of sucursales(); track s.sucursalId) {
+              <option [value]="s.sucursalId">{{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+      }
+      @if (usa('fechas')) {
+        <div class="campo">
+          <label for="desde">Desde</label>
+          <input id="desde" type="date" class="control" [(ngModel)]="filtros.desde" />
+        </div>
+        <div class="campo">
+          <label for="hasta">Hasta</label>
+          <input id="hasta" type="date" class="control" [(ngModel)]="filtros.hasta" [min]="filtros.desde" />
+        </div>
+      }
+      @if (usa('sucursal')) {
+        <div class="campo">
+          <label for="sucursal">Sucursal</label>
+          <select id="sucursal" class="control" [(ngModel)]="filtros.sucursalId" (ngModelChange)="alCambiarSucursalFiltro()">
+            <option value="">Todas</option>
+            @for (s of sucursales(); track s.sucursalId) {
+              <option [value]="s.sucursalId">{{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+      }
+      @if (usa('ruta')) {
+        <div class="campo">
+          <label for="ruta">Ruta</label>
+          <select id="ruta" class="control" [(ngModel)]="filtros.rutaId">
+            <option value="">Todas</option>
+            @for (ruta of rutasSucursal(); track ruta.rutaId) {
+              <option [value]="ruta.rutaId">{{ ruta.origenNombre }} → {{ ruta.destinoNombre }}</option>
+            }
+          </select>
+        </div>
+      }
+      @if (usa('bus')) {
+        <div class="campo">
+          <label for="bus">Bus</label>
+          <select id="bus" class="control" [(ngModel)]="filtros.busId">
+            <option value="">Todos</option>
+            @for (b of buses(); track b.busId) {
+              <option [value]="b.busId">{{ b.placa }} · {{ b.marca }}</option>
+            }
+          </select>
+        </div>
+      }
+      @if (usa('estadoBus')) {
+        <div class="campo">
+          <label for="estado-bus">Estado</label>
+          <select id="estado-bus" class="control" [(ngModel)]="filtros.estado">
+            <option value="">Todos</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="EN_RUTA">En ruta</option>
+            <option value="EN_TALLER">En taller</option>
+            <option value="INACTIVO">Inactivo</option>
+          </select>
+        </div>
+      }
+      @if (usa('estadoChofer')) {
+        <div class="campo">
+          <label for="estado-chofer">Estado</label>
+          <select id="estado-chofer" class="control" [(ngModel)]="filtros.estado">
+            <option value="">Todos</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+          </select>
+        </div>
+      }
+      @if (usa('limite')) {
+        <div class="campo limite">
+          <label for="limite">Mostrar</label>
+          <select id="limite" class="control" [(ngModel)]="filtros.limite">
+            <option [ngValue]="5">5 rutas</option>
+            <option [ngValue]="10">10 rutas</option>
+            <option [ngValue]="20">20 rutas</option>
+          </select>
+        </div>
+      }
+
+      <div class="botones">
+        <button type="button" class="btn primario" [disabled]="cargando()" (click)="ver()">Ver</button>
+        <button type="button" class="btn" [disabled]="cargando()" (click)="descargar()">Descargar PDF</button>
+        <button type="button" class="btn texto" (click)="limpiar()">Limpiar</button>
+      </div>
+    </div>
+  </div>
+
+  @if (r.ambito === 'sucursal' && !sucursalReporte()) {
+    <div class="tarjeta tabla-vacia">Elige una sucursal para ver sus reportes.</div>
+  } @else if (r.esMapa) {
+    @if (mapa(); as m) {
+      <app-mapa-rutas [datos]="m" [resaltar]="filtros.sucursalId" />
+    } @else {
+      <div class="tarjeta tabla-vacia">{{ cargando() ? 'Cargando mapa…' : 'Sin datos.' }}</div>
+    }
+  } @else {
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr>
+            @for (c of r.columnas; track c.clave) {
+              <th [class.numero]="c.formato === 'dinero' || c.formato === 'numero'">{{ c.etiqueta }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (fila of paginaActual().elementos; track $index) {
+            <tr>
+              @for (c of r.columnas; track c.clave) {
+                <td [class.numero]="c.formato === 'dinero' || c.formato === 'numero'" [class.negativo]="esNegativo(fila, c)">
+                  {{ valor(fila, c) }}
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td [attr.colspan]="r.columnas.length" class="tabla-vacia">
+                {{ cargando() ? 'Cargando…' : consultado() ? 'No hay datos con esos filtros.' : '' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+        @if (totales(); as t) {
+          <tfoot>
+            <tr>
+              @for (c of r.columnas; track c.clave; let primero = $first) {
+                <td [class.numero]="c.formato === 'dinero' || c.formato === 'numero'">
+                  {{ t[c.clave] !== undefined ? valor(t, c) : primero ? 'Total' : '' }}
+                </td>
+              }
+            </tr>
+          </tfoot>
+        }
+      </table>
+    </div>
+
+    <app-paginador [pagina]="paginaActual().pagina" [tamano]="tamano()" [total]="paginaActual().total"
+                   (cambioPagina)="pagina.set($event)" (cambioTamano)="tamano.set($event); pagina.set(1)" />
+  }
+}

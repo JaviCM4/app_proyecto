@@ -1,0 +1,79 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Seguridad</h1>
+    <p>Protege tu cuenta.</p>
+  </div>
+</div>
+
+<div class="secciones">
+  <section class="tarjeta">
+    <h2>Cambiar contraseña</h2>
+    <p class="descripcion">Usa al menos 8 caracteres. No la compartas con nadie.</p>
+    <p class="nota">
+      ¿Creaste tu cuenta con Google y no tienes contraseña? Cierra sesión y usa
+      “¿Olvidaste tu contraseña?” en la pantalla de entrar: te llega un enlace para crear una.
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="cambiarContrasena()" class="formulario">
+      <div class="campo">
+        <label for="actual">Contraseña actual</label>
+        <input id="actual" type="password" class="control" formControlName="actual" autocomplete="current-password"
+               [class.invalido]="form.controls.actual.touched && form.controls.actual.invalid" />
+      </div>
+      <div class="campo">
+        <label for="nueva">Contraseña nueva</label>
+        <input id="nueva" type="password" class="control" formControlName="nueva" autocomplete="new-password"
+               [class.invalido]="form.controls.nueva.touched && form.controls.nueva.invalid" />
+        @if (form.controls.nueva.touched && form.controls.nueva.invalid) {
+          <span class="error">Mínimo 8 caracteres.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="confirmacion">Repite la contraseña nueva</label>
+        <input id="confirmacion" type="password" class="control" formControlName="confirmacion" autocomplete="new-password"
+               [class.invalido]="form.controls.confirmacion.touched && form.hasError('distintas')" />
+        @if (form.controls.confirmacion.touched && form.hasError('distintas')) {
+          <span class="error">Las contraseñas no coinciden.</span>
+        }
+      </div>
+      <div class="acciones">
+        <button type="submit" class="btn primario" [disabled]="guardandoClave()">
+          {{ guardandoClave() ? 'Guardando…' : 'Cambiar contraseña' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Verificación en dos pasos</h2>
+    <p class="descripcion">
+      Al entrar (con contraseña o con Google) te pediremos además un código de 6 dígitos que llega a tu correo.
+    </p>
+    @if (dobleFactor() !== null) {
+      <p class="estado">
+        <span class="insignia" [class.exito]="dobleFactor()">{{ dobleFactor() ? 'Activada' : 'Desactivada' }}</span>
+      </p>
+    }
+    <div class="acciones">
+      <button type="button" class="btn" [disabled]="guardandoDobleFactor()" (click)="cambiarDobleFactor(false)">Desactivar</button>
+      <button type="button" class="btn primario" [disabled]="guardandoDobleFactor()" (click)="cambiarDobleFactor(true)">Activar</button>
+    </div>
+  </section>
+
+  <section class="tarjeta">
+    <h2>Sesión</h2>
+    <p class="descripcion">Cierra tu sesión en este navegador.</p>
+    <div class="acciones">
+      <button type="button" class="btn peligro" (click)="confirmarSalida.set(true)">Cerrar sesión</button>
+    </div>
+  </section>
+</div>
+
+<app-confirmacion
+  [abierto]="confirmarSalida()"
+  titulo="Cerrar sesión"
+  mensaje="¿Quieres cerrar tu sesión? Tendrás que volver a entrar."
+  textoAceptar="Cerrar sesión"
+  [peligro]="true"
+  (aceptar)="salir()"
+  (cancelar)="confirmarSalida.set(false)" />

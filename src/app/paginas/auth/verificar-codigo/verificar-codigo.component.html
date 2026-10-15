@@ -1,0 +1,19 @@
+<div class="tarjeta caja-acceso">
+  <h1>Verifica tu identidad</h1>
+  <p class="descripcion">Escribe el código de 6 dígitos que enviamos a <strong>{{ correo }}</strong>. Vence en 10 minutos.</p>
+
+  <form [formGroup]="form" (ngSubmit)="verificar()">
+    <div class="campo">
+      <label for="codigo">Código</label>
+      <input id="codigo" class="control" formControlName="codigo" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+             [class.invalido]="form.controls.codigo.touched && form.controls.codigo.invalid" />
+    </div>
+    <button type="submit" class="btn primario bloque" [disabled]="enviando()">
+      {{ enviando() ? 'Verificando…' : 'Verificar' }}
+    </button>
+  </form>
+
+  <div class="enlaces">
+    <a routerLink="/login">Volver a entrar</a>
+  </div>
+</div>

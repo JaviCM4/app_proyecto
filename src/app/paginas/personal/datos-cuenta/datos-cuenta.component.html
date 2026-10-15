@@ -1,0 +1,44 @@
+<div class="formulario-grilla" [formGroup]="grupo()">
+  <div class="campo">
+    <label [for]="prefijo() + '-nombres'">Nombres</label>
+    <input [id]="prefijo() + '-nombres'" class="control" formControlName="nombres" [class.invalido]="invalido('nombres')" />
+  </div>
+  <div class="campo">
+    <label [for]="prefijo() + '-apellidos'">Apellidos</label>
+    <input [id]="prefijo() + '-apellidos'" class="control" formControlName="apellidos" [class.invalido]="invalido('apellidos')" />
+  </div>
+  <div class="campo">
+    <label [for]="prefijo() + '-correo'">Correo</label>
+    <input [id]="prefijo() + '-correo'" type="email" class="control" formControlName="correo" [class.invalido]="invalido('correo')" />
+    @if (invalido('correo')) {
+      <span class="error">{{ errorServidor('correo') ?? 'Escribe un correo válido.' }}</span>
+    } @else {
+      <span class="ayuda">Aquí le llega el enlace para activar su cuenta.</span>
+    }
+  </div>
+  <div class="campo">
+    <label [for]="prefijo() + '-dpi'">DPI</label>
+    <input [id]="prefijo() + '-dpi'" class="control" formControlName="dpi" inputmode="numeric" maxlength="13" [class.invalido]="invalido('dpi')" />
+    @if (invalido('dpi')) {
+      <span class="error">{{ errorServidor('dpi') ?? 'Debe tener 13 dígitos.' }}</span>
+    }
+  </div>
+  <div class="campo">
+    <label [for]="prefijo() + '-nit'">NIT</label>
+    <input [id]="prefijo() + '-nit'" class="control mayusculas" formControlName="nit" [class.invalido]="invalido('nit')" />
+    @if (errorServidor('nit')) {
+      <span class="error">{{ errorServidor('nit') }}</span>
+    }
+  </div>
+  <div class="campo">
+    <label [for]="prefijo() + '-telefono'">Teléfono</label>
+    <input [id]="prefijo() + '-telefono'" class="control" formControlName="telefono" inputmode="numeric" [class.invalido]="invalido('telefono')" />
+    @if (invalido('telefono')) {
+      <span class="error">Solo números, mínimo 8.</span>
+    }
+  </div>
+  <div class="campo completo">
+    <label [for]="prefijo() + '-direccion'">Dirección</label>
+    <input [id]="prefijo() + '-direccion'" class="control" formControlName="direccion" [class.invalido]="invalido('direccion')" />
+  </div>
+</div>

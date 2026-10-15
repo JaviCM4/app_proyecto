@@ -1,0 +1,62 @@
+<app-modal [abierto]="!!usuarioId()" ancho="mediano" (cerrar)="cerrar.emit()"
+           [titulo]="detalle() ? detalle()!.nombres + ' ' + detalle()!.apellidos : 'Usuario'"
+           [subtitulo]="detalle()?.correo ?? ''">
+  @if (detalle(); as d) {
+    <p class="fila">
+      <app-avatar [foto]="d.fotoUrl" [nombre]="d.nombres + ' ' + d.apellidos" [tamano]="40" />
+      <span class="insignia" [class]="'insignia ' + estados[d.estado].clase">{{ estados[d.estado].texto }}</span>
+      <span class="suave">{{ d.roles | rolTexto }}</span>
+    </p>
+    <dl class="datos-lista mt">
+      <div><dt>DPI</dt><dd>{{ d.dpi || '—' }}</dd></div>
+      <div><dt>NIT</dt><dd>{{ d.nit || '—' }}</dd></div>
+      <div><dt>Teléfono</dt><dd>{{ d.telefono || '—' }}</dd></div>
+      <div><dt>Último acceso</dt><dd>{{ d.ultimoAcceso ? (d.ultimoAcceso | date: 'dd/MM/yyyy HH:mm') : 'Nunca' }}</dd></div>
+      <div class="completo"><dt>Dirección</dt><dd>{{ d.direccion || '—' }}</dd></div>
+    </dl>
+    @if (esPersonal()) {
+      <div class="tarjeta puesto mt">
+        <strong>{{ esPiloto() ? 'Piloto' : puesto() ? nombreRol[puesto()!.rol] : 'Personal' }}</strong>
+        en {{ sucursal()?.nombre ?? 'su sucursal' }}
+        @if (puesto(); as p) {
+          <span class="suave">desde el {{ p.fechaAsignacion | date: 'dd/MM/yyyy' : 'UTC' }}</span>
+        }
+        <p class="suave">
+          @if (esPiloto()) {
+            Los pilotos los da de baja el administrador de su sucursal.
+          } @else {
+            Para quitarle el acceso, retíralo de la sucursal o trasládalo a otra. La sucursal debe conservar al menos un administrador.
+          }
+        </p>
+      </div>
+    }
+  } @else {
+    <p class="suave">Cargando…</p>
+  }
+
+  <div pie>
+    @if (puesto()) {
+      <button type="button" class="btn" (click)="enAccion.set('trasladar')">Trasladar</button>
+      <button type="button" class="btn peligro" (click)="enAccion.set('desactivar')">Retirar de la sucursal</button>
+    }
+    @if (detalle() && !esPersonal()) {
+      @for (a of acciones(); track a.estado) {
+        <button type="button" class="btn" [class.peligro]="a.peligro" (click)="porConfirmar.set(a)">{{ a.texto }}</button>
+      }
+    }
+    <button type="button" class="btn" (click)="cerrar.emit()">Cerrar</button>
+  </div>
+</app-modal>
+
+<app-confirmacion
+  [abierto]="porConfirmar() !== null"
+  [titulo]="(porConfirmar()?.texto ?? '') + ' cuenta'"
+  [mensaje]="porConfirmar()?.pregunta ?? ''"
+  [textoAceptar]="porConfirmar()?.texto ?? 'Aceptar'"
+  [peligro]="!!porConfirmar()?.peligro"
+  [procesando]="procesando()"
+  (aceptar)="confirmar()"
+  (cancelar)="porConfirmar.set(null)" />
+
+<app-accion-personal [personal]="enAccion() ? puesto() : null" [accion]="enAccion() ?? 'desactivar'"
+                     (hecho)="alTerminarAccion()" (cerrar)="enAccion.set(null)" />

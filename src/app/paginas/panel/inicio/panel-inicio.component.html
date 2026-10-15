@@ -1,0 +1,22 @@
+@if (auth.usuario(); as usuario) {
+  <div class="pagina-encabezado">
+    <div>
+      <h1>Hola, {{ usuario.nombre }}</h1>
+      <p>{{ usuario.roles | rolTexto }}</p>
+    </div>
+  </div>
+
+  @if (accesos().length > 0) {
+    <h2 class="titulo-seccion">Accesos rápidos</h2>
+    <div class="accesos">
+      @for (a of accesos(); track a.ruta) {
+        <a class="tarjeta acceso" [routerLink]="a.ruta">
+          <app-icono [nombre]="a.icono" [tamano]="22" />
+          <span>{{ a.texto }}</span>
+        </a>
+      }
+    </div>
+  } @else {
+    <div class="tarjeta suave">Todavía no hay opciones disponibles para tu rol.</div>
+  }
+}
