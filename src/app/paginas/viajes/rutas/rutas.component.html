@@ -1,0 +1,166 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Rutas</h1>
+    <p>Tramos entre sucursales con su distancia y precio de boleto.</p>
+  </div>
+  <button type="button" class="btn primario" (click)="abrirNueva()">+ Nueva ruta</button>
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo">
+      <label for="sucursal">Sucursal origen</label>
+      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="campo crece">
+    <label for="buscar">Buscar</label>
+    <input id="buscar" class="control" placeholder="Origen o destino"
+           [ngModel]="texto()" (ngModelChange)="filtrar($event)" />
+  </div>
+  <div class="campo">
+    <label for="activa">Estado</label>
+    <select id="activa" class="control" [ngModel]="filtroActiva()" (ngModelChange)="cambiarFiltroActiva($event)">
+      <option value="todas">Todas</option>
+      <option value="activas">Activas</option>
+      <option value="inactivas">Inactivas</option>
+    </select>
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Origen</th>
+        <th>Destino</th>
+        <th>Distancia</th>
+        <th>Precio</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of paginaActual().elementos; track r.rutaId) {
+        <tr>
+          <td><strong>{{ r.origenNombre }}</strong></td>
+          <td>{{ r.destinoNombre }}</td>
+          <td>{{ r.distanciaKm }} km</td>
+          <td>Q {{ r.precioBoleto }}</td>
+          <td>
+            <span class="insignia" [class.exito]="r.activa">{{ r.activa ? 'Activa' : 'Inactiva' }}</span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="abrirEditar(r)">Editar</button>
+            <button type="button" class="btn chico peligro" (click)="porEliminar.set(r)">Eliminar</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando rutas…' : 'No hay rutas que coincidan con la búsqueda.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-modal [abierto]="enFormulario() !== undefined"
+           [titulo]="enFormulario() ? 'Editar ruta' : 'Nueva ruta'"
+           subtitulo="El origen es la sucursal que opera la ruta."
+           ancho="chico" (cerrar)="enFormulario.set(undefined)">
+  <form id="form-ruta" [formGroup]="form" (ngSubmit)="guardar()" class="formulario">
+    <div class="campo">
+      <label for="origen">Origen</label>
+      @if (esSistema && !enFormulario()) {
+        <select id="origen" class="control" formControlName="sucursalOrigenId">
+          <option value="">Elige la sucursal…</option>
+          @for (s of sucursalesActivas(); track s.sucursalId) {
+            <option [value]="s.sucursalId">{{ s.nombre }}</option>
+          }
+        </select>
+      } @else {
+        <input id="origen" class="control" [value]="nombreSucursal(form.getRawValue().sucursalOrigenId)" disabled />
+      }
+      @if (errorServidor('sucursalOrigenId')) {
+        <span class="error">{{ errorServidor('sucursalOrigenId') }}</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="destino">Destino</label>
+      @if (enFormulario()) {
+        <input id="destino" class="control" [value]="nombreSucursal(form.getRawValue().sucursalDestinoId)" disabled />
+      } @else {
+        <select id="destino" class="control" formControlName="sucursalDestinoId">
+          <option value="">Elige el destino…</option>
+          @for (s of sucursalesActivas(); track s.sucursalId) {
+            <option [value]="s.sucursalId" [disabled]="s.sucursalId === form.controls.sucursalOrigenId.value">
+              {{ s.nombre }}
+            </option>
+          }
+        </select>
+      }
+      @if (errorServidor('sucursalDestinoId')) {
+        <span class="error">{{ errorServidor('sucursalDestinoId') }}</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="km">Distancia (km)</label>
+      <input id="km" type="number" min="0.01" step="0.01" class="control" formControlName="distanciaKm" />
+      @if (form.controls.distanciaKm.touched && form.controls.distanciaKm.invalid && !errorServidor('distanciaKm')) {
+        <span class="error">Escribe una distancia mayor que cero.</span>
+      }
+      @if (errorServidor('distanciaKm')) {
+        <span class="error">{{ errorServidor('distanciaKm') }}</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="precio">Precio del boleto (Q)</label>
+      <input id="precio" type="number" min="0.01" step="0.01" class="control" formControlName="precioBoleto" />
+      @if (form.controls.precioBoleto.touched && form.controls.precioBoleto.invalid && !errorServidor('precioBoleto')) {
+        <span class="error">Escribe un precio mayor que cero.</span>
+      }
+      @if (errorServidor('precioBoleto')) {
+        <span class="error">{{ errorServidor('precioBoleto') }}</span>
+      }
+    </div>
+    @if (enFormulario()) {
+      <div class="campo">
+        <label for="activa-ruta">Estado</label>
+        <select id="activa-ruta" class="control" formControlName="activa">
+          <option [ngValue]="true">Activa</option>
+          <option [ngValue]="false">Inactiva</option>
+        </select>
+      </div>
+    }
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="enFormulario.set(undefined)">Cancelar</button>
+    <button type="submit" form="form-ruta" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-confirmacion
+  [abierto]="porEliminar() !== null"
+  titulo="Eliminar ruta"
+  [mensaje]="'Se eliminará la ruta ' + porEliminar()?.origenNombre + ' → ' + porEliminar()?.destinoNombre + '. No se puede eliminar si ya tiene viajes programados.'"
+  textoAceptar="Eliminar"
+  [peligro]="true"
+  [procesando]="eliminando()"
+  (aceptar)="confirmarEliminar()"
+  (cancelar)="porEliminar.set(null)" />

@@ -1,0 +1,265 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Choferes</h1>
+    <p>Pilotos de la sucursal: registro, salario, licencia y estado.</p>
+  </div>
+  <button type="button" class="btn primario" (click)="creando.set(true)">+ Nuevo chofer</button>
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo">
+      <label for="ch-sucursal">Sucursal</label>
+      <select id="ch-sucursal" class="control" [ngModel]="sucursalSel()" (ngModelChange)="alCambiarSucursal($event)">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="campo crece">
+    <label for="ch-buscar">Buscar</label>
+    <input id="ch-buscar" class="control" placeholder="Nombre o número de licencia"
+           [ngModel]="texto()" (ngModelChange)="filtrar($event)" />
+  </div>
+  <div class="campo">
+    <label for="ch-estado">Estado</label>
+    <select id="ch-estado" class="control" [ngModel]="estado()" (ngModelChange)="cambiarFiltroEstado($event)">
+      <option value="todas">Todos</option>
+      <option value="ACTIVO">Activos</option>
+      <option value="INACTIVO">Inactivos</option>
+    </select>
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Licencia</th>
+        <th>Vencimiento</th>
+        <th>Salario base</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of paginaActual().elementos; track c.choferId) {
+        <tr>
+          <td>
+            {{ c.nombreCompleto }}
+            <div class="secundario">{{ nombreSucursal(c.sucursalId) }}</div>
+          </td>
+          <td>
+            <strong>{{ c.numeroLicencia }}</strong>
+            <div class="secundario">Tipo {{ c.tipoLicencia }}</div>
+          </td>
+          <td>{{ c.fechaVencimientoLicencia | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+          <td>Q {{ c.salarioBaseViaje }}</td>
+          <td>
+            <span class="insignia" [class.exito]="c.estado === 'ACTIVO'">{{ c.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="viendo.set(c)">Ver</button>
+            <button type="button" class="btn chico" (click)="editandoSalario.set(c)">Salario</button>
+            <button type="button" class="btn chico" (click)="renovando.set(c)">Licencia</button>
+            @if (c.estado === 'ACTIVO') {
+              <button type="button" class="btn chico peligro" (click)="porDesactivar.set(c)">Retirar</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando choferes…' : 'No hay choferes que coincidan con la búsqueda.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<!-- Nuevo chofer -->
+<app-modal [abierto]="creando()" titulo="Nuevo chofer" ancho="grande" (cerrar)="creando.set(false)"
+           subtitulo="Se crea su cuenta y le llega un correo para crear su contraseña. La foto se sube antes de guardar.">
+  <form id="form-chofer-crear" [formGroup]="formCrear" (ngSubmit)="guardarCrear()" class="formulario">
+    <div class="formulario-grilla">
+      <p class="formulario-seccion">Datos laborales</p>
+      @if (esSistema) {
+        <div class="campo">
+          <label for="ch-nueva-sucursal">Sucursal</label>
+          <select id="ch-nueva-sucursal" class="control" formControlName="sucursalId">
+            <option value="" disabled>Elige una sucursal…</option>
+            @for (s of sucursales(); track s.sucursalId) {
+              <option [value]="s.sucursalId">{{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+      } @else {
+        <p class="suave">Sucursal: {{ nombreSucursal(sucursalPropia) || 'tu sucursal' }}</p>
+      }
+      <div class="campo">
+        <label for="ch-licencia">Número de licencia</label>
+        <input id="ch-licencia" class="control mayusculas" formControlName="numeroLicencia" maxlength="30"
+               [class.invalido]="invalidoCrear('numeroLicencia')" />
+        @if (invalidoCrear('numeroLicencia')) {
+          <span class="error">{{ errorServidorCrear('numeroLicencia') ?? 'De 4 a 30 caracteres: letras, números o guion.' }}</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="ch-tipo">Tipo de licencia</label>
+        <select id="ch-tipo" class="control" formControlName="tipoLicencia">
+          @for (t of tiposLicencia; track t) {
+            <option [value]="t">Tipo {{ t }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="ch-vence">Vencimiento de la licencia</label>
+        <input id="ch-vence" type="date" class="control" formControlName="fechaVencimientoLicencia"
+               [class.invalido]="invalidoCrear('fechaVencimientoLicencia')" />
+        @if (invalidoCrear('fechaVencimientoLicencia')) {
+          <span class="error">Debe ser una fecha futura.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="ch-salario">Salario base por viaje (Q)</label>
+        <input id="ch-salario" type="number" class="control" formControlName="salarioBaseViaje" min="0.01" step="0.01"
+               [class.invalido]="invalidoCrear('salarioBaseViaje')" />
+        @if (invalidoCrear('salarioBaseViaje')) {
+          <span class="error">Debe ser mayor a 0.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="ch-fecha">Fecha de registro</label>
+        <input id="ch-fecha" type="date" class="control" formControlName="fechaRegistro" />
+      </div>
+      <div class="campo">
+        <label for="ch-foto">Foto del chofer</label>
+        <input id="ch-foto" type="file" class="control" accept="image/jpeg,image/png,image/webp" (change)="alElegirFoto($event)" />
+        @if (foto(); as f) {
+          <span class="ayuda">{{ f.name }}</span>
+        } @else {
+          <span class="ayuda">JPG, PNG o WEBP, máximo 2 MB. Opcional.</span>
+        }
+      </div>
+      <p class="formulario-seccion">Datos de la persona</p>
+    </div>
+    <app-datos-cuenta [grupo]="formCrear.controls.cuenta" prefijo="ch" />
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="creando.set(false)">Cancelar</button>
+    <button type="submit" form="form-chofer-crear" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Registrar' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- Detalle -->
+<app-modal [abierto]="viendo() !== null" ancho="grande" (cerrar)="viendo.set(null)"
+           [titulo]="viendo()?.nombreCompleto ?? ''"
+           [subtitulo]="viendo() ? 'Licencia ' + viendo()!.numeroLicencia + ' · Tipo ' + viendo()!.tipoLicencia : ''">
+  @if (cargandoDetalle()) {
+    <p class="suave">Cargando detalle…</p>
+  } @else {
+    @if (detalle(); as d) {
+    <dl class="datos-lista">
+      <div>
+        <dt>Estado</dt>
+        <dd><span class="insignia" [class.exito]="d.estado === 'ACTIVO'">{{ d.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></dd>
+      </div>
+      <div><dt>Sucursal</dt><dd>{{ nombreSucursal(d.sucursalId) || d.sucursalId }}</dd></div>
+      <div><dt>Licencia</dt><dd>{{ d.numeroLicencia }} (Tipo {{ d.tipoLicencia }})</dd></div>
+      <div><dt>Vencimiento</dt><dd>{{ d.fechaVencimientoLicencia | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+      <div><dt>Salario base</dt><dd>Q {{ d.salarioBaseViaje }} por viaje</dd></div>
+      <div><dt>Usuario</dt><dd class="secundario">{{ d.usuarioId }}</dd></div>
+    </dl>
+    <p class="suave">El nombre, el correo y la foto se editan en el perfil de su cuenta (Identity).</p>
+    }
+  }
+  <div pie>
+    <button type="button" class="btn" (click)="viendo.set(null)">Cerrar</button>
+  </div>
+</app-modal>
+
+<!-- Editar salario -->
+<app-modal [abierto]="editandoSalario() !== null" ancho="chico" (cerrar)="editandoSalario.set(null)"
+           [titulo]="'Salario · ' + (editandoSalario()?.nombreCompleto ?? '')"
+           subtitulo="Solo datos laborales.">
+  <form id="form-chofer-salario" [formGroup]="formSalario" (ngSubmit)="guardarSalario()" class="formulario">
+    <div class="campo">
+      <label for="chs-salario">Salario base por viaje (Q)</label>
+      <input id="chs-salario" type="number" class="control" formControlName="salarioBaseViaje" min="0.01" step="0.01" />
+      <span class="ayuda">Debe ser mayor a 0.</span>
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="editandoSalario.set(null)">Cancelar</button>
+    <button type="submit" form="form-chofer-salario" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- Renovar licencia -->
+<app-modal [abierto]="renovando() !== null" ancho="grande" (cerrar)="renovando.set(null)"
+           [titulo]="'Renovar licencia · ' + (renovando()?.nombreCompleto ?? '')">
+  <form id="form-chofer-licencia" [formGroup]="formLicencia" (ngSubmit)="guardarLicencia()" class="formulario">
+    <div class="formulario-grilla">
+      <div class="campo">
+        <label for="chl-numero">Número de licencia</label>
+        <input id="chl-numero" class="control mayusculas" formControlName="numeroLicencia" maxlength="30" />
+      </div>
+      <div class="campo">
+        <label for="chl-tipo">Tipo de licencia</label>
+        <select id="chl-tipo" class="control" formControlName="tipoLicencia">
+          @for (t of tiposLicencia; track t) {
+            <option [value]="t">Tipo {{ t }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="chl-vence">Vencimiento</label>
+        <input id="chl-vence" type="date" class="control" formControlName="fechaVencimientoLicencia" />
+        <span class="ayuda">Debe ser una fecha futura.</span>
+      </div>
+      <div class="campo">
+        <label for="chl-fecha">Fecha de registro</label>
+        <input id="chl-fecha" type="date" class="control" formControlName="fechaRegistro" />
+      </div>
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="renovando.set(null)">Cancelar</button>
+    <button type="submit" form="form-chofer-licencia" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Renovar' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- Desactivar -->
+<app-modal [abierto]="porDesactivar() !== null" ancho="chico" (cerrar)="porDesactivar.set(null)"
+           [titulo]="'Retirar · ' + (porDesactivar()?.nombreCompleto ?? '')"
+           subtitulo="Deja de estar disponible para los viajes de la sucursal.">
+  <form id="form-chofer-retiro" [formGroup]="formRetiro" (ngSubmit)="confirmarRetiro()" class="formulario">
+    <div class="campo">
+      <label for="chr-fecha">Fecha de retiro</label>
+      <input id="chr-fecha" type="date" class="control" formControlName="fecha" />
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="porDesactivar.set(null)">Cancelar</button>
+    <button type="submit" form="form-chofer-retiro" class="btn peligro" [disabled]="enviando()">
+      {{ enviando() ? 'Procesando…' : 'Retirar' }}
+    </button>
+  </div>
+</app-modal>

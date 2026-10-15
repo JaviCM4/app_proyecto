@@ -1,0 +1,95 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Personal</h1>
+    <p>Administradores y cajeros de la sucursal. Los pilotos se gestionan en Choferes.</p>
+  </div>
+  <button type="button" class="btn primario" (click)="agregando.set(true)">+ Agregar personal</button>
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo">
+      <label for="pe-sucursal">Sucursal</label>
+      <select id="pe-sucursal" class="control" [ngModel]="sucursalSel()" (ngModelChange)="alCambiarSucursal($event)">
+        <option value="" disabled>Elige una sucursal…</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="campo crece">
+    <label for="pe-buscar">Buscar</label>
+    <input id="pe-buscar" class="control" placeholder="Nombre o correo"
+           [ngModel]="texto()" (ngModelChange)="filtrar($event)" />
+  </div>
+  <div class="campo">
+    <label for="pe-estado">Estado</label>
+    <select id="pe-estado" class="control" [ngModel]="filtro()" (ngModelChange)="cambiarFiltro($event)">
+      <option value="todos">Todos</option>
+      <option value="activos">Activos</option>
+      <option value="inactivos">Retirados</option>
+    </select>
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Puesto</th>
+        <th>Asignado</th>
+        <th>Retiro</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of paginaActual().elementos; track p.personalId) {
+        <tr>
+          <td>
+            {{ p.nombreCompleto }}
+            <div class="secundario">{{ p.correo }}</div>
+          </td>
+          <td>{{ nombreRol[p.rol] }}</td>
+          <td>{{ p.fechaAsignacion | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+          <td>{{ p.fechaDesasignacion ? (p.fechaDesasignacion | date: 'dd/MM/yyyy' : 'UTC') : '—' }}</td>
+          <td>
+            @if (p.activo) {
+              <span class="insignia exito">Activo</span>
+            } @else {
+              <span class="insignia">Retirado</span>
+            }
+          </td>
+          <td class="acciones">
+            @if (p.activo) {
+              <button type="button" class="btn chico peligro" (click)="enAccion.set({ persona: p, accion: 'desactivar' })">Retirar</button>
+            } @else if (esUltimaAsignacion(p)) {
+              <button type="button" class="btn chico" (click)="enAccion.set({ persona: p, accion: 'reintegrar' })">Reintegrar</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando personal…' : 'No hay personal que coincida con la búsqueda.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-agregar-personal [abierto]="agregando()" [sucursalId]="sucursalEfectiva() || null"
+                      (agregado)="alTerminarAccion()" (cerrar)="agregando.set(false)" />
+
+<app-accion-personal [personal]="enAccion()?.persona ?? null" [accion]="enAccion()?.accion ?? 'desactivar'"
+                     (hecho)="alTerminarAccion()" (cerrar)="enAccion.set(null)" />
