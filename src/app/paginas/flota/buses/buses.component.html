@@ -1,0 +1,310 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Buses</h1>
+    <p>Buses de la sucursal: registro, estado y kilometraje.</p>
+  </div>
+  <button type="button" class="btn primario" (click)="creando.set(true)">+ Nuevo bus</button>
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo">
+      <label for="b-sucursal">Sucursal</label>
+      <select id="b-sucursal" class="control" [ngModel]="sucursalSel()" (ngModelChange)="alCambiarSucursal($event)">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="campo crece">
+    <label for="b-buscar">Buscar</label>
+    <input id="b-buscar" class="control" placeholder="Placa, marca o modelo"
+           [ngModel]="texto()" (ngModelChange)="filtrar($event)" />
+  </div>
+  <div class="campo">
+    <label for="b-estado">Estado</label>
+    <select id="b-estado" class="control" [ngModel]="estado()" (ngModelChange)="cambiarFiltroEstado($event)">
+      <option value="todas">Todos</option>
+      <option value="ACTIVO">Activo</option>
+      <option value="EN_RUTA">En ruta</option>
+      <option value="EN_TALLER">En taller</option>
+      <option value="INACTIVO">Inactivo</option>
+    </select>
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Placa</th>
+        <th>Bus</th>
+        <th>Capacidad</th>
+        <th>Km actual</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (b of paginaActual().elementos; track b.busId) {
+        <tr>
+          <td><strong>{{ b.placa }}</strong></td>
+          <td>
+            {{ b.marca }} {{ b.modelo }}
+            <div class="secundario">Año {{ b.anioFabricacion }}</div>
+          </td>
+          <td>{{ b.capacidadPasajeros }}</td>
+          <td>{{ b.kilometrajeActual }}</td>
+          <td>
+            <span class="insignia" [class.exito]="b.estado === 'ACTIVO'">{{ textoEstado(b.estado) }}</span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="viendo.set(b)">Ver</button>
+            <button type="button" class="btn chico" (click)="editando.set(b)">Editar</button>
+            <button type="button" class="btn chico" (click)="cambiandoEstado.set(b)">Estado</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando buses…' : 'No hay buses que coincidan con la búsqueda.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<!-- Nuevo bus -->
+<app-modal [abierto]="creando()" titulo="Nuevo bus" ancho="grande" (cerrar)="creando.set(false)"
+           subtitulo="La placa queda en mayúsculas. La foto se sube antes de guardar.">
+  <form id="form-bus-crear" [formGroup]="formCrear" (ngSubmit)="guardarCrear()" class="formulario">
+    @if (esSistema) {
+      <div class="campo">
+        <label for="b-nueva-sucursal">Sucursal</label>
+        <select id="b-nueva-sucursal" class="control" formControlName="sucursalId">
+          <option value="" disabled>Elige una sucursal…</option>
+          @for (s of sucursales(); track s.sucursalId) {
+            <option [value]="s.sucursalId">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+    } @else {
+      <p class="suave">Sucursal: {{ nombreSucursal(sucursalPropia) || 'tu sucursal' }}</p>
+    }
+    <div class="formulario-grilla">
+      <div class="campo">
+        <label for="b-placa">Placa</label>
+        <input id="b-placa" class="control mayusculas" formControlName="placa" maxlength="10"
+               [class.invalido]="invalidoCrear('placa')" />
+        @if (invalidoCrear('placa')) {
+          <span class="error">{{ errorServidorCrear('placa') ?? 'De 5 a 10 caracteres: letras, números o guion.' }}</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="b-marca">Marca</label>
+        <input id="b-marca" class="control" formControlName="marca" [class.invalido]="invalidoCrear('marca')" />
+      </div>
+      <div class="campo">
+        <label for="b-modelo">Modelo</label>
+        <input id="b-modelo" class="control" formControlName="modelo" [class.invalido]="invalidoCrear('modelo')" />
+      </div>
+      <div class="campo">
+        <label for="b-anio">Año de fabricación</label>
+        <input id="b-anio" type="number" class="control" formControlName="anioFabricacion" min="1950" max="2100"
+               [class.invalido]="invalidoCrear('anioFabricacion')" />
+        @if (invalidoCrear('anioFabricacion')) {
+          <span class="error">Entre 1950 y 2100.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="b-capacidad">Capacidad de pasajeros</label>
+        <input id="b-capacidad" type="number" class="control" formControlName="capacidadPasajeros" min="1" max="120"
+               [class.invalido]="invalidoCrear('capacidadPasajeros')" />
+        @if (invalidoCrear('capacidadPasajeros')) {
+          <span class="error">Entre 1 y 120.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="b-km">Kilometraje inicial</label>
+        <input id="b-km" type="number" class="control" formControlName="kilometrajeActual" min="0" />
+        <span class="ayuda">Opcional; si se omite empieza en 0.</span>
+      </div>
+      <div class="campo">
+        <label for="b-fecha">Fecha de registro</label>
+        <input id="b-fecha" type="date" class="control" formControlName="fechaRegistro" />
+      </div>
+      <div class="campo completo">
+        <label for="b-foto">Foto del bus</label>
+        <input id="b-foto" type="file" class="control" accept="image/jpeg,image/png,image/webp"
+               (change)="alElegirFoto($event, 'crear')" />
+        @if (fotoCrear(); as f) {
+          <span class="ayuda">{{ f.name }}</span>
+        } @else {
+          <span class="ayuda">JPG, PNG o WEBP, máximo 2 MB.</span>
+        }
+      </div>
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="creando.set(false)">Cancelar</button>
+    <button type="submit" form="form-bus-crear" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Registrar' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- Editar bus -->
+<app-modal [abierto]="editando() !== null" titulo="Editar bus" ancho="grande" (cerrar)="editando.set(null)"
+           [subtitulo]="editando() ? 'Placa ' + editando()!.placa : ''">
+  <form id="form-bus-editar" [formGroup]="formEditar" (ngSubmit)="guardarEditar()" class="formulario">
+    <div class="formulario-grilla">
+      <div class="campo">
+        <label for="be-marca">Marca</label>
+        <input id="be-marca" class="control" formControlName="marca" />
+      </div>
+      <div class="campo">
+        <label for="be-modelo">Modelo</label>
+        <input id="be-modelo" class="control" formControlName="modelo" />
+      </div>
+      <div class="campo">
+        <label for="be-anio">Año de fabricación</label>
+        <input id="be-anio" type="number" class="control" formControlName="anioFabricacion" min="1950" max="2100" />
+      </div>
+      <div class="campo">
+        <label for="be-capacidad">Capacidad de pasajeros</label>
+        <input id="be-capacidad" type="number" class="control" formControlName="capacidadPasajeros" min="1" max="120" />
+      </div>
+      <div class="campo completo">
+        <label for="be-foto">Cambiar foto</label>
+        <input id="be-foto" type="file" class="control" accept="image/jpeg,image/png,image/webp"
+               (change)="alElegirFoto($event, 'editar')" />
+        @if (fotoEditar(); as f) {
+          <span class="ayuda">{{ f.name }} (se sube al guardar)</span>
+        } @else {
+          <span class="ayuda">Si no eliges otra, se conserva la actual.</span>
+        }
+      </div>
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="editando.set(null)">Cancelar</button>
+    <button type="submit" form="form-bus-editar" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- Cambiar estado -->
+<app-modal [abierto]="cambiandoEstado() !== null" ancho="chico" (cerrar)="cambiandoEstado.set(null)"
+           [titulo]="'Cambiar estado · ' + (cambiandoEstado()?.placa ?? '')"
+           subtitulo="En ruta lo asigna el sistema al iniciar un viaje.">
+  <form id="form-bus-estado" [formGroup]="formEstado" (ngSubmit)="confirmarEstado()" class="formulario">
+    <div class="campo">
+      <label for="bes-estado">Nuevo estado</label>
+      <select id="bes-estado" class="control" formControlName="estado">
+        @for (e of estadosManuales; track e) {
+          <option [value]="e">{{ textoEstado(e) }}</option>
+        }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="bes-fecha">Fecha del cambio</label>
+      <input id="bes-fecha" type="date" class="control" formControlName="fecha" />
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="cambiandoEstado.set(null)">Cancelar</button>
+    <button type="submit" form="form-bus-estado" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Procesando…' : 'Confirmar' }}
+    </button>
+  </div>
+</app-modal>
+
+<!-- Detalle + bitácora -->
+<app-modal [abierto]="viendo() !== null" ancho="grande" (cerrar)="viendo.set(null)"
+           [titulo]="viendo()?.placa ?? ''"
+           [subtitulo]="viendo() ? viendo()!.marca + ' ' + viendo()!.modelo : ''">
+  @if (cargandoDetalle()) {
+    <p class="suave">Cargando detalle…</p>
+  } @else {
+    @if (detalle(); as d) {
+    <dl class="datos-lista">
+      <div><dt>Estado</dt><dd><span class="insignia" [class.exito]="d.estado === 'ACTIVO'">{{ textoEstado(d.estado) }}</span></dd></div>
+      <div><dt>Año</dt><dd>{{ d.anioFabricacion }}</dd></div>
+      <div><dt>Capacidad</dt><dd>{{ d.capacidadPasajeros }} pasajeros</dd></div>
+      <div><dt>Kilometraje</dt><dd>{{ d.kilometrajeActual }} km</dd></div>
+      <div><dt>Sucursal</dt><dd>{{ nombreSucursal(d.sucursalId) || d.sucursalId }}</dd></div>
+      <div><dt>Foto</dt><dd><a [href]="d.fotoUrl" target="_blank" rel="noopener">Ver foto</a></dd></div>
+    </dl>
+
+    <h3>Últimos viajes</h3>
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr><th>Llegada</th><th>Km inicial</th><th>Km final</th><th>Recorridos</th></tr>
+        </thead>
+        <tbody>
+          @for (v of d.ultimosViajes; track v.viajeId) {
+            <tr>
+              <td>{{ v.fechaLlegada | date: 'dd/MM/yyyy HH:mm' : '-0600' }}</td>
+              <td>{{ v.kmInicial }}</td>
+              <td>{{ v.kmFinal }}</td>
+              <td>{{ v.kmRecorridos }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="tabla-vacia">Sin viajes registrados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Bitácora de kilometraje</h3>
+    <div class="filtros">
+      <div class="campo">
+        <label for="b-desde">Desde</label>
+        <input id="b-desde" type="date" class="control" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+      </div>
+      <div class="campo">
+        <label for="b-hasta">Hasta</label>
+        <input id="b-hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+      </div>
+      <div class="campo">
+        <label for="b-filtrar-bitacora">&nbsp;</label>
+        <button id="b-filtrar-bitacora" type="button" class="btn chico" (click)="cargarBitacora()">Filtrar</button>
+      </div>
+    </div>
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr><th>Llegada</th><th>Km inicial</th><th>Km final</th><th>Recorridos</th></tr>
+        </thead>
+        <tbody>
+          @for (v of bitacora(); track v.viajeId) {
+            <tr>
+              <td>{{ v.fechaLlegada | date: 'dd/MM/yyyy HH:mm' : '-0600' }}</td>
+              <td>{{ v.kmInicial }}</td>
+              <td>{{ v.kmFinal }}</td>
+              <td>{{ v.kmRecorridos }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="tabla-vacia">Sin movimientos en el rango elegido.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  }
+  <div pie>
+    <button type="button" class="btn" (click)="viendo.set(null)">Cerrar</button>
+  </div>
+</app-modal>

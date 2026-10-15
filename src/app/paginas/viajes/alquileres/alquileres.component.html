@@ -1,0 +1,193 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Alquileres</h1>
+    <p>Solicitudes de buses privados: cotización, asignación y cancelación.</p>
+  </div>
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo">
+      <label for="sucursal">Sucursal</label>
+      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="campo">
+    <label for="estado">Estado</label>
+    <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="cambiarFiltro({ estado: $event })">
+      <option value="">Todos</option>
+      @for (e of estados; track e) {
+        <option [value]="e">{{ estadoTexto(e) }}</option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="desde">Desde</label>
+    <input id="desde" type="date" class="control" [ngModel]="desde()" (ngModelChange)="cambiarFiltro({ desde: $event })" />
+  </div>
+  <div class="campo">
+    <label for="hasta">Hasta</label>
+    <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="cambiarFiltro({ hasta: $event })" />
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Salida</th>
+        <th>Cliente</th>
+        <th>Tramo</th>
+        <th>Precio</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (a of paginaActual().elementos; track a.alquilerId) {
+        <tr>
+          <td>{{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <strong>{{ a.clienteNombre }}</strong>
+            <div class="secundario">{{ a.cantidadPasajeros }} pasajeros</div>
+          </td>
+          <td>{{ a.origen }} → {{ a.destino }}</td>
+          <td>Q {{ a.precioConfirmado ?? a.precioEstimado }}</td>
+          <td>
+            <span class="insignia" [class.exito]="a.estado === 'COMPLETADO' || a.estado === 'ASIGNADO'">
+              {{ estadoTexto(a.estado) }}
+            </span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="verDetalle(a)">Ver</button>
+            @if (puedeGestionar) {
+              @if (a.estado === 'SOLICITADO') {
+                <button type="button" class="btn chico" (click)="abrirCotizar(a)">Cotizar</button>
+              }
+              @if (a.estado === 'PAGADO') {
+                <button type="button" class="btn chico" (click)="abrirAsignar(a)">Asignar</button>
+              }
+              @if (a.estado !== 'CANCELADO' && a.estado !== 'COMPLETADO') {
+                <button type="button" class="btn chico peligro" (click)="abrirCancelar(a)">Cancelar</button>
+              }
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando alquileres…' : 'No hay alquileres que coincidan con los filtros.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-modal [abierto]="enDetalle() !== null" titulo="Detalle del alquiler" (cerrar)="enDetalle.set(null)">
+  @if (enDetalle(); as d) {
+    <p><strong>{{ d.clienteNombre }}</strong> · {{ d.cantidadPasajeros }} pasajeros · {{ d.kmEstimados }} km estimados</p>
+    <p class="secundario">{{ d.origen }} → {{ d.destino }} · Salida {{ d.fechaSalida | date: 'dd/MM/yyyy HH:mm' }}</p>
+    <p>Precio estimado: Q {{ d.precioEstimado }}</p>
+    <p>Precio confirmado: {{ d.precioConfirmado !== null ? 'Q ' + d.precioConfirmado : 'pendiente de cotización' }}</p>
+    @if (d.viajeId) {
+      <p class="secundario">Viaje asignado: {{ d.viajeId }}</p>
+    } @else {
+      <p class="secundario">Todavía no tiene viaje asignado.</p>
+    }
+    @if (d.motivoCancelacion) {
+      <p class="secundario">Motivo de cancelación: {{ d.motivoCancelacion }}</p>
+    }
+  }
+  <div pie>
+    <button type="button" class="btn" (click)="enDetalle.set(null)">Cerrar</button>
+  </div>
+</app-modal>
+
+@if (puedeGestionar) {
+  <app-modal [abierto]="porCotizar() !== null" titulo="Cotizar alquiler"
+             subtitulo="Confirma el precio final, igual o ajustado al estimado."
+             ancho="chico" (cerrar)="porCotizar.set(null)">
+    <form id="form-cotizar" [formGroup]="formCotizar" (ngSubmit)="cotizar()" class="formulario">
+      <div class="campo">
+        <label for="precio-confirmado">Precio confirmado (Q)</label>
+        <input id="precio-confirmado" type="number" min="0.01" step="0.01" class="control" formControlName="precioConfirmado" />
+        @if (formCotizar.controls.precioConfirmado.touched && formCotizar.controls.precioConfirmado.invalid) {
+          <span class="error">Escribe un precio mayor que cero.</span>
+        }
+      </div>
+    </form>
+    <div pie>
+      <button type="button" class="btn" (click)="porCotizar.set(null)">Cancelar</button>
+      <button type="submit" form="form-cotizar" class="btn primario" [disabled]="enviando()">
+        {{ enviando() ? 'Guardando…' : 'Confirmar precio' }}
+      </button>
+    </div>
+  </app-modal>
+
+  <app-modal [abierto]="porAsignar() !== null" titulo="Asignar bus y chofer"
+             subtitulo="Se crea el viaje privado del alquiler." (cerrar)="porAsignar.set(null)">
+    <form id="form-asignar" [formGroup]="formAsignar" (ngSubmit)="asignar()" class="formulario">
+      <div class="campo">
+        <label for="a-bus">Bus</label>
+        <select id="a-bus" class="control" formControlName="busId">
+          <option value="">Elige el bus…</option>
+          @for (b of buses(); track b.busId) {
+            <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="a-chofer">Chofer</label>
+        <select id="a-chofer" class="control" formControlName="choferId">
+          <option value="">Elige el chofer…</option>
+          @for (c of choferes(); track c.choferId) {
+            <option [value]="c.choferId">{{ c.nombreCompleto }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="a-llegada">Llegada estimada</label>
+        <input id="a-llegada" type="datetime-local" class="control" formControlName="llegadaEstimada" />
+      </div>
+    </form>
+    <div pie>
+      <button type="button" class="btn" (click)="porAsignar.set(null)">Cancelar</button>
+      <button type="submit" form="form-asignar" class="btn primario" [disabled]="enviando()">
+        {{ enviando() ? 'Asignando…' : 'Crear viaje' }}
+      </button>
+    </div>
+  </app-modal>
+
+  <app-modal [abierto]="porCancelar() !== null" titulo="Cancelar alquiler"
+             subtitulo="Indica el motivo de la cancelación." ancho="chico" (cerrar)="porCancelar.set(null)">
+    <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
+      <div class="campo">
+        <label for="motivo-cancelar">Motivo</label>
+        <textarea id="motivo-cancelar" class="control" rows="3" formControlName="motivo"
+                  placeholder="Por qué se cancela el alquiler"></textarea>
+        @if (formCancelar.controls.motivo.touched && formCancelar.controls.motivo.invalid) {
+          <span class="error">Escribe el motivo de la cancelación.</span>
+        }
+      </div>
+    </form>
+    <div pie>
+      <button type="button" class="btn" (click)="porCancelar.set(null)">Volver</button>
+      <button type="submit" form="form-cancelar" class="btn primario peligro" [disabled]="enviando()">
+        {{ enviando() ? 'Cancelando…' : 'Cancelar alquiler' }}
+      </button>
+    </div>
+  </app-modal>
+}
