@@ -61,10 +61,10 @@
     <tbody>
       @for (v of paginaActual().elementos; track v.viajeId) {
         <tr>
-          <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</td>
           <td>
             <strong>{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
-            <div class="secundario">Llega {{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' }}</div>
+            <div class="secundario">Llega {{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</div>
           </td>
           <td>{{ v.busPlaca ?? '—' }}</td>
           <td>{{ v.choferNombre ?? '—' }}</td>
@@ -193,15 +193,15 @@
     <p><strong>{{ d.origenNombre }} → {{ d.destinoNombre }}</strong></p>
     <p class="secundario">
       Bus {{ d.busPlaca ?? '—' }} · Chofer {{ d.choferNombre ?? '—' }} ·
-      Salida {{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' }} ·
-      Llegada {{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' }}
+      Salida {{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }} ·
+      Llegada {{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}
     </p>
     @if (d.salida) {
-      <p>Salió el {{ d.salida.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' }} con {{ d.salida.kmInicial }} km.</p>
+      <p>Salió el {{ d.salida.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' : zona }} con {{ d.salida.kmInicial }} km.</p>
     }
     @if (d.llegada) {
       <p>
-        Llegó el {{ d.llegada.fechaHoraLlegada | date: 'dd/MM/yyyy HH:mm' }} con {{ d.llegada.kmFinal }} km
+        Llegó el {{ d.llegada.fechaHoraLlegada | date: 'dd/MM/yyyy HH:mm' : zona }} con {{ d.llegada.kmFinal }} km
         ({{ d.llegada.kmRecorridos }} km recorridos, Q {{ d.llegada.costoCombustible }} de combustible).
       </p>
     }

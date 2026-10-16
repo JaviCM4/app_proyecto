@@ -1,0 +1,179 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Venta en mostrador</h1>
+    <p>Busca el viaje, elige los asientos y cobra en efectivo. La venta queda confirmada al instante.</p>
+  </div>
+  @if (esSistema) {
+    <div class="campo">
+      <label for="sucursal">Sucursal</label>
+      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo crece">
+      <label for="sucursal">Sucursal origen</label>
+      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  } @else {
+    <div class="campo crece">
+      <label>Origen (tu sucursal)</label>
+      <span class="control">{{ nombreOrigen() }}</span>
+    </div>
+  }
+  <div class="campo crece">
+    <label for="destino">Destino</label>
+    <select id="destino" class="control" [ngModel]="destinoId()" (ngModelChange)="destinoId.set($event)">
+      <option value="">Todos los destinos</option>
+      @for (d of destinos(); track d.id) {
+        <option [value]="d.id">{{ d.nombre }}</option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="fecha">Desde</label>
+    <input id="fecha" type="date" class="control" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" />
+  </div>
+  <div class="campo">
+    <label for="hasta">Hasta</label>
+    <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+  </div>
+  <div class="campo">
+    <label>&nbsp;</label>
+    <button type="button" class="btn primario" (click)="buscar()" [disabled]="buscando()">
+      {{ buscando() ? 'Buscando…' : 'Buscar' }}
+    </button>
+  </div>
+</div>
+
+@if (ventaConfirmada(); as venta) {
+  <div class="datos-lista">
+    <h2>Venta confirmada <span class="insignia exito">{{ venta.estado }}</span></h2>
+    <p class="secundario">
+      {{ venta.viaje?.origenNombre }} → {{ venta.viaje?.destinoNombre }}
+      · Salida: {{ venta.viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}
+      · Total: {{ venta.montoTotal | currency }}
+    </p>
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr><th>Boleto</th><th>Asiento</th><th class="acciones">Precio</th></tr>
+        </thead>
+        <tbody>
+          @for (b of venta.boletos; track b.boletoId) {
+            <tr>
+              <td class="secundario">{{ b.boletoId }}</td>
+              <td><strong>{{ b.numeroAsiento }}</strong></td>
+              <td class="acciones">{{ b.precio | currency }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <button type="button" class="btn chico" (click)="nuevaVenta()">Nueva venta</button>
+  </div>
+}
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Ruta</th>
+        <th>Salida</th>
+        <th>Bus</th>
+        <th>Precio</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (v of filtrados(); track v.viajeId) {
+        <tr>
+          <td>
+            <strong>{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
+            <div class="secundario">{{ v.estado }} · Capacidad: {{ v.capacidad }}</div>
+          </td>
+          <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</td>
+          <td>{{ v.busPlaca || '—' }}</td>
+          <td>{{ v.precioBoleto | currency }}</td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="elegir(v)">Elegir</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5" class="tabla-vacia">
+            {{ buscando() ? 'Buscando viajes…' : 'No hay viajes programados para esa búsqueda (revisa fechas y destino).' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-modal
+  [abierto]="viajeElegido() !== null"
+  [titulo]="viajeElegido() ? viajeElegido()!.origenNombre + ' → ' + viajeElegido()!.destinoNombre : 'Vender'"
+  subtitulo="Elige los asientos y cobra en efectivo."
+  ancho="grande"
+  (cerrar)="cerrarModal()">
+  @if (cargandoMapa()) {
+    <p class="secundario">Cargando asientos…</p>
+  } @else {
+    <app-selector-asientos
+      [mapa]="mapa()"
+      [maximo]="10"
+      (seleccion)="asientosElegidos.set($event)" />
+    <p class="secundario">
+      Asientos: {{ asientosElegidos().join(', ') || '—' }} · Total: {{ total() | currency }}
+    </p>
+    <form [formGroup]="formVenta" (ngSubmit)="vender()">
+      <div class="filtros">
+        <div class="campo">
+          <label for="nit">NIT del cliente (opcional)</label>
+          <input id="nit" class="control" formControlName="clienteNit" placeholder="CF o NIT" />
+        </div>
+        <div class="campo crece">
+          <label for="nombre">Nombre del cliente (opcional)</label>
+          <input id="nombre" class="control" formControlName="clienteNombre" placeholder="Nombre y apellido" />
+        </div>
+      </div>
+      <div class="filtros">
+        <div class="campo crece">
+          <label for="correo">Correo del cliente (opcional)</label>
+          <input id="correo" type="email" class="control" formControlName="clienteCorreo" placeholder="correo@ejemplo.com" />
+          @if (formVenta.controls.clienteCorreo.touched && formVenta.controls.clienteCorreo.errors?.['email']) {
+            <small class="secundario">Escribe un correo válido.</small>
+          }
+        </div>
+        <div class="campo">
+          <label for="fechaPago">Fecha de pago</label>
+          <input id="fechaPago" type="date" class="control" formControlName="fechaPago" />
+        </div>
+      </div>
+      @if (formVenta.controls.fechaPago.touched && formVenta.controls.fechaPago.errors?.['servidor']) {
+        <p class="secundario">{{ formVenta.controls.fechaPago.errors?.['servidor'] }}</p>
+      }
+    </form>
+  }
+  <div pie>
+    <button type="button" class="btn chico" (click)="cerrarModal()">Cancelar</button>
+    @if (mapa()) {
+      <button type="button" class="btn primario chico"
+        [disabled]="vendiendo() || asientosElegidos().length === 0 || formVenta.invalid" (click)="vender()">
+        {{ vendiendo() ? 'Vendiendo…' : 'Cobrar ' + (total() | currency) }}
+      </button>
+    }
+  </div>
+</app-modal>

@@ -48,6 +48,13 @@ export const MENU: GrupoMenu[] = [
     ],
   },
   {
+    titulo: 'Taller',
+    opciones: [
+      { texto: 'Servicios', ruta: '/panel/taller', icono: 'taller', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+      { texto: 'Categorías', ruta: '/panel/categorias', icono: 'taller', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+    ],
+  },
+  {
     titulo: 'Reportes',
     opciones: [{ texto: 'Reportes', ruta: '/panel/reportes', icono: 'reporte', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] }],
   },
@@ -55,7 +62,19 @@ export const MENU: GrupoMenu[] = [
     titulo: 'Mis compras',
     // Todas las cuentas tienen el rol Cliente, así que todos ven su billetera.
     // Para ocultarla al personal, agrega soloCliente: true (aquí y en la ruta).
-    opciones: [{ texto: 'Billetera digital', ruta: '/panel/cartera', icono: 'cartera', roles: ['CLIENTE'] }],
+    opciones: [
+      { texto: 'Billetera digital', ruta: '/panel/cartera', icono: 'cartera', roles: ['CLIENTE'] },
+      { texto: 'Comprar boletos', ruta: '/panel/comprar', icono: 'boleto', roles: ['CLIENTE'], soloCliente: true },
+      { texto: 'Mis compras', ruta: '/panel/mis-compras', icono: 'boleto', roles: ['CLIENTE'], soloCliente: true },
+    ],
+  },
+  {
+    titulo: 'Ventanilla',
+    opciones: [
+      { texto: 'Vender boletos', ruta: '/panel/mostrador', icono: 'boleto', roles: ['CAJERO', 'ADMIN_SUCURSAL'] },
+      { texto: 'Ventas', ruta: '/panel/ventas', icono: 'reporte', roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
+      { texto: 'Órdenes de alquiler', ruta: '/panel/ordenes', icono: 'tarifa', roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
+    ],
   },
   {
     titulo: 'Mi cuenta',

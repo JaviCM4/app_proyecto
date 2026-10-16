@@ -1,0 +1,144 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Mis compras</h1>
+    <p>Tus boletos y pagos de alquileres.</p>
+  </div>
+  <button type="button" class="btn" (click)="cargar()" [disabled]="cargando()">Recargar</button>
+</div>
+
+@if (historial()) {
+  <div class="filtros">
+    <div class="campo crece">
+      <label>NIT</label>
+      <span class="control">{{ historial()!.nit || '—' }}</span>
+    </div>
+    <div class="campo crece">
+      <label>Nombre</label>
+      <span class="control">{{ historial()!.nombre || '—' }}</span>
+    </div>
+  </div>
+}
+
+<h2>Boletos</h2>
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Ruta</th>
+        <th>Salida</th>
+        <th>Asientos</th>
+        <th>Monto</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (v of boletosPagina().elementos; track v.ventaId) {
+        <tr>
+          <td><strong>{{ v.origenNombre || '—' }} → {{ v.destinoNombre || '—' }}</strong></td>
+          <td>{{ v.fechaSalida ? (v.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }}</td>
+          <td>{{ v.asientos.length ? v.asientos.join(', ') : '—' }}</td>
+          <td>Q{{ v.montoTotal }}</td>
+          <td>
+            <span class="insignia" [class.exito]="v.estado === 'CONFIRMADA'">{{ v.estado }}</span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="verTicket(v.ventaId)">Ver</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando historial…' : 'Aún no tienes boletos.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="boletosPagina().pagina"
+  [tamano]="tamano()"
+  [total]="boletosPagina().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<h2>Alquileres</h2>
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Ruta</th>
+        <th>Monto</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (a of historial()?.alquileres ?? []; track a.ordenId) {
+        <tr>
+          <td><strong>{{ a.origen }} → {{ a.destino }}</strong></td>
+          <td>Q{{ a.monto }}</td>
+          <td>
+            <span class="insignia" [class.exito]="a.estado === 'PAGADA'">{{ a.estado }}</span>
+          </td>
+          <td class="acciones">
+            @if (a.estado === 'PENDIENTE_PAGO') {
+              <button
+                type="button"
+                class="btn chico primario"
+                [disabled]="pagandoId() === a.ordenId"
+                (click)="pagarAlquiler(a)">
+                {{ pagandoId() === a.ordenId ? 'Pagando…' : 'Pagar con cartera' }}
+              </button>
+            } @else {
+              <span class="secundario">—</span>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="4" class="tabla-vacia">
+            {{ cargando() ? 'Cargando historial…' : 'Aún no tienes alquileres.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-modal [abierto]="ticket() !== null || cargandoTicket()" titulo="Boleto de viaje" (cerrar)="ticket.set(null)">
+  @if (cargandoTicket()) {
+    <p class="secundario">Cargando boleto…</p>
+  } @else {
+    @if (ticket(); as t) {
+    <div class="ticket-imprimible">
+      <div class="ticket-principal">
+        <p class="ticket-fecha-top">SALIDA · {{ t.viaje?.fechaSalida ? (t.viaje?.fechaSalida | date: 'MMMM yyyy' : zona) : '—' }}</p>
+        <p class="ticket-ruta">{{ t.viaje?.origenNombre || '—' }} → {{ t.viaje?.destinoNombre || '—' }}</p>
+        <p class="ticket-hora">{{ t.viaje?.fechaSalida ? (t.viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }} · Bus {{ t.viaje?.busPlaca || '—' }}</p>
+        <div class="ticket-cajas">
+          <div><span>Asientos</span><strong>{{ asientosTicket(t) }}</strong></div>
+          <div><span>Total</span><strong>Q{{ t.montoTotal }}</strong></div>
+          <div><span>Pasajero</span><strong>{{ t.clienteNombre || historial()?.nombre || '—' }}</strong></div>
+          <div><span>Estado</span><strong>{{ t.estado }}</strong></div>
+        </div>
+        <p class="ticket-nota">NIT {{ t.clienteNit || 'CF' }} · Presenta este código al abordar. Llega 30 minutos antes.</p>
+      </div>
+      <div class="ticket-talon">
+        <div class="codigo-barras"></div>
+        <p class="ticket-codigo">{{ t.ventaId }}</p>
+        <p class="ticket-codigo-titulo">CÓDIGO</p>
+      </div>
+    </div>
+    }
+  }
+  <div pie>
+    @if (ticket()) {
+      <button type="button" class="btn primario chico" (click)="descargarPdf()">Descargar PDF</button>
+      <button type="button" class="btn chico" (click)="imprimir()">Imprimir</button>
+    }
+    <button type="button" class="btn chico" (click)="ticket.set(null)">Cerrar</button>
+  </div>
+</app-modal>

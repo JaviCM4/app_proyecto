@@ -1,0 +1,89 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Categorías de gasto</h1>
+    <p>Mano de obra y repuestos por los que se clasifican los servicios.</p>
+  </div>
+  @if (puedeEditar) {
+    <button type="button" class="btn primario" (click)="abrirNueva()">+ Nueva categoría</button>
+  }
+</div>
+
+<div class="filtros">
+  <div class="campo crece">
+    <label for="buscar">Buscar</label>
+    <input id="buscar" class="control" placeholder="Nombre o descripción"
+      [ngModel]="texto()" (ngModelChange)="texto.set($event); pagina.set(1)" />
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr><th>Nombre</th><th>Descripción</th><th>Estado</th>
+        @if (puedeEditar) { <th class="acciones">Acciones</th> }
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of paginaActual().elementos; track c.categoriaId) {
+        <tr>
+          <td><strong>{{ c.nombre }}</strong></td>
+          <td>{{ c.descripcion || '—' }}</td>
+          <td><span class="insignia" [class.exito]="c.activa">{{ c.activa ? 'Activa' : 'Inactiva' }}</span></td>
+          @if (puedeEditar) {
+            <td class="acciones">
+              <button type="button" class="btn chico" (click)="abrirEditar(c)">Editar</button>
+              <button type="button" class="btn chico" [class.peligro]="c.activa" (click)="confirmarCambio(c)">
+                {{ c.activa ? 'Desactivar' : 'Activar' }}
+              </button>
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr><td [attr.colspan]="puedeEditar ? 4 : 3" class="tabla-vacia">
+          {{ cargando() ? 'Cargando categorías…' : 'Sin categorías.' }}
+        </td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+@if (puedeEditar) {
+  <app-modal [abierto]="enFormulario() !== undefined" titulo="Categoría" (cerrar)="enFormulario.set(undefined)">
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="campo">
+        <label for="nombre">Nombre</label>
+        <input id="nombre" class="control" formControlName="nombre" maxlength="60" />
+      </div>
+      <div class="campo">
+        <label for="descripcion">Descripción (opcional)</label>
+        <input id="descripcion" class="control" formControlName="descripcion" maxlength="255" />
+      </div>
+      @if (enFormulario() !== null) {
+        <div class="campo">
+          <label for="activa">Estado</label>
+          <select id="activa" class="control" formControlName="activa">
+            <option [ngValue]="true">Activa</option>
+            <option [ngValue]="false">Inactiva</option>
+          </select>
+        </div>
+      }
+    </form>
+    <div pie>
+      <button type="button" class="btn chico" (click)="enFormulario.set(undefined)">Cancelar</button>
+      <button type="button" class="btn primario chico" [disabled]="enviando()" (click)="guardar()">
+        {{ enviando() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  </app-modal>
+
+  <app-confirmacion [abierto]="porCambiar() !== null" titulo="Cambiar estado"
+    mensaje="¿Confirmas el cambio de estado de la categoría?"
+    (confirmar)="ejecutarCambio()" (cancelar)="porCambiar.set(null)" />
+}

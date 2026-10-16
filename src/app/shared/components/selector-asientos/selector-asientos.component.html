@@ -1,0 +1,38 @@
+<div class="asientos-info">
+  @if (resumen()) {
+    <p><strong>{{ mapa()?.origenNombre }} → {{ mapa()?.destinoNombre }}</strong></p>
+    <p class="suave">Bus {{ mapa()?.busPlaca }} · {{ mapa()?.disponibles }} disponibles · {{ mapa()?.precioBoleto | currency:'Q ' }} c/u</p>
+    <p class="suave">Elegidos: {{ cantidad() }} · Total: {{ total() | currency:'Q ' }}
+      @if (cantidad()) { <button type="button" class="btn chico" (click)="limpiar()">Limpiar</button> }
+    </p>
+  }
+</div>
+<div class="bus">
+  <div class="parabrisas"></div>
+  <div class="fila-bus">
+    <span class="piloto" title="Piloto">P</span>
+    <span></span><span class="pasillo"></span><span></span><span></span>
+  </div>
+  @for (fila of filas(); track $index) {
+    <div class="fila-bus">
+      @for (celda of fila; track $index) {
+        @if (celda.tipo === 'pasillo') {
+          <span class="pasillo"></span>
+        } @else if (celda.tipo === 'asiento') {
+          <button type="button" class="asiento" [class.ocupado]="ocupado(celda.numero)" [class.elegido]="elegido(celda.numero)"
+            [disabled]="bloqueado() || ocupado(celda.numero)" (click)="alternar(celda.numero)" [title]="'Asiento ' + celda.numero">
+            {{ celda.numero }}
+          </button>
+        } @else {
+          <span></span>
+        }
+      }
+    </div>
+  }
+</div>
+<p class="suave leyenda">
+  <span class="muestra libre"></span> Libre
+  <span class="muestra ocupado"></span> Ocupado
+  <span class="muestra elegido"></span> Elegido
+  <span class="muestra piloto"></span> Piloto
+</p>

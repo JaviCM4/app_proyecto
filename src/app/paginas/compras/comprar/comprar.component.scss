@@ -1,0 +1,49 @@
+.acciones .btn + .btn { margin-left: 6px; }
+
+.resumen {
+  display: flex;
+  gap: 24px;
+  margin: 12px 0;
+}
+
+.aviso-info { color: #555; }
+.aviso-exito { color: green; font-weight: bold; }
+.aviso-error { color: #b00020; }
+
+.acciones-modal {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.estado { padding: 24px; text-align: center; color: var(--texto-suave); }
+.conteo { margin-bottom: 8px; color: var(--texto-suave); font-size: 13px; }
+
+.viajes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.viaje { display: grid; grid-template-columns: 72px 1fr 180px auto; align-items: center; gap: 20px; padding: 14px 18px; }
+.fecha { display: flex; flex-direction: column; align-items: center; padding-right: 16px; border-right: 1px solid var(--borde); line-height: 1.2; }
+.fecha .dia { font-size: 22px; font-weight: 600; }
+.fecha .mes { text-transform: uppercase; font-size: 12px; color: var(--texto-suave); }
+.fecha .semana { font-size: 11px; color: var(--texto-tenue); text-transform: capitalize; }
+.recorrido { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.punto { display: flex; flex-direction: column; min-width: 0; }
+.punto strong { font-size: 16px; }
+.punto span { color: var(--texto-suave); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linea { flex: 1; min-width: 60px; border-top: 1px dashed var(--borde-fuerte); text-align: center; }
+.linea span { position: relative; top: -10px; padding: 0 6px; background: var(--superficie); color: var(--texto-tenue); font-size: 12px; white-space: nowrap; }
+.detalle { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 13px; }
+.detalle .precio { font-size: 18px; font-weight: 600; }
+.acciones { display: flex; flex-direction: column; gap: 6px; }
+
+/* Modal: info a la izquierda, bus a la derecha (en móvil se apilan). */
+.compra-grid { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
+.compra-info p { margin: 0 0 10px; }
+.compra-info .total { font-size: 1.1rem; }
+
+@media (max-width: 860px) {
+  .viaje { grid-template-columns: 60px 1fr; }
+  .viaje .detalle, .viaje .acciones { grid-column: 1 / -1; }
+  .viaje .detalle { flex-direction: row; justify-content: space-between; align-items: center; }
+  .viaje .acciones { flex-direction: row; justify-content: flex-end; }
+  .compra-grid { grid-template-columns: 1fr; }
+}
