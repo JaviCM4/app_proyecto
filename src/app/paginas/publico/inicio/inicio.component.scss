@@ -1,0 +1,123 @@
+.presentacion {
+  margin-bottom: 16px;
+
+  p { color: var(--texto-suave); margin-top: 4px; }
+}
+
+.buscador {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr 150px 150px;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 20px;
+
+  .texto-libre { grid-column: 1 / 4; }
+  .botones { grid-column: 4 / 6; display: flex; gap: 8px; justify-content: flex-end; }
+  .invertir { height: 36px; font-size: 16px; color: var(--texto-suave); }
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr 1fr;
+
+    .invertir { display: none; }
+    .texto-libre, .botones { grid-column: 1 / -1; }
+  }
+}
+
+.estado {
+  padding: 24px;
+  text-align: center;
+  color: var(--texto-suave);
+
+  &.error { color: var(--peligro); }
+  p { margin-top: 4px; }
+}
+
+.conteo { margin-bottom: 8px; color: var(--texto-suave); font-size: 13px; }
+
+.viajes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.viaje {
+  display: grid;
+  grid-template-columns: 72px 1fr 180px auto;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 18px;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 60px 1fr;
+
+    .detalle, .acciones { grid-column: 1 / -1; }
+    .detalle { flex-direction: row; justify-content: space-between; align-items: center; }
+  }
+}
+
+.fecha {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-right: 16px;
+  border-right: 1px solid var(--borde);
+  line-height: 1.2;
+
+  .dia { font-size: 22px; font-weight: 600; }
+  .mes { text-transform: uppercase; font-size: 12px; color: var(--texto-suave); }
+  .semana { font-size: 11px; color: var(--texto-tenue); text-transform: capitalize; }
+}
+
+.recorrido {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.punto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  strong { font-size: 16px; }
+  span { color: var(--texto-suave); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+.linea {
+  flex: 1;
+  min-width: 60px;
+  border-top: 1px dashed var(--borde-fuerte);
+  text-align: center;
+
+  span {
+    position: relative;
+    top: -10px;
+    padding: 0 6px;
+    background: var(--superficie);
+    color: var(--texto-tenue);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+}
+
+.detalle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 13px;
+
+  .precio { font-size: 18px; font-weight: 600; }
+}
+
+.acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  @media (max-width: 860px) { flex-direction: row; justify-content: flex-end; }
+}

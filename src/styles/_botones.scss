@@ -1,0 +1,45 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) { background: var(--primario-suave); text-decoration: none; }
+  &:focus-visible { outline: 2px solid var(--primario); outline-offset: 2px; }
+  &:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  &.primario {
+    background: var(--primario);
+    border-color: var(--primario);
+    color: #fff;
+
+    &:hover:not(:disabled) { background: var(--primario-hover); }
+  }
+
+  &.peligro {
+    color: var(--peligro);
+    border-color: var(--peligro);
+
+    &:hover:not(:disabled) { background: var(--peligro-suave); }
+  }
+
+  &.texto {
+    border-color: transparent;
+    background: transparent;
+    padding: 0 8px;
+  }
+
+  &.chico { height: 30px; padding: 0 10px; font-size: 13px; }
+  &.bloque { width: 100%; }
+}

@@ -1,0 +1,8 @@
+<div class="avisos" aria-live="polite">
+  @for (aviso of servicio.avisos(); track aviso.id) {
+    <div class="aviso" [class]="aviso.tipo">
+      <span>{{ aviso.texto }}</span>
+      <button type="button" aria-label="Cerrar" (click)="servicio.cerrar(aviso.id)">✕</button>
+    </div>
+  }
+</div>

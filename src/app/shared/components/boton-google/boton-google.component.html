@@ -1,0 +1,6 @@
+<button type="button" class="btn bloque google" [disabled]="yendo()" (click)="continuar()">
+  @if (!sinLogo()) {
+    <img class="logo" [src]="logo" alt="" width="18" height="18" (error)="sinLogo.set(true)" />
+  }
+  <span>{{ yendo() ? 'Abriendo Google…' : texto() }}</span>
+</button>

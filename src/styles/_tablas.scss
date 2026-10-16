@@ -1,0 +1,42 @@
+.tabla-contenedor {
+  overflow-x: auto;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--borde);
+    vertical-align: middle;
+  }
+
+  th {
+    background: var(--primario-suave);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primario-hover);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--superficie-alterna); }
+  tfoot td { font-weight: 600; background: var(--superficie-alterna); border-top: 1px solid var(--borde-fuerte); border-bottom: none; }
+
+  .acciones { text-align: right; white-space: nowrap; }
+  .numero { text-align: right; font-variant-numeric: tabular-nums; }
+  .secundario { color: var(--texto-suave); font-size: 13px; }
+}
+
+.tabla-vacia {
+  padding: 32px;
+  text-align: center;
+  color: var(--texto-suave);
+}

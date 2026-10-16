@@ -1,0 +1,106 @@
+<section class="presentacion">
+  <h1>Viajes programados</h1>
+  <p>Consulta los horarios, el precio y los asientos disponibles. Para comprar, entra con tu cuenta.</p>
+</section>
+
+<form class="tarjeta buscador" (ngSubmit)="buscar()">
+  <div class="campo">
+    <label for="origen">Origen</label>
+    <select id="origen" name="origen" class="control" [(ngModel)]="filtros.origenId">
+      <option value="">Todas las sucursales</option>
+      @for (s of sucursales(); track s.sucursalId) {
+        <option [value]="s.sucursalId">{{ s.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <button type="button" class="btn texto invertir" title="Cambiar origen y destino" (click)="invertir()">⇄</button>
+
+  <div class="campo">
+    <label for="destino">Destino</label>
+    <select id="destino" name="destino" class="control" [(ngModel)]="filtros.destinoId">
+      <option value="">Todos los destinos</option>
+      @for (s of sucursales(); track s.sucursalId) {
+        <option [value]="s.sucursalId">{{ s.nombre }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="campo">
+    <label for="desde">Desde</label>
+    <input id="desde" name="desde" type="date" class="control" [(ngModel)]="filtros.desde" />
+  </div>
+
+  <div class="campo">
+    <label for="hasta">Hasta</label>
+    <input id="hasta" name="hasta" type="date" class="control" [(ngModel)]="filtros.hasta" [min]="filtros.desde" />
+  </div>
+
+  <div class="campo texto-libre">
+    <label for="texto">Buscar</label>
+    <input id="texto" name="texto" class="control" placeholder="Ciudad, sucursal o placa" [(ngModel)]="filtros.texto" />
+  </div>
+
+  <div class="botones">
+    <button type="submit" class="btn primario" [disabled]="cargando()">Buscar</button>
+    <button type="button" class="btn" (click)="limpiar()">Limpiar</button>
+  </div>
+</form>
+
+@if (cargando()) {
+  <p class="estado">Cargando viajes…</p>
+} @else if (error()) {
+  <p class="estado error">{{ error() }}</p>
+} @else if (resultados().length === 0) {
+  <div class="tarjeta estado">
+    <strong>No hay viajes con esos filtros.</strong>
+    <p>Prueba con otras fechas u otro destino.</p>
+  </div>
+} @else {
+  <p class="conteo">{{ resultados().length }} viaje(s) encontrado(s)</p>
+
+  <ul class="viajes">
+    @for (v of paginaActual().elementos; track v.viajeId) {
+      <li class="tarjeta viaje">
+        <div class="fecha">
+          <span class="dia">{{ v.fechaSalidaProgramada | date: 'd' : zona }}</span>
+          <span class="mes">{{ v.fechaSalidaProgramada | date: 'MMM' : zona }}</span>
+          <span class="semana">{{ v.fechaSalidaProgramada | date: 'EEEE' : zona }}</span>
+        </div>
+
+        <div class="recorrido">
+          <div class="punto">
+            <strong>{{ v.fechaSalidaProgramada | date: 'HH:mm' : zona }}</strong>
+            <span>{{ v.origenNombre }}</span>
+          </div>
+          <div class="linea"><span>{{ duracion(v) }}</span></div>
+          <div class="punto">
+            <strong>{{ v.fechaLlegadaEstimada | date: 'HH:mm' : zona }}</strong>
+            <span>{{ v.destinoNombre }}</span>
+          </div>
+        </div>
+
+        <div class="detalle">
+          <span class="suave">Bus {{ v.busPlaca ?? '—' }} · {{ v.capacidad }} asientos</span>
+          <span class="precio">{{ v.precioBoleto | currency: 'GTQ' : 'symbol-narrow' }}</span>
+        </div>
+
+        <div class="acciones">
+          <button type="button" class="btn chico" (click)="viajeSeleccionado.set(v)">Ver asientos</button>
+          @if (!auth.autenticado()) {
+            <a routerLink="/login" class="btn chico primario">Entrar para comprar</a>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+
+  <app-paginador
+    [pagina]="paginaActual().pagina"
+    [tamano]="tamano()"
+    [total]="paginaActual().total"
+    (cambioPagina)="pagina.set($event)"
+    (cambioTamano)="tamano.set($event); pagina.set(1)" />
+}
+
+<app-asientos-viaje [viaje]="viajeSeleccionado()" (cerrar)="viajeSeleccionado.set(null)" />

@@ -1,0 +1,102 @@
+<app-modal [abierto]="abierto()" ancho="grande" (cerrar)="cerrar.emit()"
+           [titulo]="esNueva() ? 'Nueva sucursal' : 'Editar sucursal'"
+           [subtitulo]="'Paso ' + (paso() + 1) + ' de ' + pasos().length + ': ' + pasos()[paso()].titulo">
+  <ol class="pasos">
+    @for (p of pasos(); track p.titulo; let i = $index) {
+      <li [class.actual]="i === paso()" [class.hecho]="i < paso()">
+        <button type="button" (click)="irA(i)">
+          <span class="numero">{{ i < paso() ? '✓' : i + 1 }}</span>
+          <span class="nombre">{{ p.titulo }}</span>
+        </button>
+      </li>
+    }
+  </ol>
+
+  <form id="form-sucursal" [formGroup]="form" (ngSubmit)="siguiente()">
+    <!-- Paso 1: datos -->
+    @if (paso() === 0) {
+      <div class="formulario-grilla">
+        <div class="campo">
+          <label for="codigo">Código</label>
+          <input id="codigo" class="control mayusculas" formControlName="codigo" maxlength="10" placeholder="Ej. XELA"
+                 [class.invalido]="invalido('codigo')" />
+          @if (invalido('codigo')) {
+            <span class="error">Hasta 10 letras, números, guion o guion bajo.</span>
+          } @else if (esNueva()) {
+            <span class="ayuda">No se puede cambiar después.</span>
+          }
+        </div>
+        <div class="campo">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" class="control" formControlName="nombre" placeholder="Ej. Terminal Quetzaltenango"
+                 [class.invalido]="invalido('nombre')" />
+        </div>
+        <div class="campo">
+          <label for="departamento">Departamento</label>
+          <select id="departamento" class="control" formControlName="departamento" [class.invalido]="invalido('departamento')">
+            <option value="" disabled>Selecciona…</option>
+            @for (d of departamentos; track d) {
+              <option [value]="d">{{ d }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="municipio">Municipio</label>
+          <input id="municipio" class="control" formControlName="municipio" [class.invalido]="invalido('municipio')" />
+        </div>
+        <div class="campo completo">
+          <label for="direccion">Dirección</label>
+          <input id="direccion" class="control" formControlName="direccion" [class.invalido]="invalido('direccion')" />
+        </div>
+        <div class="campo">
+          <label for="telefono">Teléfono <span class="opcional">(opcional)</span></label>
+          <input id="telefono" class="control" formControlName="telefono" inputmode="numeric" [class.invalido]="invalido('telefono')" />
+        </div>
+      </div>
+    }
+
+    <!-- Paso 2: ubicación en el mapa -->
+    @if (paso() === 1) {
+      <app-selector-ubicacion [latitud]="form.controls.latitud.value" [longitud]="form.controls.longitud.value"
+                              (cambio)="alElegirUbicacion($event)" />
+      <div class="formulario-grilla coordenadas">
+        <div class="campo">
+          <label for="latitud">Latitud</label>
+          <input id="latitud" type="number" step="0.000001" class="control" formControlName="latitud" placeholder="Haz clic en el mapa"
+                 [class.invalido]="invalido('latitud')" />
+        </div>
+        <div class="campo">
+          <label for="longitud">Longitud</label>
+          <input id="longitud" type="number" step="0.000001" class="control" formControlName="longitud" placeholder="Haz clic en el mapa"
+                 [class.invalido]="invalido('longitud')" />
+        </div>
+      </div>
+    }
+
+    <!-- Paso 3: administrador (solo al crear) -->
+    @if (paso() === 2 && esNueva()) {
+      <p class="suave intro">Esta persona administrará la sucursal. Le llegará un correo para crear su contraseña.</p>
+      <app-datos-cuenta [grupo]="form.controls.adminInicial" prefijo="a" />
+      <div class="formulario-grilla mt">
+        <div class="campo">
+          <label for="fecha">Fecha de asignación</label>
+          <input id="fecha" type="date" class="control" formControlName="fechaAsignacion" />
+        </div>
+      </div>
+    }
+  </form>
+
+  <div pie>
+    <button type="button" class="btn" (click)="cerrar.emit()">Cancelar</button>
+    @if (paso() > 0) {
+      <button type="button" class="btn" (click)="anterior()">Anterior</button>
+    }
+    <button type="submit" form="form-sucursal" class="btn primario" [disabled]="enviando()">
+      @if (!esUltimo()) {
+        Siguiente
+      } @else {
+        {{ enviando() ? 'Guardando…' : esNueva() ? 'Crear sucursal' : 'Guardar cambios' }}
+      }
+    </button>
+  </div>
+</app-modal>

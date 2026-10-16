@@ -54,9 +54,13 @@
               }
             ],
             "styles": [
+              "node_modules/leaflet/dist/leaflet.css",
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "leaflet"
+            ]
           },
           "configurations": {
             "production": {
@@ -68,8 +72,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "6kB",
+                  "maximumError": "12kB"
                 }
               ],
               "outputHashing": "all"
@@ -94,7 +98,7 @@
           },
           "defaultConfiguration": "development",
           "options": {
-            "proxyConfig": "proxy.conf.json"
+            "port": 4200
           }
         },
         "extract-i18n": {

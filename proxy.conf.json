@@ -1,9 +1,0 @@
-{
-  "/identity": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
-  "/fleet": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
-  "/trips": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
-  "/sales": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
-  "/maintenance": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
-  "/reports": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true },
-  "/notifications": { "target": "http://localhost:8080", "secure": false, "changeOrigin": true }
-}

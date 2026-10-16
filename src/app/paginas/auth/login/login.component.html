@@ -1,0 +1,33 @@
+<div class="tarjeta caja-acceso">
+  <h1>Entrar</h1>
+  <p class="descripcion">Ingresa con tu cuenta de Google o con tu correo y contraseña.</p>
+
+  <app-boton-google />
+  <div class="separador">o con tu correo</div>
+
+  <form [formGroup]="form" (ngSubmit)="entrar()">
+    <div class="campo">
+      <label for="correo">Correo</label>
+      <input id="correo" type="email" class="control" formControlName="correo" autocomplete="username"
+             [class.invalido]="form.controls.correo.touched && form.controls.correo.invalid" />
+      @if (form.controls.correo.touched && form.controls.correo.invalid) {
+        <span class="error">Escribe un correo válido.</span>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="contrasena">Contraseña</label>
+      <input id="contrasena" type="password" class="control" formControlName="contrasena" autocomplete="current-password"
+             [class.invalido]="form.controls.contrasena.touched && form.controls.contrasena.invalid" />
+    </div>
+
+    <button type="submit" class="btn primario bloque" [disabled]="enviando()">
+      {{ enviando() ? 'Entrando…' : 'Entrar' }}
+    </button>
+  </form>
+
+  <div class="enlaces">
+    <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>
+    <span>¿No tienes cuenta? <a routerLink="/registro">Crear cuenta</a></span>
+  </div>
+</div>

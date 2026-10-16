@@ -1,0 +1,85 @@
+<app-modal [abierto]="!!sucursal()" ancho="grande" (cerrar)="cerrar.emit()"
+           [titulo]="sucursal()?.nombre ?? ''" [subtitulo]="sucursal() ? 'Código ' + sucursal()!.codigo : ''">
+  @if (sucursal(); as s) {
+    <dl class="datos-lista">
+      <div><dt>Estado</dt><dd><span class="insignia" [class.exito]="s.activa">{{ s.activa ? 'Activa' : 'Inactiva' }}</span></dd></div>
+      <div><dt>Teléfono</dt><dd>{{ s.telefono || '—' }}</dd></div>
+      <div><dt>Ubicación</dt><dd>{{ s.municipio }}, {{ s.departamento }}</dd></div>
+      <div><dt>Coordenadas</dt><dd>{{ s.latitud | number: '1.4-6' }}, {{ s.longitud | number: '1.4-6' }}</dd></div>
+      <div class="completo"><dt>Dirección</dt><dd>{{ s.direccion }}</dd></div>
+      <div class="completo">
+        <dt>Administrador(es)</dt>
+        <dd>
+          @for (a of administradores(); track a.personalId; let ultimo = $last) {
+            {{ a.nombreCompleto }}{{ ultimo ? '' : ', ' }}
+          } @empty {
+            Sin administrador activo
+          }
+        </dd>
+      </div>
+    </dl>
+
+    <div class="encabezado-personal">
+      <h3>Personal de la sucursal</h3>
+      <label class="fila suave">
+        <input type="checkbox" [checked]="mostrarInactivos()" (change)="mostrarInactivos.set(!mostrarInactivos())" />
+        Mostrar retirados
+      </label>
+    </div>
+
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Puesto</th>
+            <th>Desde</th>
+            <th>Estado</th>
+            <th class="acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of visibles(); track p.personalId) {
+            <tr>
+              <td>
+                {{ p.nombreCompleto }}
+                <div class="secundario">{{ p.correo }}</div>
+              </td>
+              <td>{{ nombreRol[p.rol] }}</td>
+              <td>{{ p.fechaAsignacion | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+              <td>
+                @if (p.activo) {
+                  <span class="insignia exito">Activo</span>
+                } @else {
+                  <span class="insignia">Retirado {{ p.fechaDesasignacion | date: 'dd/MM/yyyy' : 'UTC' }}</span>
+                }
+              </td>
+              <td class="acciones">
+                @if (p.activo) {
+                  <button type="button" class="btn chico" (click)="enAccion.set({ persona: p, accion: 'trasladar' })">Trasladar</button>
+                  <button type="button" class="btn chico peligro" (click)="enAccion.set({ persona: p, accion: 'desactivar' })">Retirar</button>
+                } @else if (esUltimaAsignacion(p)) {
+                  <button type="button" class="btn chico" (click)="enAccion.set({ persona: p, accion: 'reintegrar' })">Reintegrar</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="tabla-vacia">{{ cargando() ? 'Cargando…' : 'Sin personal.' }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <div pie>
+    <button type="button" class="btn" (click)="editar.emit(sucursal()!)">Editar sucursal</button>
+    <button type="button" class="btn primario" (click)="agregando.set(true)">+ Agregar administrador</button>
+    <button type="button" class="btn" (click)="cerrar.emit()">Cerrar</button>
+  </div>
+</app-modal>
+
+<app-agregar-personal [abierto]="agregando()" [sucursalId]="sucursal()?.sucursalId ?? null"
+                      (agregado)="alTerminarAccion()" (cerrar)="agregando.set(false)" />
+
+<app-accion-personal [personal]="enAccion()?.persona ?? null" [accion]="enAccion()?.accion ?? 'desactivar'"
+                     (hecho)="alTerminarAccion()" (cerrar)="enAccion.set(null)" />

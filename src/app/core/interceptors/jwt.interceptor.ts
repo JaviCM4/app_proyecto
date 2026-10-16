@@ -6,21 +6,33 @@ import { AuthService } from '../services/auth.service';
 
 let refrescando = false;
 
-/** Adjunta el Bearer token y reintenta una vez con token refrescado ante un 401. */
+/** Peticiones de sesión que no llevan token (si fallan con 401 no se intenta refrescar). */
+const PUBLICAS = [
+  '/identity/auth/login',
+  '/identity/auth/registro',
+  '/identity/auth/refrescar',
+  '/identity/auth/recuperar',
+  '/identity/auth/restablecer',
+  '/identity/auth/oauth2/',
+];
+
+/**
+ * Agrega el token a cada petición. Si el token venció (401), pide uno nuevo con el token de
+ * refresco una sola vez y repite la petición; si tampoco se puede, cierra la sesión.
+ */
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  const token = auth.getToken();
-
-  const conToken = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+  const token = auth.token();
+  const esAuth = PUBLICAS.some((ruta) => req.url.includes(ruta));
+  const conToken = token && !esAuth ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
 
   return next(conToken).pipe(
     catchError((error: HttpErrorResponse) => {
-      const esRefresco = req.url.includes('/identity/auth/refrescar');
-      if (error.status !== 401 || esRefresco || refrescando || !localStorage.getItem('refreshToken')) {
-        if (error.status === 401 && !esRefresco) {
-          auth.cerrarSesion().subscribe(() => router.navigateByUrl('/login'));
-        }
+      if (error.status !== 401 || esAuth || !token) return throwError(() => error);
+      if (refrescando || !auth.tieneRefresco()) {
+        auth.limpiar();
+        router.navigateByUrl('/login');
         return throwError(() => error);
       }
       refrescando = true;
@@ -31,7 +43,8 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
         }),
         catchError((e) => {
           refrescando = false;
-          auth.cerrarSesion().subscribe(() => router.navigateByUrl('/login'));
+          auth.limpiar();
+          router.navigateByUrl('/login');
           return throwError(() => e);
         }),
       );

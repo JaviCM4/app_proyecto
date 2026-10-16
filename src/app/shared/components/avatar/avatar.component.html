@@ -1,0 +1,6 @@
+<!-- referrerpolicy: las fotos de Google (googleusercontent.com) pueden rechazarse si se envía el Referer. -->
+@if (mostrarFoto()) {
+  <img [src]="foto()" alt="" referrerpolicy="no-referrer" (error)="fallo()" />
+} @else {
+  <span aria-hidden="true">{{ iniciales() }}</span>
+}

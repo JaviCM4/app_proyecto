@@ -1,0 +1,24 @@
+.titulo-seccion {
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.accesos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.acceso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--texto);
+  font-weight: 500;
+
+  &:hover { text-decoration: none; border-color: var(--borde-fuerte); background: #fcfcfd; }
+}

@@ -1,0 +1,17 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rapidos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+
+  .elegido {
+    background: var(--primario-suave);
+    border-color: var(--primario);
+    color: var(--primario-hover);
+  }
+}

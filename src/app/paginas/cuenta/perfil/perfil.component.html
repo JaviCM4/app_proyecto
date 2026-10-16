@@ -1,0 +1,77 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Mi perfil</h1>
+    <p>Tus datos personales. El correo y el DPI no se pueden cambiar.</p>
+  </div>
+</div>
+
+@if (cargando()) {
+  <div class="tarjeta suave">Cargando tu perfil…</div>
+}
+@if (!cargando() && perfil(); as p) {
+  @if (incompleto()) {
+    <div class="aviso-perfil">
+      <strong>Completa tu perfil.</strong>
+      Para comprar boletos necesitamos tu NIT, teléfono y dirección.
+    </div>
+  }
+  <div class="perfil">
+    <section class="tarjeta resumen">
+      <app-avatar class="foto" [foto]="p.fotoUrl" [nombre]="p.nombres + ' ' + p.apellidos" [tamano]="96" />
+      @if (esFotoGoogle(p)) {
+        <span class="ayuda">Foto de tu cuenta de Google</span>
+      }
+      <h2>{{ p.nombres }} {{ p.apellidos }}</h2>
+      <p class="suave">{{ p.roles | rolTexto }}</p>
+
+      <label class="btn chico subir">
+        {{ subiendoFoto() ? 'Subiendo…' : 'Cambiar foto' }}
+        <input type="file" accept="image/jpeg,image/png,image/webp" hidden [disabled]="subiendoFoto()" (change)="cambiarFoto($event)" />
+      </label>
+      <span class="ayuda">{{ esFotoGoogle(p) ? 'Sube una propia (JPG, PNG o WEBP, máx. 2 MB) para reemplazarla.' : 'JPG, PNG o WEBP de máximo 2 MB.' }}</span>
+
+      <dl class="datos-lista una-columna">
+        <div><dt>Correo</dt><dd>{{ p.correo }}</dd></div>
+        <div><dt>DPI</dt><dd>{{ p.dpi || 'Sin registrar' }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="tarjeta">
+      <h2 class="titulo">Datos personales</h2>
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="formulario-grilla">
+        <div class="campo">
+          <label for="nombres">Nombres</label>
+          <input id="nombres" class="control" formControlName="nombres" [class.invalido]="invalido('nombres')" />
+        </div>
+        <div class="campo">
+          <label for="apellidos">Apellidos</label>
+          <input id="apellidos" class="control" formControlName="apellidos" [class.invalido]="invalido('apellidos')" />
+        </div>
+        <div class="campo">
+          <label for="nit">NIT</label>
+          <input id="nit" class="control" formControlName="nit" [class.invalido]="invalido('nit')" />
+          @if (form.controls.nit.errors?.['servidor']) {
+            <span class="error">{{ form.controls.nit.errors?.['servidor'] }}</span>
+          }
+        </div>
+        <div class="campo">
+          <label for="telefono">Teléfono</label>
+          <input id="telefono" class="control" formControlName="telefono" inputmode="numeric" [class.invalido]="invalido('telefono')" />
+          @if (invalido('telefono')) {
+            <span class="error">Solo números, mínimo 8.</span>
+          }
+        </div>
+        <div class="campo completo">
+          <label for="direccion">Dirección</label>
+          <input id="direccion" class="control" formControlName="direccion" [class.invalido]="invalido('direccion')" />
+        </div>
+        <div class="completo acciones">
+          <button type="button" class="btn" [disabled]="form.pristine || guardando()" (click)="descartar()">Descartar cambios</button>
+          <button type="submit" class="btn primario" [disabled]="form.pristine || guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

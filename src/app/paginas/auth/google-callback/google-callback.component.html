@@ -1,0 +1,14 @@
+<div class="tarjeta caja-acceso">
+  @if (problema(); as mensaje) {
+    <h1>No se pudo entrar con Google</h1>
+    <p class="descripcion">{{ mensaje }}</p>
+    <app-boton-google texto="Intentar de nuevo con Google" />
+    <div class="enlaces">
+      <a routerLink="/login">Entrar con correo y contraseña</a>
+      <a routerLink="/">Volver a los viajes</a>
+    </div>
+  } @else {
+    <h1>Entrando con Google…</h1>
+    <p class="descripcion">Un momento, estamos abriendo tu sesión.</p>
+  }
+</div>

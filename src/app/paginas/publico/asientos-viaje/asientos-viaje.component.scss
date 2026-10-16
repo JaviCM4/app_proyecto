@@ -1,0 +1,52 @@
+.resumen {
+  display: flex;
+
+  span { display: inline-block; }
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-bottom: 14px;
+  color: var(--texto-suave);
+
+  span:first-child { color: var(--texto); }
+  span:first-child::first-letter { text-transform: uppercase; }
+}
+
+.leyenda {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--texto-suave);
+
+  span { display: flex; align-items: center; gap: 6px; }
+  .asiento { width: 16px; height: 16px; }
+}
+
+/* 4 asientos por fila con pasillo al centro */
+.bus {
+  display: grid;
+  grid-template-columns: repeat(2, 40px) 24px repeat(2, 40px);
+  gap: 8px;
+  justify-content: center;
+  padding: 16px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--fondo);
+
+  .asiento:nth-child(4n + 3) { grid-column-start: 4; }
+}
+
+.asiento {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  border-radius: var(--radio-sm);
+  border: 1px solid var(--borde-fuerte);
+  font-size: 12px;
+
+  &.libre { background: var(--superficie); }
+  &.ocupado { background: var(--borde); color: var(--texto-tenue); border-color: var(--borde); }
+}
+
+.error { color: var(--peligro); }

@@ -1,0 +1,30 @@
+<app-modal [abierto]="abierto()" titulo="Recargar saldo" subtitulo="El saldo de tu billetera se usa para comprar boletos y pagar alquileres."
+           ancho="chico" (cerrar)="cerrar.emit()">
+  <form id="form-recarga" [formGroup]="form" (ngSubmit)="recargar()" class="formulario">
+    <div class="rapidos">
+      @for (m of montosRapidos; track m) {
+        <button type="button" class="btn chico" [class.elegido]="form.controls.monto.value === m" (click)="elegir(m)">
+          {{ m | currency: 'GTQ' : 'symbol-narrow' : '1.0-0' }}
+        </button>
+      }
+    </div>
+    <div class="campo">
+      <label for="monto">Monto (Q)</label>
+      <input id="monto" type="number" min="0.01" step="0.01" class="control" formControlName="monto"
+             [class.invalido]="form.controls.monto.touched && form.controls.monto.invalid" />
+      @if (form.controls.monto.touched && form.controls.monto.invalid) {
+        <span class="error">Escribe un monto mayor que cero.</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="fecha">Fecha</label>
+      <input id="fecha" type="date" class="control" formControlName="fecha" />
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="cerrar.emit()">Cancelar</button>
+    <button type="submit" form="form-recarga" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Recargando…' : 'Recargar' }}
+    </button>
+  </div>
+</app-modal>

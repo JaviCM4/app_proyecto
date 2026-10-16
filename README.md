@@ -1,158 +1,146 @@
-# Transporte Extraurbano — Frontend
+# Frontend · Transporte Extraurbano
 
-Frontend en **Angular 19 standalone + Tailwind CSS 3** para el proyecto de transporte extraurbano.
-El módulo **identity** está completo; el resto de módulos tiene su carpeta lista (ver "Estado por módulo").
-Estructura inspirada en el frontend de referencia `Cinema-Frontend` (guards, interceptor JWT, servicios por dominio, vistas por rol).
+Angular 19 (componentes standalone). Todas las llamadas van al **API Gateway**, cuya URL sale del archivo `.env`.
 
-## 1. Requisitos y cómo correrlo
-
-- Node 22 + npm.
-- Backend corriendo: API Gateway en `http://localhost:8080` (enruta cada prefijo a su microservicio).
+## Arrancar
 
 ```bash
 npm install
-npm start        # http://localhost:4200 (usa proxy.conf.json para /identity, /fleet, ...)
-npm run build    # build de producción a dist/
+cp .env.example .env          # y ajusta API_GATEWAY_URL si hace falta
+npm start                     # http://localhost:4200
 ```
 
-- `src/environments/environment.ts` → `apiBaseUrl: 'http://localhost:8080'`. Si el gateway corre en otro host/puerto, cámbialo ahí.
-- `proxy.conf.json` redirige al gateway en desarrollo. Si agregas un módulo nuevo, **agrega su prefijo al proxy** (ya vienen `/identity`, `/fleet`, `/trips`, `/sales`, `/maintenance`, `/reports`, `/notifications`).
-- CORS: el gateway permite `http://localhost:4200` y `http://localhost:5173` (ver `GATEWAY_ALLOWED_ORIGINS` en el backend). Si corres el frontend en otro puerto, agrégalo allá.
+- `npm start` y `npm run build` generan primero `src/environments/environment.ts` a partir del `.env`
+  (script `scripts/generar-env.mjs`). Ese archivo es generado: no se edita a mano ni se sube a Git.
+- Usa siempre `npm start` / `npm run build` (no `ng serve` directo) para que se genere el entorno.
+- El puerto es **4200**. En el `.env` del backend debe estar `FRONTEND_URL=http://localhost:4200`: el gateway
+  solo acepta CORS desde esa dirección y los correos de activación traen enlaces a
+  `http://localhost:4200/restablecer?token=...`.
 
-## 2. Estado por módulo
-
-| Módulo | Prefijo gateway → servicio | Estado |
-|---|---|---|
-| identity | `/identity/**` → `:8081` | ✅ Completo (auth, perfil, foto, cartera, usuarios, tarifas, internos) |
-| fleet | `/fleet/**` → `:8082` | ⬜ Carpeta `features/fleet` lista |
-| trips | `/trips/**` → `:8083` | ⬜ Carpeta `features/trips` lista |
-| sales | `/sales/**` → `:8084` | ⬜ Carpeta `features/sales` lista |
-| maintenance | `/maintenance/**` → `:8085` | ⬜ Carpeta `features/maintenance` lista |
-| reports | `/reports/**` → `:8086` | ⬜ Carpeta `features/reports` lista (ojo: el prefijo es `/reports`, no `/reporting`) |
-| notifications | `/notifications/**` → `:8087` | ⬜ Carpeta `features/notifications` lista |
-
-Roles del sistema (los mismos del backend): `ADMIN_SISTEMA` · `ADMIN_SUCURSAL` · `CAJERO` · `CHOFER` · `CLIENTE` (+ `SERVICIO`, solo interno entre servicios).
-
-## 3. Arquitectura (no cambiar sin acordarlo)
-
-```
-src/app/
-  core/
-    models/        # interfaces TS por módulo (identity.model.ts, fleet.model.ts, ...)
-    services/      # un servicio por dominio, un método por endpoint (auth, usuarios, cartera, ...)
-    guards/        # authGuard (sesión), guestGuard (solo invitados), roleGuard (por rol)
-    interceptors/  # jwtInterceptor: adjunta Bearer y refresca el token una vez ante 401
-  shared/          # navbar, toast (servicio + componente), mensaje-error.ts, estilos base
-  features/
-    public/        # home (pública)
-    auth/          # login, registro, verificar-2fa, recuperar, restablecer
-    dashboard/     # vistas con sesión del módulo identity
-    fleet/ trips/ sales/ maintenance/ reports/ notifications/  # pendientes (cada una con su README)
-```
-
-Reglas:
-
-- Componentes **standalone** con `loadComponent` (lazy) en `app.routes.ts`.
-- Un servicio por dominio en `core/services`, con la URL base del gateway (`${environment.apiBaseUrl}/<prefijo>`).
-- Formularios con `FormsModule` (template-driven), como los existentes.
-- No agregar PrimeNG ni otras librerías UI: solo Tailwind + clases del §4.
-
-## 4. Paleta y dónde aplicar cada color (`tailwind.config.js` + `src/styles.scss`)
-
-| Color | Hex | Dónde se usa |
-|---|---|---|
-| `azul` / `azul-oscuro` | `#1B3A6B` / `#12294D` | Navbar, encabezados de tabla (`.table thead th`), títulos (`.page-title`), botones primarios, texto base |
-| `cafe` | `#6B4A2F` | Subtítulos (`.page-subtitle`), hints (`.hint`, `.label` secundaria), botones secundarios, texto de detalle en toasts |
-| `menta` / `menta-oscuro` | `#5ED3A7` / `#2FA67E` | Acentos y éxito: logo, badges activos (`.badge-activo`), foco de inputs (`.input:focus`), botón de acción principal alternativa |
-| `crema` / `crema-oscuro` | `#FAF3E7` / `#EFE3CE` | Fondo de la app (body), filas pares de tabla, tarjetas de datos, hover suave |
-
-Fondo global: crema con dos brillos radiales (menta arriba-izquierda, azul abajo-derecha). No poner fondos blancos planos a página completa: el contenido va en `.card`.
-
-## 5. Botones (una sola forma en todo el proyecto)
-
-Base `.btn` (misma en todos lados: `rounded-xl`, `px-5 py-2.5`, `text-sm font-semibold`, anillo de foco y `active:scale`). **Solo cambia el color**:
-
-| Clase | Color | Uso |
-|---|---|---|
-| `.btn-primary` | azul | Acción principal del formulario (Entrar, Guardar, Filtrar) |
-| `.btn-menta` | menta | Acción principal alternativa / crear (Registrarme, Crear tarifa, Recargar) |
-| `.btn-cafe` | café | Acciones secundarias con peso (Enviar enlace, Cerrar sesión, Inactivar) |
-| `.btn-crema` | blanco/borde azul | Acciones terciarias (Ver, Cerrar, Cambiar foto) |
-| `.btn-ghost` | transparente | Enlaces-acción discretos |
-| `.btn-danger` | rojo | Acciones destructivas/bloqueo (Bloquear) |
-| `.btn-sm` | — | Modificador de tamaño para tablas y menús |
-
-Un submit por formulario, siempre `w-full`. En tablas, botones `btn-sm`.
-
-## 6. Formularios, tablas y demás piezas (`src/styles.scss`)
-
-- Campo: `<div class="field"><label class="label">…</label><input class="input">…</div>`; ayuda con `.hint`, error de validación con `.error-text`.
-- Contenedor: `.card`; título `.page-title` + descripción `.page-subtitle` (aquí se documenta el endpoint que usa la vista, p. ej. `POST /identity/auth/login`).
-- Listados: `.table-wrap > table.table` (encabezado azul, filas pares crema). Filtros encima, en `.card` con grid.
-- Estados de usuario: `.badge-activo` / `.badge-inactivo` / `.badge-bloqueado`.
-- Modal (ver `usuarios.component.ts`): overlay `fixed inset-0 z-50 … bg-azul-oscuro/60`, tarjeta `.card max-w-lg`, cierra con ✕, botón Cerrar o clic en el fondo (`(click)="$event.stopPropagation()"` en la tarjeta).
-- No creen CSS por componente salvo casos puntuales: todo va en `styles.scss` con `@layer components`.
-
-## 7. Toasts (avisos emergentes)
-
-Equivalente al `p-toast` + `MessageService` del proyecto de referencia, implementado con Tailwind (sin PrimeNG).
-Render global: `<app-toast></app-toast>` ya está en `app.component.ts` (arriba a la derecha, `z-[100]`, auto-cierre, botón ×).
-
-```ts
-import { ToastService } from '../../shared/toast.service';
-
-private readonly avisos = inject(ToastService);
-
-this.avisos.success('Perfil actualizado.');            // borde menta, 4 s
-this.avisos.error(mensajeError(e, 'No se pudo guardar.')); // borde rojo, 5 s
-this.avisos.info('Te enviamos un código al correo.');  // borde azul, 3.5 s
-// Firmas: success(detail, summary='Éxito', life=4000) · error(detail, summary='Error', life=5000) · info(...)
-```
-
-Reglas:
-
-- Todo resultado de una acción (crear, guardar, cambiar estado, recargar, login, etc.) avisa con toast.
-- Los errores HTTP se traducen con `mensajeError(e, 'texto por defecto')` de `shared/mensaje-error.ts` (usa el `mensaje` del backend si viene; si no, texto según status).
-- No dupliquen el aviso inline + toast: usen toast y quiten el `<p class="error-text">` / éxito inline del formulario.
-- Los errores de carga inicial de página (listas, perfil) pueden quedarse inline en su `.card` si la vista queda vacía sin ellos.
-
-## 8. Agregar un módulo nuevo (paso a paso, ejemplo fleet)
-
-1. **Modelo** `src/app/core/models/fleet.model.ts`: interfaces a partir de los records/DTOs del backend (`fleet-service/.../dtos`) y lo que devuelven sus `@RestController` (fíjense en `@RequestMapping` + método para la URL y verbo exactos).
-2. **Servicio** `src/app/core/services/fleet.service.ts` (`providedIn: 'root'`), un método por endpoint:
-   ```ts
-   private readonly http = inject(HttpClient);
-   private readonly base = `${environment.apiBaseUrl}/fleet`;
-   listar(): Observable<Sucursal[]> {
-     return this.http.get<Sucursal[]>(`${this.base}/sucursales`);
-   }
-   ```
-   Query params con `HttpParams`; subida de archivos con `FormData`; descargas (PDF/Excel) con `{ responseType: 'blob' }` y descarga vía `objectURL` (ver nota de reports en su README).
-3. **Vistas** en `src/app/features/fleet/` (p. ej. `sucursales.component.ts`): standalone, `imports: [FormsModule]`, plantilla con `.card`, `.table`, `.btn-*` y toasts. Borren el `README.md` de la carpeta cuando haya vistas reales.
-4. **Rutas** en `src/app/app.routes.ts` con lazy load:
-   ```ts
-   { path: 'dashboard/fleet/sucursales', canActivate: [authGuard, roleGuard],
-     data: { roles: ['ADMIN_SISTEMA'] },
-     loadComponent: () => import('./features/fleet/sucursales.component').then((m) => m.SucursalesComponent) },
-   ```
-   Los roles salen del `@RequiereRol` del controlador backend. Las rutas públicas van con `guestGuard` o sin guard según el caso.
-5. **Navbar** (`shared/navbar.component.ts`): agreguen el enlace dentro del `@if` del rol correspondiente. No agreguen enlaces de un módulo a roles que no lo usan.
-6. **Proxy**: si el prefijo no está en `proxy.conf.json`, agréguenlo (`"/fleet": { "target": "http://localhost:8080", ... }`).
-7. Verifiquen con `npm run build` antes de entregar.
-
-## 9. Endpoints de identity ya implementados (referencia)
-
-| Vista / servicio | Endpoints |
+| Variable (`.env`) | Para qué |
 |---|---|
-| Registro | `POST /identity/auth/registro` |
-| Login | `POST /identity/auth/login` (200 sesión / 202 reto 2FA) |
-| Verificar 2FA | `POST /identity/auth/login/verificar` |
-| Recuperar / Restablecer | `POST /identity/auth/recuperar`, `POST /identity/auth/restablecer` |
-| Seguridad | `PUT /identity/auth/contrasena`, `PUT /identity/auth/doble-factor`, `POST /identity/auth/cerrar-sesion`, `POST /identity/auth/refrescar` (auto en interceptor) |
-| Mi perfil + foto | `GET/PUT /identity/perfil`, `POST /identity/archivos/fotos` (multipart `archivo`) |
-| Mi cartera (CLIENTE) | `GET /identity/cartera`, `POST /identity/cartera/recargas`, `GET /identity/cartera/movimientos?desde&hasta` |
-| Usuarios (ADMIN_SISTEMA) | `GET /identity/usuarios?rol&estado&q`, `POST /identity/usuarios/administradores-sistema`, `GET /identity/usuarios/:id`, `PATCH /identity/usuarios/:id/estado` |
-| Tarifas (ADMIN_SISTEMA / ADMIN_SUCURSAL) | `GET /identity/tarifas-depreciacion`, `GET ?vigenteEn=YYYY-MM-DD`, `POST` crear |
-| Internos (rol SERVICIO) | `InternoService`: `POST /identity/interno/cuentas-personal`, `GET /identity/interno/sucursales/:id/administradores`, `GET /identity/interno/usuarios/:id/contacto` |
+| `API_GATEWAY_URL` | URL del gateway (local `http://localhost:8080`). |
+| `APP_NOMBRE` | Nombre que se muestra en el encabezado y el menú. |
 
-Rutas UI: `/`, `/login`, `/registro`, `/verificar-2fa`, `/recuperar`, `/restablecer`, `/dashboard`, `/dashboard/perfil`, `/dashboard/seguridad`, `/dashboard/cartera` (CLIENTE), `/dashboard/usuarios` (ADMIN_SISTEMA), `/dashboard/tarifas` (ADMIN_SISTEMA, ADMIN_SUCURSAL).
+En Docker o en el pipeline se puede pasar como variable de entorno (`API_GATEWAY_URL=https://... npm run build`):
+tiene prioridad sobre el `.env`.
+
+## Estructura (MVC)
+
+```
+src/
+├── styles.scss                 # solo importa las piezas de styles/
+├── styles/                     # variables (paleta), base, botones, formularios, tablas, utilidades
+├── environments/environment.ts # GENERADO desde .env
+└── app/
+    ├── app.routes.ts           # todas las rutas (público y panel)
+    ├── core/                   # MODELO: datos y acceso al backend
+    │   ├── models/             #   interfaces (Sucursal, Viaje, Sesion...)
+    │   ├── services/           #   llamadas HTTP al gateway (un servicio por recurso)
+    │   ├── guards/             #   auth (con sesión), invitado (sin sesión), rol
+    │   ├── interceptors/       #   agrega el token y lo renueva si venció
+    │   └── utils/              #   mensajes de error, fechas de Guatemala
+    ├── shared/                 # piezas reutilizables
+    │   ├── components/         #   modal, paginador, confirmación, avisos (toast), ícono, avatar, botón de Google
+    │   ├── pipes/              #   rolTexto: ADMIN_SUCURSAL → "Administrador de sucursal"
+    │   ├── constants/          #   nombres de roles, departamentos de Guatemala
+    │   ├── services/           #   ToastService
+    │   └── utils/              #   paginar() y normalizar() para buscar sin tildes
+    ├── layout/                 # estructura de pantalla
+    │   ├── publico/            #   encabezado con Entrar / Crear cuenta
+    │   ├── privado/            #   panel: menú lateral + barra superior + contenido
+    │   ├── menu-lateral/       #   menú plegable; opciones en menu.config.ts
+    │   └── barra-superior/     #   botón de menú, usuario y cerrar sesión
+    └── paginas/                # VISTA (.html/.scss) + CONTROLADOR (.ts)
+        ├── publico/            #   inicio con viajes y mapa de asientos
+        ├── auth/               #   login, registro, verificar código, recuperar, restablecer, regreso de Google
+        ├── panel/              #   inicio del panel
+        ├── cuenta/             #   perfil, seguridad, cartera y recarga (modal)
+        ├── personal/           #   datos de cuenta, agregar personal, retirar / trasladar (modales)
+        ├── sucursales/         #   lista, detalle (modal) y asistente por pasos con mapa
+        ├── usuarios/           #   lista, detalle (modal) y nuevo administrador (modal)
+        ├── tarifas/            #   tarifas de depreciación
+        └── reportes/           #   reportes en pestañas (reportes.config.ts) y mapa de rutas
+```
+
+- **Modelo:** `core/models` (forma de los datos) y `core/services` (de dónde vienen).
+- **Vista:** el `.html` y el `.scss` de cada componente. Nunca muestran rutas, métodos ni códigos técnicos.
+- **Controlador:** el `.component.ts`: estado de la pantalla, validaciones y llamadas a los servicios.
+
+Cada componente tiene sus 3 archivos (`.ts`, `.html`, `.scss`).
+
+## Convenciones de pantalla
+
+- **Listas:** filtros arriba, tabla, y `<app-paginador>` abajo. Los servicios devuelven la lista completa y se
+  pagina en el navegador con `paginar(lista, pagina, tamano)`.
+- **Crear / editar:** botón “+ Nuevo…” que abre un modal (`<app-modal>`) con el formulario.
+- **Acciones peligrosas** (desactivar, eliminar, cancelar): `<app-confirmacion>` antes de hacerlas.
+- **Errores:** `mensajeError(e)` muestra el mensaje del backend (ya viene en español) y
+  `marcarErroresServidor(form, e)` marca en rojo los campos que el backend rechazó.
+- **Roles:** siempre con el pipe `rolTexto`, nunca el código.
+- **Fechas:** se muestran en hora de Guatemala (`date: '...' : zona`, con `zona = ZONA_GT`).
+- **Colores:** solo los de `styles/_variables.scss` (grises y un acento). Clases globales: `btn`, `btn primario`,
+  `btn peligro`, `control`, `campo`, `tabla`, `tarjeta`, `insignia`.
+
+## Agregar una pantalla nueva (ejemplo: Buses)
+
+1. Modelo: `core/models/bus.model.ts` y servicio `core/services/buses.service.ts`.
+2. Página: `paginas/buses/lista/` (`.ts`, `.html`, `.scss`) y `paginas/buses/formulario/` (modal), copiando el
+   patrón de `paginas/sucursales`.
+3. Ruta en `app.routes.ts` dentro de `panel`, con `canActivate: [rolGuard]` y `data: { roles: [...] }`.
+4. Opción en `layout/menu-lateral/menu.config.ts` con los mismos roles.
+
+## Pantallas y roles
+
+El menú (`layout/menu-lateral/menu.config.ts`) y las rutas (`app.routes.ts`, `data.roles`) usan los mismos roles:
+
+| Pantalla | Ruta | Quién la ve |
+|---|---|---|
+| Inicio con viajes y asientos | `/` | todos (sin sesión) |
+| Entrar / crear cuenta (con correo o con Google) | `/login`, `/registro`, `/oauth/google/callback` | sin sesión |
+| Inicio del panel | `/panel` | todos con sesión |
+| Sucursales (nueva por pasos con mapa, ver detalle y personal, agregar, retirar y trasladar administradores) | `/panel/sucursales` | Administrador del sistema |
+| Usuarios (nuevo administrador del sistema o de sucursal; retirar o trasladar personal) | `/panel/usuarios` | Administrador del sistema |
+| Tarifas de depreciación | `/panel/tarifas` | Administrador del sistema (crea) y de sucursal (consulta) |
+| Reportes (del sistema / por sucursal) + mapa | `/panel/reportes` | Administrador del sistema y de sucursal |
+| Billetera digital | `/panel/cartera` | todas las cuentas (todas tienen el rol Cliente) |
+| Mi perfil, Seguridad | `/panel/perfil`, `/panel/seguridad` | todos con sesión |
+
+Todas las cuentas tienen también el rol Cliente (para poder comprar con cartera). Las opciones marcadas con
+`soloCliente: true` (y las rutas con `data: { soloCliente: true }`) solo aparecen cuando el rol principal de la cuenta
+es Cliente, para que el personal no vea las opciones de cliente.
+
+Perfil, Seguridad y Billetera digital también están en el menú que se abre al hacer clic en el usuario (arriba a la derecha).
+
+## Entrar con Google
+
+Los clientes pueden crear su cuenta o entrar con Google (botón en **Entrar** y en **Crear cuenta**). Todo el
+intercambio con Google lo hace Identity; el front nunca ve el código ni las credenciales de Google:
+
+1. `app-boton-google` pide `GET /identity/auth/oauth2/google/url` y manda el navegador a esa URL de Google.
+2. Google regresa al backend (`/identity/auth/oauth2/google/callback`) y el backend redirige al front:
+   `OAUTH_FRONTEND_URL/oauth/google/callback?ticket=...` (o `?error=CODIGO`).
+3. `paginas/auth/google-callback` cambia el ticket (`POST /identity/auth/oauth2/canjear`) por la sesión. Si la
+   cuenta tiene verificación en dos pasos, sigue a `/verificar` igual que el login normal.
+4. Las cuentas nuevas de Google llegan sin NIT, teléfono ni dirección: se abre **Mi perfil** con un aviso para
+   completarlos (sin NIT no se puede comprar).
+
+**Foto:** `app-avatar` muestra la foto del perfil; si la cuenta se creó con Google y no ha subido una propia, es la de
+Google. Si no hay foto o no carga, muestra las iniciales. Al subir una foto en Mi perfil, reemplaza la de Google.
+
+**Logo del botón:** es el logo oficial que Google publica para "Sign in with Google"
+(`https://developers.google.com/static/identity/images/g-logo.png`, de la
+[guía de marca](https://developers.google.com/identity/branding-guidelines)); no se guarda en el proyecto. Si no carga,
+el botón se muestra solo con el texto.
+
+Las cuentas de Google no tienen contraseña; si la persona quiere una, usa “¿Olvidaste tu contraseña?”.
+
+En el backend (`.env`): `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
+`GOOGLE_OAUTH_REDIRECT_URI=http://localhost:8080/identity/auth/oauth2/google/callback` y
+`OAUTH_FRONTEND_URL=http://localhost:4200`. Sin client id el botón muestra “no disponible” y lo demás sigue igual.
+
+## Colores
+
+La paleta está en `src/styles/_variables.scss`: verde azulado suave como color principal (`--primario`), fondos
+claros, un toque cálido (`--acento`) y estados en tonos pastel. Para cambiar el color del sistema basta con cambiar
+las variables `--primario*`.

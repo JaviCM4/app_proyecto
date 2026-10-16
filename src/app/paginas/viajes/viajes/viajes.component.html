@@ -1,0 +1,290 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Viajes</h1>
+    <p>Salidas programadas de la sucursal: bus, chofer y horario.</p>
+  </div>
+  <button type="button" class="btn primario" (click)="abrirProgramar()">+ Programar viaje</button>
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo">
+      <label for="sucursal">Sucursal</label>
+      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="campo crece">
+    <label for="ruta">Ruta</label>
+    <select id="ruta" class="control" [ngModel]="rutaId()" (ngModelChange)="cambiarFiltro({ rutaId: $event })">
+      <option value="">Todas</option>
+      @for (r of rutasDeSucursal(); track r.rutaId) {
+        <option [value]="r.rutaId">{{ r.origenNombre }} → {{ r.destinoNombre }}</option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="estado">Estado</label>
+    <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="cambiarFiltro({ estado: $event })">
+      <option value="TODAS">Todos</option>
+      <option value="PROGRAMADO">Programado</option>
+      <option value="EN_RUTA">En ruta</option>
+      <option value="COMPLETADO">Completado</option>
+    </select>
+  </div>
+  <div class="campo">
+    <label for="desde">Desde</label>
+    <input id="desde" type="date" class="control" [ngModel]="desde()" (ngModelChange)="cambiarFiltro({ desde: $event })" />
+  </div>
+  <div class="campo">
+    <label for="hasta">Hasta</label>
+    <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="cambiarFiltro({ hasta: $event })" />
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Salida</th>
+        <th>Ruta</th>
+        <th>Bus</th>
+        <th>Chofer</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (v of paginaActual().elementos; track v.viajeId) {
+        <tr>
+          <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <strong>{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
+            <div class="secundario">Llega {{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' }}</div>
+          </td>
+          <td>{{ v.busPlaca ?? '—' }}</td>
+          <td>{{ v.choferNombre ?? '—' }}</td>
+          <td>
+            <span class="insignia" [class.exito]="v.estado === 'COMPLETADO'">
+              {{ v.estado === 'PROGRAMADO' ? 'Programado' : v.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }}
+            </span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="verDetalle(v)">Ver</button>
+            @if (v.estado === 'PROGRAMADO') {
+              <button type="button" class="btn chico" (click)="abrirEditar(v)">Editar</button>
+              <button type="button" class="btn chico" (click)="abrirSalida(v)">Salida</button>
+              <button type="button" class="btn chico peligro" (click)="abrirEliminar(v)">Eliminar</button>
+            }
+            @if (v.estado === 'EN_RUTA') {
+              <button type="button" class="btn chico" (click)="abrirLlegada(v)">Llegada</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando viajes…' : 'No hay viajes que coincidan con los filtros.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-modal [abierto]="programando()" titulo="Programar viaje"
+           subtitulo="Bus y chofer activos de la sucursal, con fecha y hora de salida y llegada."
+           (cerrar)="programando.set(false)">
+  <form id="form-viaje" [formGroup]="formViaje" (ngSubmit)="programar()" class="formulario">
+    <div class="campo">
+      <label for="v-ruta">Ruta</label>
+      <select id="v-ruta" class="control" formControlName="rutaId">
+        <option value="">Elige la ruta…</option>
+        @for (r of rutasDeSucursal(); track r.rutaId) {
+          <option [value]="r.rutaId">{{ r.origenNombre }} → {{ r.destinoNombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="v-bus">Bus</label>
+      <select id="v-bus" class="control" formControlName="busId">
+        <option value="">Elige el bus…</option>
+        @for (b of buses(); track b.busId) {
+          <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
+        }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="v-chofer">Chofer</label>
+      <select id="v-chofer" class="control" formControlName="choferId">
+        <option value="">Elige el chofer…</option>
+        @for (c of choferes(); track c.choferId) {
+          <option [value]="c.choferId">{{ c.nombreCompleto }}</option>
+        }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="v-salida">Salida programada</label>
+      <input id="v-salida" type="datetime-local" class="control" formControlName="salida" />
+    </div>
+    <div class="campo">
+      <label for="v-llegada">Llegada estimada</label>
+      <input id="v-llegada" type="datetime-local" class="control" formControlName="llegada" />
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="programando.set(false)">Cancelar</button>
+    <button type="submit" form="form-viaje" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Programar' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [abierto]="editando() !== null" titulo="Editar viaje"
+           subtitulo="Solo se puede editar un viaje programado: bus, chofer u horario."
+           (cerrar)="editando.set(null)">
+  <form id="form-editar" [formGroup]="formEditar" (ngSubmit)="guardarEdicion()" class="formulario">
+    <div class="campo">
+      <label for="e-bus">Bus</label>
+      <select id="e-bus" class="control" formControlName="busId">
+        @for (b of buses(); track b.busId) {
+          <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
+        }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="e-chofer">Chofer</label>
+      <select id="e-chofer" class="control" formControlName="choferId">
+        @for (c of choferes(); track c.choferId) {
+          <option [value]="c.choferId">{{ c.nombreCompleto }}</option>
+        }
+      </select>
+    </div>
+    <div class="campo">
+      <label for="e-salida">Salida programada</label>
+      <input id="e-salida" type="datetime-local" class="control" formControlName="salida" />
+    </div>
+    <div class="campo">
+      <label for="e-llegada">Llegada estimada</label>
+      <input id="e-llegada" type="datetime-local" class="control" formControlName="llegada" />
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="editando.set(null)">Cancelar</button>
+    <button type="submit" form="form-editar" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [abierto]="detalleVisible()" titulo="Detalle del viaje" (cerrar)="cerrarDetalle()">
+  @if (enDetalle(); as d) {
+    <p><strong>{{ d.origenNombre }} → {{ d.destinoNombre }}</strong></p>
+    <p class="secundario">
+      Bus {{ d.busPlaca ?? '—' }} · Chofer {{ d.choferNombre ?? '—' }} ·
+      Salida {{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' }} ·
+      Llegada {{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' }}
+    </p>
+    @if (d.salida) {
+      <p>Salió el {{ d.salida.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' }} con {{ d.salida.kmInicial }} km.</p>
+    }
+    @if (d.llegada) {
+      <p>
+        Llegó el {{ d.llegada.fechaHoraLlegada | date: 'dd/MM/yyyy HH:mm' }} con {{ d.llegada.kmFinal }} km
+        ({{ d.llegada.kmRecorridos }} km recorridos, Q {{ d.llegada.costoCombustible }} de combustible).
+      </p>
+    }
+    @if (!d.salida && !d.llegada) {
+      <p class="secundario">Todavía no se registra la salida de este viaje.</p>
+    }
+  } @else {
+    <p class="secundario">Cargando detalle…</p>
+  }
+  <div pie>
+    <button type="button" class="btn" (click)="cerrarDetalle()">Cerrar</button>
+  </div>
+</app-modal>
+
+<app-modal [abierto]="porEliminar() !== null" titulo="Eliminar viaje"
+           subtitulo="Indica el motivo de la eliminación." ancho="chico" (cerrar)="porEliminar.set(null)">
+  <form id="form-eliminar" [formGroup]="formEliminar" (ngSubmit)="confirmarEliminar()" class="formulario">
+    <div class="campo">
+      <label for="motivo-eliminar">Motivo</label>
+      <textarea id="motivo-eliminar" class="control" rows="3" formControlName="motivo"
+                placeholder="Por qué se elimina el viaje"></textarea>
+      @if (formEliminar.controls.motivo.touched && formEliminar.controls.motivo.invalid) {
+        <span class="error">Escribe el motivo de la eliminación.</span>
+      }
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="porEliminar.set(null)">Cancelar</button>
+    <button type="submit" form="form-eliminar" class="btn primario peligro" [disabled]="enviando()">
+      {{ enviando() ? 'Eliminando…' : 'Eliminar' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [abierto]="enSalida() !== null" titulo="Registrar salida"
+           subtitulo="El viaje pasa a estar en ruta." ancho="chico" (cerrar)="enSalida.set(null)">
+  <form id="form-salida" [formGroup]="formSalida" (ngSubmit)="confirmarSalida()" class="formulario">
+    <div class="campo">
+      <label for="s-fecha">Fecha y hora de salida</label>
+      <input id="s-fecha" type="datetime-local" class="control" formControlName="fechaHora" />
+    </div>
+    <div class="campo">
+      <label for="s-km">Kilometraje inicial</label>
+      <input id="s-km" type="number" min="0" step="1" class="control" formControlName="kmInicial" />
+      @if (formSalida.controls.kmInicial.touched && formSalida.controls.kmInicial.invalid) {
+        <span class="error">Escribe un kilometraje válido.</span>
+      }
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="enSalida.set(null)">Cancelar</button>
+    <button type="submit" form="form-salida" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Registrando…' : 'Registrar salida' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [abierto]="enLlegada() !== null" titulo="Registrar llegada"
+           subtitulo="El viaje queda completado." ancho="chico" (cerrar)="enLlegada.set(null)">
+  <form id="form-llegada" [formGroup]="formLlegada" (ngSubmit)="confirmarLlegada()" class="formulario">
+    <div class="campo">
+      <label for="ll-fecha">Fecha y hora de llegada</label>
+      <input id="ll-fecha" type="datetime-local" class="control" formControlName="fechaHora" />
+    </div>
+    <div class="campo">
+      <label for="ll-km">Kilometraje final</label>
+      <input id="ll-km" type="number" min="0" step="1" class="control" formControlName="kmFinal" />
+      @if (formLlegada.controls.kmFinal.touched && formLlegada.controls.kmFinal.invalid) {
+        <span class="error">Escribe un kilometraje válido.</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="ll-combustible">Costo de combustible (Q)</label>
+      <input id="ll-combustible" type="number" min="0" step="0.01" class="control" formControlName="costoCombustible" />
+      @if (formLlegada.controls.costoCombustible.touched && formLlegada.controls.costoCombustible.invalid) {
+        <span class="error">Escribe un costo válido.</span>
+      }
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="enLlegada.set(null)">Cancelar</button>
+    <button type="submit" form="form-llegada" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Registrando…' : 'Registrar llegada' }}
+    </button>
+  </div>
+</app-modal>

@@ -1,0 +1,38 @@
+<header class="barra">
+  <button type="button" class="btn texto alternar" aria-label="Mostrar u ocultar el menú" (click)="layout.alternar()">
+    <app-icono nombre="menu" [tamano]="20" />
+  </button>
+
+  <a routerLink="/" class="enlace-viajes oculto-movil">Ver viajes</a>
+
+  @if (auth.usuario(); as usuario) {
+    <div class="usuario">
+      <button type="button" class="btn texto quien" [attr.aria-expanded]="menuUsuario()" (click)="menuUsuario.set(!menuUsuario())">
+        <app-avatar [foto]="usuario.fotoUrl" [nombre]="usuario.nombre" [tamano]="32" />
+        <span class="datos oculto-movil">
+          <strong>{{ usuario.nombre }}</strong>
+          <small>{{ usuario.roles | rolTexto }}</small>
+        </span>
+        <span class="flecha oculto-movil">▾</span>
+      </button>
+
+      @if (menuUsuario()) {
+        <div class="desplegable" (click)="menuUsuario.set(false)">
+          <div class="cabecera">
+            <strong>{{ usuario.nombre }}</strong>
+            <span>{{ usuario.correo }}</span>
+          </div>
+          @for (o of opcionesCuenta(); track o.ruta) {
+            <a class="opcion" [routerLink]="o.ruta">
+              <app-icono [nombre]="o.icono" [tamano]="16" /> {{ o.texto }}
+            </a>
+          }
+          <hr />
+          <button type="button" class="opcion salir" (click)="salir()">
+            <app-icono nombre="salir" [tamano]="16" /> Cerrar sesión
+          </button>
+        </div>
+      }
+    </div>
+  }
+</header>
