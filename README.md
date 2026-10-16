@@ -144,3 +144,13 @@ En el backend (`.env`): `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`,
 La paleta está en `src/styles/_variables.scss`: verde azulado suave como color principal (`--primario`), fondos
 claros, un toque cálido (`--acento`) y estados en tonos pastel. Para cambiar el color del sistema basta con cambiar
 las variables `--primario*`.
+
+## Ventas (boletos y alquileres)
+
+Paginas: `compras/` (cliente: comprar con mapa seleccionable + `mis-compras` con pago de ordenes con cartera)
+y `ventas/` (ventanilla: mostrador, listado de ventas con cancelar, ordenes con pago en efectivo).
+Servicios: `core/services/ventas.service.ts` y `core/services/ordenes-alquiler.service.ts`.
+
+Las compras en linea y los pagos con cartera son asincronos: el POST devuelve 202
+pendiente y el front consulta cada 2 s con `seguirHastaFin(id)` hasta el estado final
+(`CONFIRMADA`/`PAGADA` o rechazo). La ventanilla (efectivo) es inmediata.

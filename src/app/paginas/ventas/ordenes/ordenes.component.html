@@ -1,0 +1,147 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Órdenes de alquiler</h1>
+    <p>Cobros de viajes privados: ver detalle y registrar el pago en efectivo.</p>
+  </div>
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo">
+      <label for="sucursal">Sucursal</label>
+      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="sucursalId.set($event); cambiarFiltro()">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="campo">
+    <label for="estado">Estado</label>
+    <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="estado.set($event); cambiarFiltro()">
+      @for (e of estados; track e) {
+        <option [value]="e">{{ e === 'TODAS' ? 'Todos' : e }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Ruta</th>
+        <th>Monto</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (o of paginaActual().elementos; track o.ordenId) {
+        <tr>
+          <td>
+            <strong>{{ o.clienteNombre || '—' }}</strong>
+            <div class="secundario">{{ o.clienteNit || 'Sin NIT' }}</div>
+          </td>
+          <td>
+            {{ o.origen }} → {{ o.destino }}
+            <div class="secundario">{{ o.fechaPago | date: 'short' }}</div>
+          </td>
+          <td>{{ o.monto | currency }}</td>
+          <td>
+            <span class="insignia" [class.exito]="o.estado === 'PAGADA'">{{ o.estado }}</span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="verDetalle(o)">Ver</button>
+            @if (o.estado === 'PENDIENTE_PAGO') {
+              <button type="button" class="btn chico" (click)="abrirPagar(o)">Pagar en efectivo</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5" class="tabla-vacia">
+            {{ cargando() ? 'Cargando órdenes…' : 'No hay órdenes que coincidan con los filtros.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-modal
+  [abierto]="enDetalle() !== null"
+  titulo="Detalle de la orden"
+  (cerrar)="enDetalle.set(null)">
+  @if (cargandoDetalle()) {
+    <p class="secundario">Cargando detalle…</p>
+  } @else {
+    @if (enDetalle(); as d) {
+    <div class="datos-lista">
+      <p>
+        <strong>{{ d.clienteNombre || 'Sin nombre' }}</strong>
+        <span class="secundario"> · NIT: {{ d.clienteNit || '—' }} · {{ d.clienteCorreo || 'Sin correo' }}</span>
+      </p>
+      <p class="secundario">
+        {{ d.origen }} → {{ d.destino }} · Monto: {{ d.monto | currency }}
+        @if (d.metodoPago) {
+          · {{ d.metodoPago }}
+        }
+        @if (d.fechaPago) {
+          · Pagada: {{ d.fechaPago | date: 'short' }}
+        }
+      </p>
+      <p>
+        Estado: <span class="insignia" [class.exito]="d.estado === 'PAGADA'">{{ d.estado }}</span>
+      </p>
+      @if (d.motivoRechazo) {
+        <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>
+      }
+    </div>
+    }
+  }
+  <div pie>
+    @if (enDetalle(); as e) {
+      @if (e.estado === 'PENDIENTE_PAGO') {
+        <button type="button" class="btn primario chico" (click)="abrirPagar(e)">Pagar en efectivo</button>
+      }
+      <button type="button" class="btn chico" (click)="enDetalle.set(null)">Cerrar</button>
+    }
+  </div>
+</app-modal>
+
+<app-modal
+  [abierto]="porPagar() !== null"
+  titulo="Pagar en efectivo"
+  [subtitulo]="porPagar() ? (porPagar()!.origen + ' → ' + porPagar()!.destino) : ''"
+  (cerrar)="porPagar.set(null); confirmando.set(false)">
+  <form [formGroup]="formPago" (ngSubmit)="pedirConfirmacion()">
+    <div class="campo">
+      <label for="fechaPago">Fecha de pago</label>
+      <input id="fechaPago" type="date" class="control" formControlName="fechaPago" />
+    </div>
+    <p class="secundario">El pago en efectivo es inmediato y no se puede deshacer.</p>
+    <div pie>
+      <button type="button" class="btn chico" (click)="porPagar.set(null); confirmando.set(false)">Volver</button>
+      <button type="submit" class="btn primario chico">Continuar</button>
+    </div>
+  </form>
+</app-modal>
+
+<app-confirmacion
+  [abierto]="porPagar() !== null && confirmando()"
+  titulo="Confirmar pago en efectivo"
+  mensaje="Se registrará el pago de la orden. Esta acción no se puede deshacer."
+  textoAceptar="Confirmar pago"
+  [procesando]="pagando()"
+  (aceptar)="confirmarPagar()"
+  (cancelar)="confirmando.set(false)" />

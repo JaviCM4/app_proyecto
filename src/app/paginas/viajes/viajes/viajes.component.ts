@@ -11,7 +11,7 @@ import { ChoferesService } from '../../../core/services/choferes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
-import { fechaHoraGt } from '../../../core/utils/fechas';
+import { ZONA_GT, fechaHoraGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -44,6 +44,7 @@ export class ViajesComponent implements OnInit {
   readonly buses = signal<Bus[]>([]);
   readonly choferes = signal<Chofer[]>([]);
   readonly cargando = signal(true);
+  readonly zona = ZONA_GT;
 
   readonly sucursalId = signal<string>(this.auth.usuario()?.sucursalId ?? '');
   readonly rutaId = signal('');
