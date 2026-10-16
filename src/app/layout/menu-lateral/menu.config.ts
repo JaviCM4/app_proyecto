@@ -48,6 +48,13 @@ export const MENU: GrupoMenu[] = [
     ],
   },
   {
+    titulo: 'Taller',
+    opciones: [
+      { texto: 'Servicios', ruta: '/panel/taller', icono: 'taller', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+      { texto: 'Categorías', ruta: '/panel/categorias', icono: 'taller', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+    ],
+  },
+  {
     titulo: 'Reportes',
     opciones: [{ texto: 'Reportes', ruta: '/panel/reportes', icono: 'reporte', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] }],
   },

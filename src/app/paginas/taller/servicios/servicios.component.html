@@ -1,0 +1,107 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Servicios de taller</h1>
+    <p>Gastos de mantenimiento de los buses. No se editan ni se eliminan.</p>
+  </div>
+  @if (puedeRegistrar) {
+    <button type="button" class="btn primario" (click)="creando.set(true)">+ Registrar servicio</button>
+  }
+</div>
+
+<div class="filtros">
+  <div class="campo crece">
+    <label for="bus">Bus</label>
+    <select id="bus" class="control" [ngModel]="busId()" (ngModelChange)="busId.set($event)">
+      <option value="">Todos</option>
+      @for (b of buses(); track b.busId) {
+        <option [value]="b.busId">{{ b.placa }}</option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="desde">Desde</label>
+    <input id="desde" type="date" class="control" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+  </div>
+  <div class="campo">
+    <label for="hasta">Hasta</label>
+    <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+  </div>
+  <div class="campo">
+    <label>&nbsp;</label>
+    <div class="fila">
+      <button type="button" class="btn primario" (click)="buscar()" [disabled]="cargando()">Buscar</button>
+      <button type="button" class="btn" (click)="limpiar()">Limpiar</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr><th>Fecha</th><th>Bus</th><th>Taller</th><th>Total</th><th class="acciones">Acciones</th></tr>
+    </thead>
+    <tbody>
+      @for (s of paginaActual().elementos; track s.servicioId) {
+        <tr>
+          <td>{{ s.fechaServicio | date: 'dd/MM/yyyy' : zona }}</td>
+          <td><strong>{{ s.placa || placaDe(s.busId) || '—' }}</strong></td>
+          <td>{{ s.taller || '—' }}</td>
+          <td>{{ s.total | currency: 'GTQ' : 'symbol-narrow' }}</td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="ver(s.servicioId)">Ver</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="5" class="tabla-vacia">{{ cargando() ? 'Buscando servicios…' : 'Sin servicios en ese rango.' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+@if (puedeRegistrar) {
+  <app-servicio-formulario [abierto]="creando()" [buses]="buses()"
+    (guardado)="alGuardar()" (cerrar)="creando.set(false)" />
+}
+
+<app-modal [abierto]="enDetalle() !== null || cargandoDetalle()" titulo="Detalle del servicio" (cerrar)="enDetalle.set(null)">
+  @if (cargandoDetalle()) {
+    <p class="secundario">Cargando detalle…</p>
+  } @else {
+    @if (enDetalle(); as d) {
+      <div class="datos-lista">
+        <div><dt>Bus</dt><dd>{{ d.placa || placaDe(d.busId) }}</dd></div>
+        <div><dt>Fecha</dt><dd>{{ d.fechaServicio | date: 'dd/MM/yyyy' : zona }}</dd></div>
+        <div><dt>Taller</dt><dd>{{ d.taller || '—' }}</dd></div>
+        <div><dt>Observaciones</dt><dd>{{ d.observaciones || '—' }}</dd></div>
+      </div>
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead><tr><th>Categoría</th><th>Tipo</th><th>Descripción</th><th class="acciones">Monto</th></tr></thead>
+          <tbody>
+            @for (l of d.lineas ?? []; track l.lineaId) {
+              <tr>
+                <td>{{ l.categoriaNombre || '—' }}</td>
+                <td><span class="insignia" [class.exito]="l.tipo === 'MANO_OBRA'">{{ l.tipo === 'MANO_OBRA' ? 'Mano de obra' : 'Repuesto' }}</span></td>
+                <td>{{ l.descripcion }}</td>
+                <td class="acciones">{{ l.monto | currency: 'GTQ' : 'symbol-narrow' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p><strong>Mano de obra:</strong> {{ d.totalManoObra | currency: 'GTQ' : 'symbol-narrow' }}
+        · <strong>Repuestos:</strong> {{ d.totalRepuestos | currency: 'GTQ' : 'symbol-narrow' }}
+        · <strong>Total: {{ d.total | currency: 'GTQ' : 'symbol-narrow' }}</strong></p>
+    }
+  }
+  <div pie>
+    <button type="button" class="btn chico" (click)="enDetalle.set(null)">Cerrar</button>
+  </div>
+</app-modal>
