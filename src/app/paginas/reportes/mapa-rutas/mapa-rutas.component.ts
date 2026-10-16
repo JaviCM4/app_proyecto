@@ -46,9 +46,12 @@ export class MapaRutasComponent implements OnDestroy {
     }
 
     const mapa = L.map(this.contenedor.nativeElement).setView([15.5, -90.3], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+        '&copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(mapa);
 
     for (const r of datos.rutas) {

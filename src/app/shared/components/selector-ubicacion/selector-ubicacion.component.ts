@@ -37,9 +37,12 @@ export class SelectorUbicacionComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.mapa = L.map(this.contenedor.nativeElement, { maxBounds: LIMITES_GT.pad(0.3), minZoom: 6 }).setView(CENTRO_GT, 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+        '&copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(this.mapa);
     this.mapa.on('click', (e: L.LeafletMouseEvent) => this.elegir(e.latlng));
     this.colocar(this.latitud(), this.longitud(), true);
