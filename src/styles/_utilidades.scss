@@ -41,3 +41,10 @@
     &::before, &::after { content: ''; flex: 1; border-top: 1px solid var(--borde); }
   }
 }
+
+/* Impresión del boleto: solo sale el ticket (el diálogo permite guardarlo como PDF). */
+@media print {
+  body * { visibility: hidden; }
+  .ticket-imprimible, .ticket-imprimible * { visibility: visible; }
+  .ticket-imprimible { position: fixed; inset: 0 auto auto 0; width: 100%; max-width: 100%; border: none; }
+}

@@ -87,8 +87,9 @@
 
         <div class="acciones">
           <button type="button" class="btn chico" (click)="viajeSeleccionado.set(v)">Ver asientos</button>
+          <a routerLink="/comprar" class="btn chico primario">Comprar</a>
           @if (!auth.autenticado()) {
-            <a routerLink="/login" class="btn chico primario">Entrar para comprar</a>
+            <a routerLink="/login" class="btn chico">Entrar para comprar</a>
           }
         </div>
       </li>

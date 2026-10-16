@@ -39,6 +39,7 @@ export interface FiltroViajes {
   rutaId?: string | null;
   desde?: string | null;
   hasta?: string | null;
+  estado?: EstadoViaje | null;
 }
 
 export interface NuevaRuta {

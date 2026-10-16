@@ -1,0 +1,262 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Ventas</h1>
+    <p>Boletos vendidos en línea y en mostrador: detalle, cancelación e historial por NIT.</p>
+  </div>
+</div>
+
+<div class="filtros">
+  @if (esSistema) {
+    <div class="campo">
+      <label for="sucursal">Sucursal</label>
+      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="sucursalId.set($event); cambiarFiltro()">
+        <option value="">Todas</option>
+        @for (s of sucursales(); track s.sucursalId) {
+          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+        }
+      </select>
+    </div>
+  }
+  <div class="campo">
+    <label for="estado">Estado</label>
+    <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="estado.set($event); cambiarFiltro()">
+      @for (e of estados; track e) {
+        <option [value]="e">{{ e === 'TODAS' ? 'Todos' : e }}</option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="canal">Canal</label>
+    <select id="canal" class="control" [ngModel]="canal()" (ngModelChange)="canal.set($event); cambiarFiltro()">
+      @for (c of canales; track c) {
+        <option [value]="c">{{ c === 'TODOS' ? 'Todos' : c }}</option>
+      }
+    </select>
+  </div>
+  <div class="campo">
+    <label for="desde">Desde</label>
+    <input id="desde" type="date" class="control" [ngModel]="desde()" (ngModelChange)="desde.set($event); cambiarFiltro()" />
+  </div>
+  <div class="campo">
+    <label for="hasta">Hasta</label>
+    <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event); cambiarFiltro()" />
+  </div>
+  <div class="campo crece">
+    <label for="buscar">Cliente</label>
+    <input id="buscar" class="control" placeholder="NIT o nombre del cliente"
+           [ngModel]="texto()" (ngModelChange)="filtrar($event)" />
+  </div>
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Ruta</th>
+        <th>Canal</th>
+        <th>Total</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (v of paginaActual().elementos; track v.ventaId) {
+        <tr>
+          <td>
+            <strong>{{ v.clienteNombre || '—' }}</strong>
+            <div class="secundario">{{ v.clienteNit || 'Sin NIT' }}</div>
+          </td>
+          <td>
+            @if (v.viaje) {
+              {{ v.viaje.origenNombre }} → {{ v.viaje.destinoNombre }}
+              <div class="secundario">{{ v.viaje.fechaSalida | date: 'short' }}</div>
+            } @else {
+              —
+            }
+          </td>
+          <td>{{ v.canal }}</td>
+          <td>{{ v.montoTotal | currency }}</td>
+          <td>
+            <span class="insignia" [class.exito]="v.estado === 'CONFIRMADA'">{{ v.estado }}</span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="verDetalle(v)">Ver</button>
+            @if (puedeCancelar && v.estado === 'CONFIRMADA') {
+              <button type="button" class="btn chico peligro" (click)="abrirCancelar(v)">Cancelar</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="tabla-vacia">
+            {{ cargando() ? 'Cargando ventas…' : 'No hay ventas que coincidan con los filtros.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaActual().total"
+  (cambioPagina)="pagina.set($event)"
+  (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<div class="pagina-encabezado">
+  <div>
+    <h1>Historial por NIT</h1>
+    <p>Ventas y alquileres pagados por un cliente de ventanilla.</p>
+  </div>
+</div>
+
+<div class="filtros">
+  <div class="campo crece">
+    <label for="nit">NIT</label>
+    <input id="nit" class="control" placeholder="NIT del cliente"
+           [ngModel]="nitHistorial()" (ngModelChange)="nitHistorial.set($event)" />
+  </div>
+  <div class="campo">
+    <label>&nbsp;</label>
+    <button type="button" class="btn primario" (click)="buscarHistorial()" [disabled]="buscandoHistorial()">
+      {{ buscandoHistorial() ? 'Buscando…' : 'Ver historial' }}
+    </button>
+  </div>
+</div>
+
+@if (historial(); as h) {
+  <div class="datos-lista">
+    <h2>{{ h.nombre || 'Cliente' }} <span class="secundario">{{ h.nit }}</span></h2>
+    <h3>Ventas ({{ h.ventas.length }})</h3>
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr><th>Ruta</th><th>Asientos</th><th>Total</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          @for (v of h.ventas; track v.ventaId) {
+            <tr>
+              <td>
+                {{ v.origenNombre || '—' }} → {{ v.destinoNombre || '—' }}
+                <div class="secundario">{{ v.fechaSalida | date: 'short' }} · {{ v.canal }}</div>
+              </td>
+              <td>{{ v.asientos.join(', ') }}</td>
+              <td>{{ v.montoTotal | currency }}</td>
+              <td><span class="insignia" [class.exito]="v.estado === 'CONFIRMADA'">{{ v.estado }}</span></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="tabla-vacia">Sin ventas para ese NIT.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <h3>Alquileres ({{ h.alquileres.length }})</h3>
+    <div class="tabla-contenedor">
+      <table class="tabla">
+        <thead>
+          <tr><th>Ruta</th><th>Monto</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          @for (a of h.alquileres; track a.ordenId) {
+            <tr>
+              <td>
+                {{ a.origen }} → {{ a.destino }}
+                <div class="secundario">{{ a.fechaPago | date: 'short' }}</div>
+              </td>
+              <td>{{ a.monto | currency }}</td>
+              <td><span class="insignia" [class.exito]="a.estado === 'PAGADA'">{{ a.estado }}</span></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3" class="tabla-vacia">Sin alquileres para ese NIT.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<app-modal
+  [abierto]="enDetalle() !== null"
+  titulo="Detalle de la venta"
+  ancho="grande"
+  (cerrar)="enDetalle.set(null)">
+  @if (cargandoDetalle()) {
+    <p class="secundario">Cargando detalle…</p>
+  } @else {
+    @if (enDetalle(); as d) {
+    <div class="datos-lista">
+      <p>
+        <strong>{{ d.clienteNombre || 'Sin nombre' }}</strong>
+        <span class="secundario"> · NIT: {{ d.clienteNit || '—' }} · {{ d.canal }} · {{ d.metodoPago || '—' }}</span>
+      </p>
+      <p class="secundario">
+        Total: {{ d.montoTotal | currency }} · Pagada: {{ d.fechaPago | date: 'short' }}
+        · Estado: <span class="insignia" [class.exito]="d.estado === 'CONFIRMADA'">{{ d.estado }}</span>
+      </p>
+      @if (d.motivoRechazo) {
+        <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>
+      }
+      @if (d.motivoCancelacion) {
+        <p class="secundario">Motivo de cancelación: {{ d.motivoCancelacion }} ({{ d.fechaCancelacion | date: 'short' }})</p>
+      }
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead>
+            <tr><th>Boleto</th><th>Asiento</th><th class="acciones">Precio</th></tr>
+          </thead>
+          <tbody>
+            @for (b of d.boletos; track b.boletoId) {
+              <tr>
+                <td class="secundario">{{ b.boletoId }}</td>
+                <td><strong>{{ b.numeroAsiento }}</strong></td>
+                <td class="acciones">{{ b.precio | currency }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+    }
+  }
+  <div pie>
+    @if (enDetalle(); as e) {
+      @if (puedeCancelar && e.estado === 'CONFIRMADA') {
+        <button type="button" class="btn chico peligro" (click)="abrirCancelar(e)">Cancelar venta</button>
+      }
+      <button type="button" class="btn chico" (click)="enDetalle.set(null)">Cerrar</button>
+    }
+  </div>
+</app-modal>
+
+<app-modal
+  [abierto]="porCancelar() !== null"
+  titulo="Cancelar venta"
+  subtitulo="La cancelación solo aplica a viajes que aún no han salido."
+  (cerrar)="porCancelar.set(null); confirmando.set(false)">
+  <form [formGroup]="formCancelar" (ngSubmit)="pedirConfirmacion()">
+    <div class="campo">
+      <label for="motivo">Motivo</label>
+      <input id="motivo" class="control" formControlName="motivo" placeholder="Por qué se cancela" />
+    </div>
+    <div class="campo">
+      <label for="fechaCancelacion">Fecha de cancelación</label>
+      <input id="fechaCancelacion" type="date" class="control" formControlName="fechaCancelacion" />
+    </div>
+    <div pie>
+      <button type="button" class="btn chico" (click)="porCancelar.set(null); confirmando.set(false)">Volver</button>
+      <button type="submit" class="btn primario chico peligro">Continuar</button>
+    </div>
+  </form>
+</app-modal>
+
+<app-confirmacion
+  [abierto]="porCancelar() !== null && confirmando()"
+  titulo="Cancelar venta"
+  mensaje="Se devolverá el dinero a la cartera del cliente. Esta acción no se puede deshacer."
+  textoAceptar="Cancelar venta"
+  [peligro]="true"
+  [procesando]="cancelando()"
+  (aceptar)="confirmarCancelar()"
+  (cancelar)="confirmando.set(false)" />
