@@ -40,3 +40,8 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Configuración local (la URL del gateway sale de aquí)
+.env
+# Generado por scripts/generar-env.mjs a partir de .env
+/src/environments/environment.ts
