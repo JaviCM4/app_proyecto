@@ -61,6 +61,20 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/reportes/reportes.component').then((m) => m.ReportesComponent),
       },
       {
+        path: 'taller',
+        title: 'Servicios de taller',
+        canActivate: [rolGuard],
+        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        loadComponent: () => import('./paginas/taller/servicios/servicios.component').then((m) => m.ServiciosComponent),
+      },
+      {
+        path: 'categorias',
+        title: 'Categorías de gasto',
+        canActivate: [rolGuard],
+        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        loadComponent: () => import('./paginas/taller/categorias/categorias.component').then((m) => m.CategoriasComponent),
+      },
+      {
         path: 'buses',
         title: 'Buses',
         canActivate: [rolGuard],

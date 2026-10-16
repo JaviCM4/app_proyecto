@@ -1,0 +1,70 @@
+<app-modal [abierto]="abierto()" titulo="Registrar servicio" subtitulo="Mano de obra y repuestos por categoría." ancho="grande" (cerrar)="cerrar.emit()">
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="filtros">
+      <div class="campo crece">
+        <label for="bus">Bus</label>
+        <select id="bus" class="control" formControlName="busId">
+          <option value="">Elige el bus…</option>
+          @for (b of buses(); track b.busId) {
+            <option [value]="b.busId">{{ b.placa }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="fecha">Fecha del servicio</label>
+        <input id="fecha" type="date" class="control" formControlName="fechaServicio" />
+      </div>
+      <div class="campo crece">
+        <label for="tallerN">Taller (opcional)</label>
+        <input id="tallerN" class="control" formControlName="taller" maxlength="150" placeholder="¿Dónde se hizo?" />
+      </div>
+    </div>
+    <div class="campo">
+      <label for="obs">Observaciones (opcional)</label>
+      <input id="obs" class="control" formControlName="observaciones" maxlength="500" />
+    </div>
+
+    <h3>Líneas ({{ lineas.length }}) · Total: {{ total() | currency: 'GTQ' : 'symbol-narrow' }}</h3>
+    <div formArrayName="lineas">
+      @for (g of lineas.controls; track $index; let i = $index) {
+        <div class="filtros" [formGroupName]="i">
+          <div class="campo crece">
+            <label [for]="'cat' + i">Categoría</label>
+            <select [id]="'cat' + i" class="control" formControlName="categoriaId">
+              <option value="">Elige…</option>
+              @for (c of categorias(); track c.categoriaId) {
+                <option [value]="c.categoriaId">{{ c.nombre }}</option>
+              }
+            </select>
+          </div>
+          <div class="campo">
+            <label [for]="'tipo' + i">Tipo</label>
+            <select [id]="'tipo' + i" class="control" formControlName="tipo">
+              <option value="MANO_OBRA">Mano de obra</option>
+              <option value="REPUESTO">Repuesto</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label [for]="'monto' + i">Monto Q</label>
+            <input [id]="'monto' + i" type="number" min="0.01" step="0.01" class="control" formControlName="monto" />
+          </div>
+          <div class="campo crece">
+            <label [for]="'desc' + i">Descripción</label>
+            <input [id]="'desc' + i" class="control" formControlName="descripcion" maxlength="255" placeholder="¿Qué se hizo?" />
+          </div>
+          <div class="campo">
+            <label>&nbsp;</label>
+            <button type="button" class="btn chico peligro" (click)="quitarLinea(i)" [disabled]="lineas.length <= 1">Quitar</button>
+          </div>
+        </div>
+      }
+    </div>
+    <button type="button" class="btn chico" (click)="agregarLinea()">+ Agregar línea</button>
+  </form>
+  <div pie>
+    <button type="button" class="btn chico" (click)="cerrar.emit()">Cancelar</button>
+    <button type="button" class="btn primario chico" [disabled]="enviando()" (click)="guardar()">
+      {{ enviando() ? 'Guardando…' : 'Registrar' }}
+    </button>
+  </div>
+</app-modal>
