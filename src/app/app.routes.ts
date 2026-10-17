@@ -110,6 +110,13 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/viajes/viajes/viajes.component').then((m) => m.ViajesComponent),
       },
       {
+        path: 'mis-viajes',
+        title: 'Mis viajes',
+        canActivate: [rolGuard],
+        data: { roles: ['CHOFER'] },
+        loadComponent: () => import('./paginas/chofer/mis-viajes/mis-viajes.component').then((m) => m.MisViajesChoferComponent),
+      },
+      {
         path: 'alquileres',
         title: 'Alquileres',
         canActivate: [rolGuard],

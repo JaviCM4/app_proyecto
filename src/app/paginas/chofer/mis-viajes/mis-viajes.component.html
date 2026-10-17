@@ -1,0 +1,211 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Mis viajes</h1>
+    <p>Los viajes que tienes asignados. Registra la salida al arrancar y la llegada al terminar.</p>
+  </div>
+</div>
+
+<div class="pestanas">
+  <button type="button" [class.activa]="estado() === 'PROGRAMADO'" (click)="cambiarEstado('PROGRAMADO')">Por salir</button>
+  <button type="button" [class.activa]="estado() === 'EN_RUTA'" (click)="cambiarEstado('EN_RUTA')">En ruta</button>
+  <button type="button" [class.activa]="estado() === 'COMPLETADO'" (click)="cambiarEstado('COMPLETADO')">Completados</button>
+  <button type="button" [class.activa]="estado() === 'TODAS'" (click)="cambiarEstado('TODAS')">Todos</button>
+</div>
+
+<div class="filtros">
+  <div class="campo">
+    <label for="desde">Desde</label>
+    <input id="desde" type="date" class="control" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+  </div>
+  <div class="campo">
+    <label for="hasta">Hasta</label>
+    <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+  </div>
+  <div class="campo">
+    <label>&nbsp;</label>
+    <div class="fila">
+      <button type="button" class="btn primario" (click)="cargar()" [disabled]="cargando()">Buscar</button>
+      <button type="button" class="btn" (click)="limpiarFechas()">Limpiar</button>
+    </div>
+  </div>
+</div>
+
+@if (cargando()) {
+  <p class="tabla-vacia">Cargando tus viajes…</p>
+} @else if (paginaActual().total === 0) {
+  <p class="tabla-vacia">No tienes viajes que coincidan con el filtro.</p>
+} @else {
+  <div class="rejilla-viajes">
+    @for (v of paginaActual().elementos; track v.viajeId) {
+      <article class="tarjeta viaje">
+        <header class="viaje-encabezado">
+          <div>
+            <strong class="viaje-ruta">{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
+            <span class="secundario">Bus {{ v.busPlaca ?? '—' }}</span>
+          </div>
+          <span class="insignia"
+            [class.aviso]="v.estado === 'PROGRAMADO'"
+            [class.primario]="v.estado === 'EN_RUTA'"
+            [class.exito]="v.estado === 'COMPLETADO'">
+            {{ v.estado === 'PROGRAMADO' ? 'Por salir' : v.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }}
+          </span>
+        </header>
+
+        <dl class="viaje-datos">
+          <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+          <div><dt>Llegada estimada</dt><dd>{{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+          <div><dt>Tipo</dt><dd>{{ v.tipo === 'PRIVADO' ? 'Alquiler' : 'Regular' }}</dd></div>
+          <div><dt>Pasajeros</dt><dd>{{ v.capacidad }}</dd></div>
+        </dl>
+
+        <div class="viaje-acciones">
+          @if (v.estado === 'PROGRAMADO') {
+            <button type="button" class="btn primario" (click)="abrirSalida(v)">Registrar salida</button>
+          } @else if (v.estado === 'EN_RUTA') {
+            <button type="button" class="btn primario" (click)="abrirLlegada(v)">Registrar llegada</button>
+          } @else {
+            <button type="button" class="btn" (click)="verDetalle(v)">Ver detalle</button>
+          }
+          @if (v.estado !== 'COMPLETADO') {
+            <button type="button" class="btn chico" (click)="verDetalle(v)">Ver</button>
+          }
+        </div>
+      </article>
+    }
+  </div>
+
+  <app-paginador
+    [pagina]="paginaActual().pagina"
+    [tamano]="tamano()"
+    [total]="paginaActual().total"
+    (cambioPagina)="pagina.set($event)"
+    (cambioTamano)="tamano.set($event); pagina.set(1)" />
+}
+
+<app-modal [abierto]="enSalida() !== null" titulo="Registrar salida"
+           subtitulo="El viaje pasa a estar en ruta." ancho="chico" (cerrar)="enSalida.set(null)">
+  @if (enSalida(); as v) {
+    <p class="secundario">{{ v.origenNombre }} → {{ v.destinoNombre }} · Bus {{ v.busPlaca ?? '—' }}</p>
+  }
+  <form id="form-salida" [formGroup]="formSalida" (ngSubmit)="confirmarSalida()" class="formulario">
+    <div class="campo">
+      <label for="s-fecha">Fecha y hora de salida</label>
+      <input id="s-fecha" type="datetime-local" class="control" formControlName="fechaHora" />
+    </div>
+    <div class="campo">
+      <label for="s-km">Kilometraje inicial</label>
+      <input id="s-km" type="number" min="0" step="1" class="control" formControlName="kmInicial" />
+      @if (formSalida.controls.kmInicial.touched && formSalida.controls.kmInicial.invalid) {
+        <span class="error">Escribe un kilometraje válido.</span>
+      }
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="enSalida.set(null)">Cancelar</button>
+    <button type="submit" form="form-salida" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Registrando…' : 'Registrar salida' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [abierto]="enLlegada() !== null" titulo="Registrar llegada"
+           subtitulo="El viaje queda completado." ancho="chico" (cerrar)="enLlegada.set(null)">
+  @if (enLlegada(); as v) {
+    <p class="secundario">{{ v.origenNombre }} → {{ v.destinoNombre }} · Bus {{ v.busPlaca ?? '—' }}</p>
+  }
+  <form id="form-llegada" [formGroup]="formLlegada" (ngSubmit)="confirmarLlegada()" class="formulario">
+    <div class="campo">
+      <label for="ll-fecha">Fecha y hora de llegada</label>
+      <input id="ll-fecha" type="datetime-local" class="control" formControlName="fechaHora" />
+    </div>
+    <div class="campo">
+      <label for="ll-km">Kilometraje final</label>
+      <input id="ll-km" type="number" min="0" step="1" class="control" formControlName="kmFinal" />
+      @if (formLlegada.controls.kmFinal.touched && formLlegada.controls.kmFinal.invalid) {
+        <span class="error">Escribe un kilometraje válido.</span>
+      }
+    </div>
+    <div class="campo">
+      <label for="ll-combustible">Costo de combustible (Q)</label>
+      <input id="ll-combustible" type="number" min="0" step="0.01" class="control" formControlName="costoCombustible" />
+      @if (formLlegada.controls.costoCombustible.touched && formLlegada.controls.costoCombustible.invalid) {
+        <span class="error">Escribe un costo válido.</span>
+      }
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="enLlegada.set(null)">Cancelar</button>
+    <button type="submit" form="form-llegada" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Registrando…' : 'Registrar llegada' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [abierto]="detalleVisible()" titulo="Detalle del viaje" ancho="grande" (cerrar)="cerrarDetalle()">
+  @if (cargandoDetalle()) {
+    <p class="secundario">Cargando detalle…</p>
+  } @else {
+    @if (enDetalle(); as d) {
+      <div class="detalle-cabecera">
+        <div class="detalle-ruta">
+          <span>{{ d.origenNombre }}</span>
+          <span class="flecha">→</span>
+          <span>{{ d.destinoNombre }}</span>
+        </div>
+        <span class="insignia"
+          [class.aviso]="d.estado === 'PROGRAMADO'"
+          [class.primario]="d.estado === 'EN_RUTA'"
+          [class.exito]="d.estado === 'COMPLETADO'">
+          {{ d.estado === 'PROGRAMADO' ? 'Por salir' : d.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }}
+        </span>
+      </div>
+
+      <div class="datos-lista">
+        <div><dt>Bus</dt><dd>{{ d.busPlaca ?? '—' }}</dd></div>
+        <div><dt>Tipo de viaje</dt><dd>{{ d.tipo === 'PRIVADO' ? 'Alquiler privado' : 'Regular' }}</dd></div>
+        <div><dt>Salida programada</dt><dd>{{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+        <div><dt>Llegada estimada</dt><dd>{{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+        <div><dt>Chofer</dt><dd>{{ d.choferNombre ?? '—' }}</dd></div>
+        <div><dt>Capacidad</dt><dd>{{ d.capacidad }} pasajeros</dd></div>
+      </div>
+
+      <h3 class="detalle-titulo">Bitácora del viaje</h3>
+      <div class="bitacora">
+        <div class="hito" [class.pendiente]="!d.salida">
+          <span class="punto"></span>
+          <div class="hito-cuerpo">
+            <strong>Salida</strong>
+            @if (d.salida) {
+              <span class="hito-fecha">{{ d.salida.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
+              <span class="secundario">Kilometraje inicial: {{ d.salida.kmInicial }} km</span>
+            } @else {
+              <span class="secundario">Aún no registrada.</span>
+            }
+          </div>
+        </div>
+
+        <div class="hito" [class.pendiente]="!d.llegada">
+          <span class="punto"></span>
+          <div class="hito-cuerpo">
+            <strong>Llegada</strong>
+            @if (d.llegada) {
+              <span class="hito-fecha">{{ d.llegada.fechaHoraLlegada | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
+              <div class="hito-totales">
+                <span><b>{{ d.llegada.kmRecorridos }}</b> km recorridos</span>
+                <span><b>{{ d.llegada.costoCombustible | currency: 'GTQ' : 'symbol-narrow' }}</b> de combustible</span>
+              </div>
+              <span class="secundario">Kilometraje final: {{ d.llegada.kmFinal }} km</span>
+            } @else {
+              <span class="secundario">Aún no registrada.</span>
+            }
+          </div>
+        </div>
+      </div>
+    } @else {
+      <p class="secundario">Cargando detalle…</p>
+    }
+  }
+  <div pie>
+    <button type="button" class="btn" (click)="cerrarDetalle()">Cerrar</button>
+  </div>
+</app-modal>
