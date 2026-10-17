@@ -44,6 +44,7 @@ export const MENU: GrupoMenu[] = [
       { texto: 'Personal', ruta: '/panel/personal', icono: 'usuarios', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
       { texto: 'Rutas', ruta: '/panel/rutas', icono: 'ruta', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
       { texto: 'Viajes', ruta: '/panel/viajes', icono: 'boleto', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+      { texto: 'Mis viajes', ruta: '/panel/mis-viajes', icono: 'boleto', roles: ['CHOFER'] },
       { texto: 'Alquileres', ruta: '/panel/alquileres', icono: 'taller', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL', 'CAJERO'] },
     ],
   },

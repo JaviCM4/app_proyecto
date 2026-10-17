@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   ActualizarRuta,
   ActualizarViaje,
+  EstadoViaje,
   FiltroViajes,
   MapaAsientos,
   NuevaRuta,
@@ -28,6 +29,15 @@ export class ViajesService {
       if (valor) params = params.set(clave, valor);
     }
     return this.http.get<Viaje[]>(`${this.api}/trips/viajes`, { params });
+  }
+
+  /** Viajes asignados al chofer del token (T13). */
+  mios(filtro: { desde?: string | null; hasta?: string | null; estado?: EstadoViaje | null } = {}): Observable<Viaje[]> {
+    let params = new HttpParams();
+    for (const [clave, valor] of Object.entries(filtro)) {
+      if (valor) params = params.set(clave, valor);
+    }
+    return this.http.get<Viaje[]>(`${this.api}/trips/viajes/mios`, { params });
   }
 
   rutas(activa = true): Observable<Ruta[]> {
