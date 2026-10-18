@@ -4,11 +4,14 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Cartera, MovimientoCartera } from '../models/cartera.model';
 
-/** Cartera digital del usuario (todas las cuentas tienen una). */
+/**
+ * Cartera digital del cliente (wallet-service, /wallet/cartera por el gateway).
+ * Si el cliente no tiene cartera, el backend se la abre en cero la primera vez que la consulta.
+ */
 @Injectable({ providedIn: 'root' })
 export class CarteraService {
   private readonly http = inject(HttpClient);
-  private readonly url = `${environment.apiUrl}/identity/cartera`;
+  private readonly url = `${environment.apiUrl}/wallet/cartera`;
 
   consultar(): Observable<Cartera> {
     return this.http.get<Cartera>(this.url);
