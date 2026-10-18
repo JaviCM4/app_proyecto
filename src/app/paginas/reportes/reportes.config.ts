@@ -1,7 +1,7 @@
 import { FilaReporte } from '../../core/models/reporte.model';
 
 /** Filtros que puede pedir un reporte (se muestran solo los que usa la pestaña activa). */
-export type Filtro = 'fechas' | 'sucursal' | 'bus' | 'ruta' | 'estadoBus' | 'estadoChofer' | 'limite';
+export type Filtro = 'fechas' | 'sucursal' | 'bus' | 'ruta' | 'categoria' | 'estadoBus' | 'estadoChofer' | 'limite';
 export type Formato = 'texto' | 'dinero' | 'numero' | 'fecha' | 'estado';
 export type Ambito = 'sistema' | 'sucursal';
 
@@ -22,6 +22,11 @@ export interface Reporte {
   columnas: Columna[];
   /** Columnas que se suman en la fila de totales. */
   totaliza?: string[];
+  /**
+   * Si está, la tabla se muestra agrupada: una sección por cada valor de `por`
+   * (que se usa como subtítulo), con el subtotal de la columna indicada.
+   */
+  agrupar?: { por: string; etiqueta: string; subtotal: string };
   /** Convierte el JSON del servicio (que viene agrupado) en filas planas para la tabla. */
   aplanar: (json: unknown) => FilaReporte[];
   /** true = el mapa de rutas (vista especial). */
@@ -102,15 +107,17 @@ export const REPORTES: Reporte[] = [
   },
   {
     codigo: 'taller-categoria', nombre: 'Taller por categoría', ambito: 'sistema',
-    descripcion: 'Gastos de taller agrupados por categoría.',
+    descripcion: 'Detalle de cada gasto de taller (bus, fecha, descripción y monto), con el subtotal de cada categoría y el gran total. Se puede filtrar por sucursal o bus.',
     ruta: () => '/taller-por-categoria', filtros: ['fechas', 'sucursal', 'bus'],
     columnas: [
       { clave: 'categoria', etiqueta: 'Categoría', formato: 'texto' },
-      { clave: 'manoObra', etiqueta: 'Mano de obra', formato: 'dinero' },
-      { clave: 'repuestos', etiqueta: 'Repuestos', formato: 'dinero' },
-      { clave: 'total', etiqueta: 'Total', formato: 'dinero' },
+      { clave: 'placa', etiqueta: 'Bus', formato: 'texto' },
+      { clave: 'fecha', etiqueta: 'Fecha', formato: 'fecha' },
+      { clave: 'descripcion', etiqueta: 'Descripción', formato: 'texto' },
+      { clave: 'monto', etiqueta: 'Monto', formato: 'dinero' },
     ],
-    totaliza: ['manoObra', 'repuestos', 'total'],
+    totaliza: ['monto'],
+    agrupar: { por: 'categoria', etiqueta: 'Categoría', subtotal: 'monto' },
     aplanar: (j) => lista((j as Json)?.['filas']),
   },
   {
@@ -168,15 +175,17 @@ export const REPORTES: Reporte[] = [
   },
   {
     codigo: 'ingresos-alquiler', nombre: 'Ingresos por alquiler', ambito: 'sucursal',
-    descripcion: 'Alquileres de bus pagados.',
+    descripcion: 'Alquileres de bus pagados: cliente, origen, destino, fechas de salida y retorno y precio total.',
     ruta: (id) => `/sucursales/${id}/ingresos-alquiler`, filtros: ['fechas'],
     columnas: [
-      { clave: 'fecha', etiqueta: 'Fecha', formato: 'fecha' },
+      { clave: 'fecha', etiqueta: 'Fecha de pago', formato: 'fecha' },
       { clave: 'clienteNombre', etiqueta: 'Cliente', formato: 'texto' },
       { clave: 'clienteNit', etiqueta: 'NIT', formato: 'texto' },
       { clave: 'origen', etiqueta: 'Origen', formato: 'texto' },
       { clave: 'destino', etiqueta: 'Destino', formato: 'texto' },
-      { clave: 'monto', etiqueta: 'Monto', formato: 'dinero' },
+      { clave: 'fechaSalida', etiqueta: 'Salida', formato: 'texto' },
+      { clave: 'fechaRetorno', etiqueta: 'Retorno', formato: 'texto' },
+      { clave: 'monto', etiqueta: 'Precio total', formato: 'dinero' },
     ],
     totaliza: ['monto'],
     aplanar: (j) => lista((j as Json)?.['filas']),
@@ -197,16 +206,18 @@ export const REPORTES: Reporte[] = [
   },
   {
     codigo: 'taller-bus', nombre: 'Taller por bus', ambito: 'sucursal',
-    descripcion: 'Gastos de taller de cada bus por categoría.',
-    ruta: (id) => `/sucursales/${id}/taller-por-bus`, filtros: ['fechas', 'bus'],
+    descripcion: 'Cada gasto de taller de cada bus (categoría, fecha, descripción, tipo y monto), con el total del bus. Filtra por categoría para detectar reparaciones recurrentes.',
+    ruta: (id) => `/sucursales/${id}/taller-por-bus`, filtros: ['fechas', 'bus', 'categoria'],
     columnas: [
       { clave: 'placa', etiqueta: 'Bus', formato: 'texto' },
       { clave: 'categoria', etiqueta: 'Categoría', formato: 'texto' },
-      { clave: 'manoObra', etiqueta: 'Mano de obra', formato: 'dinero' },
-      { clave: 'repuestos', etiqueta: 'Repuestos', formato: 'dinero' },
-      { clave: 'total', etiqueta: 'Total', formato: 'dinero' },
+      { clave: 'fecha', etiqueta: 'Fecha', formato: 'fecha' },
+      { clave: 'descripcion', etiqueta: 'Descripción', formato: 'texto' },
+      { clave: 'tipo', etiqueta: 'Tipo', formato: 'texto' },
+      { clave: 'monto', etiqueta: 'Monto', formato: 'dinero' },
     ],
-    totaliza: ['manoObra', 'repuestos', 'total'],
-    aplanar: (j) => lista((j as Json)?.['buses']).flatMap((b) => lista(b['categorias']).map((c) => ({ ...c, placa: b['placa'] }))),
+    totaliza: ['monto'],
+    agrupar: { por: 'placa', etiqueta: 'Bus', subtotal: 'monto' },
+    aplanar: (j) => lista((j as Json)?.['buses']).flatMap((b) => lista(b['gastos']).map((g) => ({ ...g, placa: b['placa'] }))),
   },
 ];

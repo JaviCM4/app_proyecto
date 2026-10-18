@@ -1,0 +1,13 @@
+.acciones-form {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--borde);
+}
+
+.ok {
+  font-weight: 600;
+  color: var(--exito);
+  margin-bottom: 12px;
+}

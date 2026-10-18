@@ -1,0 +1,177 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Mis alquileres</h1>
+    <p>Sigue tus solicitudes de bus. Puedes cancelar mientras sigan como solicitadas.</p>
+  </div>
+  <a class="btn primario" routerLink="/panel/solicitar-alquiler">+ Solicitar alquiler</a>
+</div>
+
+<div class="pestanas">
+  <button type="button" [class.activa]="estado() === 'TODAS'" (click)="cambiarEstado('TODAS')">Todas</button>
+  <button type="button" [class.activa]="estado() === 'SOLICITADO'" (click)="cambiarEstado('SOLICITADO')">Solicitados</button>
+  <button type="button" [class.activa]="estado() === 'COTIZADO'" (click)="cambiarEstado('COTIZADO')">Cotizados</button>
+  <button type="button" [class.activa]="estado() === 'PAGADO'" (click)="cambiarEstado('PAGADO')">Pagados</button>
+  <button type="button" [class.activa]="estado() === 'ASIGNADO'" (click)="cambiarEstado('ASIGNADO')">Asignados</button>
+  <button type="button" [class.activa]="estado() === 'COMPLETADO'" (click)="cambiarEstado('COMPLETADO')">Completados</button>
+  <button type="button" [class.activa]="estado() === 'CANCELADO'" (click)="cambiarEstado('CANCELADO')">Cancelados</button>
+</div>
+
+@if (cargando()) {
+  <p class="tabla-vacia">Cargando tus alquileres…</p>
+} @else if (paginaActual().total === 0) {
+  <p class="tabla-vacia">
+    No tienes alquileres {{ estado() === 'TODAS' ? '' : 'en ese estado' }}.
+    Puedes pedir uno con el botón de arriba.
+  </p>
+} @else {
+  <div class="rejilla-alquileres">
+    @for (a of paginaActual().elementos; track a.alquilerId) {
+      <article class="tarjeta alquiler">
+        <header class="alquiler-encabezado">
+          <div>
+            <strong class="alquiler-ruta">{{ a.origen }} → {{ a.destino }}</strong>
+            <span class="secundario">Solicitado el {{ a.fechaSolicitud | date: 'dd/MM/yyyy' : zona }}</span>
+          </div>
+          <span [class]="'insignia ' + clase(a.estado)">{{ texto(a.estado) }}</span>
+        </header>
+
+        <dl class="alquiler-datos">
+          <div><dt>Salida</dt><dd>{{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+          <div><dt>Retorno</dt><dd>{{ a.fechaRetorno ? (a.fechaRetorno | date: 'dd/MM/yyyy HH:mm' : zona) : 'Solo ida' }}</dd></div>
+          <div><dt>Pasajeros</dt><dd>{{ a.cantidadPasajeros }}</dd></div>
+          <div><dt>Kilómetros</dt><dd>{{ a.kmEstimados }} km</dd></div>
+        </dl>
+
+        <div class="alquiler-precio">
+          <div class="etiqueta-grupo">
+            <span class="etiqueta">{{ a.precioConfirmado !== null ? 'Precio confirmado' : 'Precio estimado' }}</span>
+            @if (tarifa(a); as t) {
+              <span class="tarifa">{{ a.kmEstimados }} km × {{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</span>
+            }
+          </div>
+          <strong>{{ total(a) | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+        </div>
+
+        @if (a.viaje; as v) {
+          <p class="alquiler-viaje">
+            <strong>Bus {{ v.busPlaca ?? 'por confirmar' }}</strong>
+            @if (v.choferNombre) {
+              <span> · Chofer {{ v.choferNombre }}</span>
+            }
+            <span class="secundario"> · Viaje {{ viajeTexto(v.estado) }}</span>
+          </p>
+        }
+
+        <div class="alquiler-acciones">
+          <button type="button" class="btn chico" (click)="enDetalle.set(a)">Ver</button>
+          @if (a.estado === 'SOLICITADO') {
+            <span class="secundario">Esperando cotización de la sucursal</span>
+            <button type="button" class="btn chico peligro" (click)="abrirCancelar(a)">Cancelar</button>
+          }
+          @if (a.estado === 'COTIZADO') {
+            @if (ordenDe(a); as orden) {
+              @if (orden.estado === 'PENDIENTE_PAGO') {
+                <button type="button" class="btn chico primario" [disabled]="pagandoId() === orden.ordenId"
+                        (click)="pagar(a)">
+                  {{ pagandoId() === orden.ordenId ? 'Pagando…' : 'Pagar con cartera' }}
+                </button>
+              } @else {
+                <span class="secundario">
+                  {{ orden.estado === 'PAGADA' ? 'Pago confirmado' : 'Pago rechazado' }}
+                </span>
+              }
+            } @else {
+              <span class="secundario">Preparando la orden de pago…</span>
+            }
+          }
+        </div>
+      </article>
+    }
+  </div>
+
+  <app-paginador
+    [pagina]="paginaActual().pagina"
+    [tamano]="tamano()"
+    [total]="paginaActual().total"
+    (cambioPagina)="pagina.set($event)"
+    (cambioTamano)="tamano.set($event); pagina.set(1)" />
+}
+
+<app-modal [abierto]="enDetalle() !== null" titulo="Detalle del alquiler" (cerrar)="enDetalle.set(null)">
+  @if (enDetalle(); as a) {
+    <div class="detalle-cabecera">
+      <div class="detalle-ruta">{{ a.origen }} <span class="flecha">→</span> {{ a.destino }}</div>
+      <span [class]="'insignia ' + clase(a.estado)">{{ texto(a.estado) }}</span>
+    </div>
+    <div class="datos-lista">
+      <div><dt>Cliente</dt><dd>{{ a.clienteNombre }}</dd></div>
+      <div><dt>Canal</dt><dd>{{ a.canal === 'EN_LINEA' ? 'En línea' : 'Ventanilla' }}</dd></div>
+      <div><dt>NIT</dt><dd>{{ a.clienteNit ?? 'CF' }}</dd></div>
+      <div><dt>Correo</dt><dd>{{ a.clienteCorreo ?? '—' }}</dd></div>
+      <div><dt>Salida</dt><dd>{{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+      <div><dt>Retorno</dt><dd>{{ a.fechaRetorno ? (a.fechaRetorno | date: 'dd/MM/yyyy HH:mm' : zona) : 'Solo ida' }}</dd></div>
+      <div><dt>Pasajeros</dt><dd>{{ a.cantidadPasajeros }}</dd></div>
+      <div><dt>Kilómetros</dt><dd>{{ a.kmEstimados }} km</dd></div>
+      @if (tarifa(a); as t) {
+        <div><dt>Tarifa aplicada</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
+      }
+      <div><dt>Precio estimado</dt><dd>{{ a.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
+      <div><dt>Precio confirmado</dt><dd>{{ a.precioConfirmado !== null ? (a.precioConfirmado | currency: 'GTQ' : 'symbol-narrow') : '—' }}</dd></div>
+      @if (a.motivoCancelacion) {
+        <div class="completo"><dt>Motivo de cancelación</dt><dd>{{ a.motivoCancelacion }}</dd></div>
+      }
+    </div>
+    @if (a.viaje; as v) {
+      <h3 class="detalle-subtitulo">Viaje asignado</h3>
+      <div class="datos-lista">
+        <div><dt>Estado del viaje</dt><dd>{{ viajeTexto(v.estado) }}</dd></div>
+        <div><dt>Bus</dt><dd>{{ v.busPlaca ?? 'Por confirmar' }}</dd></div>
+        <div><dt>Chofer</dt><dd>{{ v.choferNombre ?? 'Por confirmar' }}</dd></div>
+        <div><dt>Capacidad</dt><dd>{{ v.capacidad }} asientos</dd></div>
+        <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+        <div><dt>Llegada estimada</dt><dd>{{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+      </div>
+    } @else if (a.estado === 'PAGADO') {
+      <p class="secundario">Pago confirmado. La sucursal asignará el bus y el chofer; aquí verás los datos.</p>
+    } @else {
+      <p class="secundario">Aún no hay bus ni chofer asignados.</p>
+    }
+    <p class="secundario">
+      La sucursal confirma el precio; cuando esté cotizado lo pagas aquí con tu cartera.
+    </p>
+  }
+  <div pie>
+    <button type="button" class="btn" (click)="enDetalle.set(null)">Cerrar</button>
+    @if (enDetalle(); as d) {
+      @if (d.estado === 'SOLICITADO') {
+        <button type="button" class="btn peligro" (click)="cancelarDesdeDetalle()">Cancelar alquiler</button>
+      }
+      @if (d.estado === 'COTIZADO' && ordenDe(d)?.estado === 'PENDIENTE_PAGO') {
+        <button type="button" class="btn primario" [disabled]="pagandoId() === ordenDe(d)?.ordenId"
+                (click)="pagar(d)">
+          {{ pagandoId() === ordenDe(d)?.ordenId ? 'Pagando…' : 'Pagar con cartera' }}
+        </button>
+      }
+    }
+  </div>
+</app-modal>
+
+<app-modal [abierto]="porCancelar() !== null" titulo="Cancelar alquiler"
+           subtitulo="El alquiler quedará cancelado y no se cobrará." ancho="chico" (cerrar)="porCancelar.set(null)">
+  <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
+    <div class="campo">
+      <label for="motivo">Motivo</label>
+      <textarea id="motivo" rows="3" class="control" formControlName="motivo"
+                placeholder="Por qué cancelas el alquiler"></textarea>
+      @if (formCancelar.controls.motivo.touched && formCancelar.controls.motivo.invalid) {
+        <span class="error">Escribe el motivo (máximo 255 caracteres).</span>
+      }
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="porCancelar.set(null)">Volver</button>
+    <button type="submit" form="form-cancelar" class="btn primario peligro" [disabled]="enviando()">
+      {{ enviando() ? 'Cancelando…' : 'Cancelar alquiler' }}
+    </button>
+  </div>
+</app-modal>

@@ -124,6 +124,30 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/viajes/alquileres/alquileres.component').then((m) => m.AlquileresComponent),
       },
       {
+        path: 'solicitar-alquiler',
+        title: 'Solicitar alquiler',
+        canActivate: [rolGuard],
+        data: { roles: ['CLIENTE', 'CAJERO'] },
+        loadComponent: () =>
+          import('./paginas/alquileres/solicitar-alquiler/solicitar-alquiler.component').then((m) => m.SolicitarAlquilerComponent),
+      },
+      {
+        path: 'mis-alquileres',
+        title: 'Mis alquileres',
+        canActivate: [rolGuard],
+        data: { roles: ['CLIENTE'], soloCliente: true },
+        loadComponent: () =>
+          import('./paginas/alquileres/mis-alquileres/mis-alquileres.component').then((m) => m.MisAlquileresComponent),
+      },
+      {
+        path: 'precio-alquiler',
+        title: 'Precio de alquiler',
+        canActivate: [rolGuard],
+        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        loadComponent: () =>
+          import('./paginas/alquileres/precio-alquiler/precio-alquiler.component').then((m) => m.PrecioAlquilerComponent),
+      },
+      {
         path: 'cartera',
         title: 'Billetera digital',
         canActivate: [rolGuard],

@@ -85,5 +85,5 @@
 
   <app-confirmacion [abierto]="porCambiar() !== null" titulo="Cambiar estado"
     mensaje="¿Confirmas el cambio de estado de la categoría?"
-    (confirmar)="ejecutarCambio()" (cancelar)="porCambiar.set(null)" />
+    (aceptar)="ejecutarCambio()" (cancelar)="porCambiar.set(null)" />
 }

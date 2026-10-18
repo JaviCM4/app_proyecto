@@ -1,0 +1,25 @@
+.vigente {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+  background: var(--primario-suave);
+  border-color: var(--primario-medio);
+
+  span { color: var(--texto-suave); font-size: 13px; }
+  strong { font-size: 22px; color: var(--primario-hover); }
+  small { color: var(--texto-suave); }
+
+  &.vacio {
+    background: var(--aviso-suave);
+    border-color: var(--aviso);
+
+    strong { font-size: 15px; color: var(--aviso); }
+  }
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}

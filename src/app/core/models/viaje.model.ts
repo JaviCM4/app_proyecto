@@ -127,6 +127,8 @@ export interface Alquiler {
   motivoCancelacion: string | null;
   fechaSolicitud: string;
   viajeId: string | null;
+  /** Viaje privado ya asignado (T22): bus, chofer y fechas. Null hasta que administración asigne. */
+  viaje: Viaje | null;
   version: number;
 }
 
@@ -152,6 +154,24 @@ export interface AsignarAlquiler {
   choferId: string;
   fechaLlegadaEstimada: string;
   version: number;
+}
+
+/** Cuerpo de POST /trips/alquileres (T16): el precio lo calcula el backend por km estimados. */
+export interface NuevoAlquiler {
+  sucursalId: string;
+  /** Solo para el cajero; vacío equivale a "CF". */
+  clienteNit?: string | null;
+  clienteNombre: string;
+  clienteCorreo?: string | null;
+  origen: string;
+  destino: string;
+  fechaSalida: string;
+  /** null = solo ida. */
+  fechaRetorno?: string | null;
+  cantidadPasajeros: number;
+  kmEstimados: number;
+  /** Fecha con la que se fija el precio por km (no puede ser pasada). */
+  fechaSolicitud: string;
 }
 
 export interface ConfigAlquiler {

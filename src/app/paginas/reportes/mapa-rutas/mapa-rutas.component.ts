@@ -46,19 +46,25 @@ export class MapaRutasComponent implements OnDestroy {
     }
 
     const mapa = L.map(this.contenedor.nativeElement).setView([15.5, -90.3], 7);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
-        '&copy; <a href="https://carto.com/attributions">CARTO</a>',
+    // Teselas de OpenStreetMap: no requieren API key (CARTO ahora sí la exige).
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      subdomains: 'abc',
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(mapa);
 
     for (const r of datos.rutas) {
       const a = puntos.get(r.sucursalOrigenId);
       const b = puntos.get(r.sucursalDestinoId);
-      if (!a || !b || (resaltar && r.sucursalOrigenId !== resaltar)) continue;
-      L.polyline([a, b], { color: '#3a7f8c', weight: 3, opacity: r.activa ? 0.8 : 0.3, dashArray: r.activa ? undefined : '6 6' })
+      if (!a || !b) continue;
+      // La sucursal elegida en el filtro resalta sus rutas; las demás se dibujan atenuadas.
+      const resaltada = !resaltar || r.sucursalOrigenId === resaltar;
+      L.polyline([a, b], {
+        color: resaltada ? '#2f6974' : '#9fb4b8',
+        weight: resaltada ? 3 : 2,
+        opacity: resaltada ? (r.activa ? 0.85 : 0.45) : 0.35,
+        dashArray: r.activa ? undefined : '6 6',
+      })
         .bindPopup(`<strong>${r.origen ?? this.nombre(r.sucursalOrigenId)} → ${r.destino ?? this.nombre(r.sucursalDestinoId)}</strong><br>${r.distanciaKm} km · Q${Number(r.precioBoleto).toFixed(2)}`)
         .addTo(mapa);
     }
