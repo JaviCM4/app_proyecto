@@ -3,12 +3,13 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
 import { IconoComponent } from '../../shared/components/icono/icono.component';
+import { SelectorTemaComponent } from '../../shared/components/selector-tema/selector-tema.component';
 
 /** Estructura de las páginas sin sesión: encabezado con Entrar / Crear cuenta. */
 @Component({
   selector: 'app-layout-publico',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, IconoComponent],
+  imports: [RouterOutlet, RouterLink, IconoComponent, SelectorTemaComponent],
   templateUrl: './layout-publico.component.html',
   styleUrl: './layout-publico.component.scss',
 })

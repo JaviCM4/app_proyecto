@@ -1,15 +1,15 @@
 .asientos-info { display: grid; gap: 0.25rem; margin-bottom: 0.75rem; }
 .leyenda { display: flex; align-items: center; justify-content: center; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; }
-.muestra { display: inline-block; width: 1rem; height: 1rem; border-radius: 0.3rem; border: 1px solid #cbd5e1; background: #fff; }
-.muestra.ocupado { background: #e5e7eb; }
-.muestra.elegido { background: var(--menta-claro, #C9F2E2); border-color: var(--menta-oscuro, #2FA67E); }
+.muestra { display: inline-block; width: 1rem; height: 1rem; border-radius: 0.3rem; border: 1px solid var(--asiento-borde); background: var(--asiento-libre); }
+.muestra.ocupado { background: var(--asiento-ocupado); }
+.muestra.elegido { background: var(--asiento-elegido); border-color: var(--asiento-elegido-borde); }
 .muestra.piloto { background: var(--azul, #1B3A6B); border-color: var(--azul, #1B3A6B); }
-.bus { max-width: 22rem; margin: 0 auto; border: 2px solid var(--azul, #1B3A6B); border-radius: 1.5rem 1.5rem 1rem 1rem; padding: 0.75rem; background: #fff; }
+.bus { max-width: 22rem; margin: 0 auto; border: 2px solid var(--azul, #1B3A6B); border-radius: 1.5rem 1.5rem 1rem 1rem; padding: 0.75rem; background: var(--superficie); }
 .parabrisas { height: 0.9rem; border-radius: 0.6rem; background: linear-gradient(180deg, #bae6fd, #e0f2fe); margin-bottom: 0.6rem; }
 .fila-bus { display: grid; grid-template-columns: 1fr 1fr 1.75rem 1fr 1fr; gap: 0.45rem; margin-bottom: 0.45rem; align-items: stretch; }
 .pasillo { min-height: 2.2rem; }
 .piloto { display: inline-flex; align-items: center; justify-content: center; border-radius: 0.65rem; background: var(--azul, #1B3A6B); color: #fff; font-weight: 800; min-height: 2.2rem; }
-.asiento { border-radius: 0.65rem 0.65rem 0.35rem 0.35rem; border: 1px solid #cbd5e1; padding: 0.5rem 0; font-weight: 600; cursor: pointer; background: #fff; min-height: 2.2rem; }
-.asiento:hover:not(:disabled) { border-color: var(--menta-oscuro, #2FA67E); }
-.asiento.ocupado { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
-.asiento.elegido { background: var(--menta-claro, #C9F2E2); border-color: var(--menta-oscuro, #2FA67E); }
+.asiento { border-radius: 0.65rem 0.65rem 0.35rem 0.35rem; border: 1px solid var(--asiento-borde); padding: 0.5rem 0; font-weight: 600; cursor: pointer; background: var(--asiento-libre); color: var(--texto); min-height: 2.2rem; }
+.asiento:hover:not(:disabled) { border-color: var(--asiento-elegido-borde); }
+.asiento.ocupado { background: var(--asiento-ocupado); color: var(--asiento-ocupado-texto); cursor: not-allowed; }
+.asiento.elegido { background: var(--asiento-elegido); border-color: var(--asiento-elegido-borde); color: var(--asiento-elegido-texto); }

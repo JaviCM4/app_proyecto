@@ -32,7 +32,7 @@
 .actual {
   background: var(--primario);
   border-color: var(--primario);
-  color: #fff;
+  color: var(--sobre-primario);
 
   &:hover:not(:disabled) { background: var(--primario); }
 }

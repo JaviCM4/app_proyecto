@@ -1,0 +1,9 @@
+<div class="selector" role="group" aria-label="Tema de la página">
+  @for (o of opciones; track o.valor) {
+    <button type="button" class="opcion" [class.activa]="tema.tema() === o.valor"
+            [attr.aria-pressed]="tema.tema() === o.valor" [attr.title]="'Tema: ' + o.texto"
+            [attr.aria-label]="'Tema ' + o.texto" (click)="tema.elegir(o.valor)">
+      <app-icono [nombre]="o.icono" [tamano]="16" />
+    </button>
+  }
+</div>

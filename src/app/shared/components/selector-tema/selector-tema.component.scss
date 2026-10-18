@@ -1,0 +1,33 @@
+:host { display: inline-flex; }
+
+.selector {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--superficie-alterna);
+}
+
+.opcion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { color: var(--texto); background: var(--primario-suave); }
+  &:focus-visible { outline: 2px solid var(--primario); outline-offset: 1px; }
+
+  &.activa {
+    background: var(--primario);
+    color: var(--sobre-primario);
+  }
+}

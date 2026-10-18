@@ -18,6 +18,10 @@ const ICONOS: Record<string, string> = {
   mapa: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z M9 4v14 M15 6v14',
   pdf: 'M6 3h9l4 4v14H6z M14 3v5h5 M9 14h6 M9 17h4',
   salir: 'M15 4h4v16h-4 M10 8l-4 4 4 4 M6 12h10',
+  sol: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M12 2v2 M12 20v2 M2 12h2 M20 12h2 M4.9 4.9l1.4 1.4 M17.7 17.7l1.4 1.4 M4.9 19.1l1.4-1.4 M17.7 6.3l1.4-1.4',
+  luna: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
+  taza: 'M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z M16 11h1.5a2.5 2.5 0 0 1 0 5H16 M8 3v3 M12 3v3',
+  monitor: 'M3 4h18v12H3z M8 20h8 M12 16v4',
 };
 
 @Component({

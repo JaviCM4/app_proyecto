@@ -6,6 +6,7 @@
     </a>
 
     <nav class="acciones">
+      <app-selector-tema />
       @if (auth.autenticado()) {
         <a routerLink="/panel" class="btn primario">Ir a mi panel</a>
       } @else {

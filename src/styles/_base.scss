@@ -16,6 +16,12 @@ body {
   font-family: var(--fuente);
   font-size: 14px;
   line-height: 1.5;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Mapas (Leaflet): en el tema oscuro los mosaicos se oscurecen para no deslumbrar */
+:root[data-tema='oscuro'] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);
 }
 
 h1,

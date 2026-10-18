@@ -1,8 +1,14 @@
 /*
  * Paleta "verde azulado suave": un color principal tranquilo, fondos claros y estados en tonos pastel.
  * Para cambiar el color del sistema basta con tocar las variables --primario*.
+ *
+ * Temas: el atributo data-tema de <html> (claro, oscuro o calido) lo pone TemaService
+ * (y antes de que cargue Angular, el script de index.html). Cada tema solo redefine colores:
+ * los componentes usan siempre var(--...), nunca colores fijos.
  */
 :root {
+  color-scheme: light;
+
   --fondo: #f3f7f8;
   --superficie: #ffffff;
   --superficie-alterna: #f8fbfb;
@@ -30,6 +36,21 @@
   --info: #3d6fa3;
   --info-suave: #e7eff8;
 
+  --sobre-primario: #ffffff;   /* texto encima de --primario (botones, paginador) */
+  --acento-texto: #a0582a;     /* iniciales del avatar sobre --acento-suave */
+  --aviso-borde: #f0dcae;
+  --total-fondo: #0d1b2a;      /* filas de total en reportes */
+  --total-texto: #ffffff;
+  --velo: rgba(17, 24, 39, 0.45);
+
+  --asiento-libre: #ffffff;
+  --asiento-borde: #cbd5e1;
+  --asiento-ocupado: #e5e7eb;
+  --asiento-ocupado-texto: #9ca3af;
+  --asiento-elegido: #c9f2e2;
+  --asiento-elegido-borde: #2fa67e;
+  --asiento-elegido-texto: #14532d;
+
   --radio: 10px;
   --radio-sm: 7px;
   --sombra: 0 1px 3px rgba(35, 56, 61, 0.06);
@@ -40,4 +61,89 @@
   --barra-alto: 60px;
 
   --fuente: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ---------- Tema oscuro ---------- */
+:root[data-tema='oscuro'] {
+  color-scheme: dark;
+
+  --fondo: #0f1a1d;
+  --superficie: #16252a;
+  --superficie-alterna: #1b2d33;
+  --borde: #263c42;
+  --borde-fuerte: #36525a;
+
+  --texto: #e3eef0;
+  --texto-suave: #a7bcc1;
+  --texto-tenue: #73898e;
+
+  --primario: #5fb0bd;
+  --primario-hover: #7cc4cf;
+  --primario-suave: #1d3a40;
+  --primario-medio: #2b5961;
+
+  --acento: #e8a87c;
+  --acento-suave: #3d2b1f;
+
+  --exito: #6fcf9a;
+  --exito-suave: #183a2a;
+  --peligro: #f08a80;
+  --peligro-suave: #3d1f1c;
+  --aviso: #e6b85c;
+  --aviso-suave: #3a2f17;
+  --info: #8ab4e8;
+  --info-suave: #1b2c42;
+
+  --sombra: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --sombra-modal: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+  --sobre-primario: #0b1d21;
+  --acento-texto: #f0c39f;
+  --aviso-borde: #6b5626;
+  --total-fondo: #2b5961;
+  --total-texto: #e3eef0;
+  --velo: rgba(0, 0, 0, 0.6);
+
+  --asiento-libre: #1b2d33;
+  --asiento-borde: #36525a;
+  --asiento-ocupado: #2a3a3f;
+  --asiento-ocupado-texto: #73898e;
+  --asiento-elegido: #1f4d3f;
+  --asiento-elegido-borde: #4fc89f;
+  --asiento-elegido-texto: #c9f2e2;
+}
+
+/* ---------- Tema cálido (tonos sepia, descansa la vista) ---------- */
+:root[data-tema='calido'] {
+  color-scheme: light;
+
+  --fondo: #f4ecdf;
+  --superficie: #fbf6ee;
+  --superficie-alterna: #f7efe3;
+  --borde: #e6d9c6;
+  --borde-fuerte: #d3c0a5;
+
+  --texto: #3b2f24;
+  --texto-suave: #6d5a47;
+  --texto-tenue: #9c8670;
+
+  --primario: #9a5b2e;
+  --primario-hover: #7f4a24;
+  --primario-suave: #f1e2d0;
+  --primario-medio: #e0c4a3;
+
+  --acento: #c0793f;
+  --acento-suave: #f6e3d1;
+
+  --sombra: 0 1px 3px rgba(59, 47, 36, 0.08);
+  --sombra-modal: 0 16px 40px rgba(59, 47, 36, 0.2);
+
+  --acento-texto: #8a4a1f;
+  --total-fondo: #3b2f24;
+  --total-texto: #fbf6ee;
+
+  --asiento-libre: #fbf6ee;
+  --asiento-borde: #d3c0a5;
+  --asiento-ocupado: #e6d9c6;
+  --asiento-ocupado-texto: #9c8670;
 }
