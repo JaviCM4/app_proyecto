@@ -103,7 +103,7 @@ El menú (`layout/menu-lateral/menu.config.ts`) y las rutas (`app.routes.ts`, `d
 | Usuarios (nuevo administrador del sistema o de sucursal; retirar o trasladar personal) | `/panel/usuarios` | Administrador del sistema |
 | Tarifas de depreciación | `/panel/tarifas` | Administrador del sistema (crea) y de sucursal (consulta) |
 | Reportes (del sistema / por sucursal) + mapa | `/panel/reportes` | Administrador del sistema y de sucursal |
-| Billetera digital | `/panel/cartera` | todas las cuentas (todas tienen el rol Cliente) |
+| Billetera digital (API `/wallet/cartera`, servicio wallet) | `/panel/cartera` | todas las cuentas (todas tienen el rol Cliente) |
 | Mi perfil, Seguridad | `/panel/perfil`, `/panel/seguridad` | todos con sesión |
 
 Todas las cuentas tienen también el rol Cliente (para poder comprar con cartera). Las opciones marcadas con

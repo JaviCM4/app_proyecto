@@ -1,4 +1,4 @@
-/** Cartera digital del cliente (Identity). */
+/** Cartera digital del cliente (wallet-service). */
 export interface Cartera {
   carteraId: string;
   saldo: number;
