@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, input, output } from '@angular/core';
 import * as L from 'leaflet';
+import { agregarCapaBase } from '../../utils/capa-base-mapa';
 
 /** Centro y límites del mapa: Guatemala. */
 const CENTRO_GT: L.LatLngTuple = [15.6, -90.25];
@@ -37,13 +38,7 @@ export class SelectorUbicacionComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.mapa = L.map(this.contenedor.nativeElement, { maxBounds: LIMITES_GT.pad(0.3), minZoom: 6 }).setView(CENTRO_GT, 7);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
-        '&copy; <a href="https://carto.com/attributions">CARTO</a>',
-    }).addTo(this.mapa);
+    agregarCapaBase(this.mapa);
     this.mapa.on('click', (e: L.LeafletMouseEvent) => this.elegir(e.latlng));
     this.colocar(this.latitud(), this.longitud(), true);
 
