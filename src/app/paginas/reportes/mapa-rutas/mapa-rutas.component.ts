@@ -2,34 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, ElementRef, OnDestroy, ViewChild, effect, input } from '@angular/core';
 import * as L from 'leaflet';
 import { MapaRutas } from '../../../core/models/reporte.model';
-
-/** Capa base de teselas sin API key. */
-interface CapaBase {
-  url: string;
-  attribution: string;
-  maxZoom: number;
-  subdominios?: string;
-}
-
-/**
- * Fuentes de teselas en orden de preferencia.
- * OSM se intenta primero (se ve mejor en local), pero su servidor bloquea
- * peticiones desde proveedores de nube como Azure (403 "Access blocked",
- * "not following the tile usage policy"), así que se cae a Esri si falla.
- */
-const CAPAS_BASE: CapaBase[] = [
-  {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    subdominios: 'abc',
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  },
-  {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    maxZoom: 19,
-    attribution: 'Teselas &copy; Esri &mdash; Esri, HERE, Garmin, OpenStreetMap contributors',
-  },
-];
+import { agregarCapaBase } from '../../../shared/utils/capa-base-mapa';
 
 /**
  * Mapa con las sucursales (puntos) y las rutas (líneas origen → destino).
@@ -61,29 +34,6 @@ export class MapaRutasComponent implements OnDestroy {
     return this.datos()?.sucursales.find((s) => s.sucursalId === id)?.nombre ?? '—';
   }
 
-  /**
-   * Agrega la capa base de teselas. Si una fuente no carga (por ejemplo, OSM
-   * bloquea la IP del despliegue en la nube), intenta con la siguiente.
-   */
-  private agregarCapaBase(mapa: L.Map, indice = 0): void {
-    const def = CAPAS_BASE[indice];
-    if (!def) return;
-    const capa = L.tileLayer(def.url, {
-      subdomains: def.subdominios ?? 'abc',
-      maxZoom: def.maxZoom,
-      attribution: def.attribution,
-      referrerPolicy: 'strict-origin-when-cross-origin',
-    });
-    let errores = 0;
-    capa.on('tileerror', () => {
-      if (++errores < 3) return;
-      capa.off();
-      mapa.removeLayer(capa);
-      this.agregarCapaBase(mapa, indice + 1);
-    });
-    capa.addTo(mapa);
-  }
-
   private dibujar(datos: MapaRutas | null, resaltar: string): void {
     this.mapa?.remove();
     this.mapa = undefined;
@@ -97,7 +47,7 @@ export class MapaRutasComponent implements OnDestroy {
     }
 
     const mapa = L.map(this.contenedor.nativeElement).setView([15.5, -90.3], 7);
-    this.agregarCapaBase(mapa);
+    agregarCapaBase(mapa);
 
     for (const r of datos.rutas) {
       const a = puntos.get(r.sucursalOrigenId);
