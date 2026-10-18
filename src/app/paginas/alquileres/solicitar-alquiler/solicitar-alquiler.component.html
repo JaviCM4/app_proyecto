@@ -1,0 +1,160 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Solicitar alquiler</h1>
+    <p>
+      Pide un bus completo para tu recorrido. Un administrador de sucursal revisa la solicitud y
+      confirma el precio antes de que la pagues.
+    </p>
+  </div>
+</div>
+
+<div class="tarjeta">
+  <form [formGroup]="form" (ngSubmit)="solicitar()">
+    <div class="formulario-grilla">
+      <div class="formulario-seccion">Sucursal</div>
+
+      @if (esCajero) {
+        <div class="campo completo">
+          <label>Sucursal</label>
+          <input class="control" [value]="sucursalFija()?.nombre ?? 'Tu sucursal'" disabled />
+          <span class="ayuda">Los alquileres de ventanilla se registran en tu propia sucursal.</span>
+        </div>
+      } @else {
+        <div class="campo completo">
+          <label for="sucursal">Sucursal que te atenderá</label>
+          <select id="sucursal" class="control" formControlName="sucursalId">
+            <option value="">Elige la sucursal…</option>
+            @for (s of sucursales(); track s.sucursalId) {
+              <option [value]="s.sucursalId">{{ s.nombre }} · {{ s.municipio }}</option>
+            }
+          </select>
+          @if (form.controls.sucursalId.touched && form.controls.sucursalId.invalid) {
+            <span class="error">Elige una sucursal.</span>
+          }
+        </div>
+      }
+
+      <div class="formulario-seccion">Datos del cliente</div>
+
+      @if (esCajero) {
+        <div class="campo">
+          <label for="nit">NIT del cliente</label>
+          <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF" />
+          <span class="ayuda">Déjalo vacío para consumidor final (CF).</span>
+        </div>
+      }
+
+      <div class="campo" [class.completo]="!esCajero">
+        <label for="nombre">Nombre del cliente</label>
+        <input id="nombre" class="control" formControlName="clienteNombre" maxlength="150" placeholder="Nombre completo" />
+        @if (form.controls.clienteNombre.touched && form.controls.clienteNombre.invalid) {
+          <span class="error">Escribe el nombre del cliente.</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="correo">Correo (opcional)</label>
+        <input id="correo" type="email" class="control" formControlName="clienteCorreo" maxlength="150"
+               placeholder="Para avisarle de la cotización" />
+        @if (form.controls.clienteCorreo.touched && form.controls.clienteCorreo.invalid) {
+          <span class="error">Escribe un correo válido.</span>
+        }
+      </div>
+
+      <div class="formulario-seccion">Recorrido</div>
+
+      <div class="campo">
+        <label for="origen">Origen</label>
+        <input id="origen" class="control" formControlName="origen" maxlength="255" placeholder="De dónde sale" />
+        @if (form.controls.origen.touched && form.controls.origen.invalid) {
+          <span class="error">Escribe el origen.</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="destino">Destino</label>
+        <input id="destino" class="control" formControlName="destino" maxlength="255" placeholder="A dónde va" />
+        @if (form.controls.destino.touched && form.controls.destino.invalid) {
+          <span class="error">Escribe el destino.</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="salida">Salida</label>
+        <input id="salida" type="datetime-local" class="control" formControlName="fechaSalida" />
+        @if (form.controls.fechaSalida.touched && form.controls.fechaSalida.invalid) {
+          <span class="error">Indica la fecha y hora de salida.</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="retorno">Retorno (opcional)</label>
+        <input id="retorno" type="datetime-local" class="control" formControlName="fechaRetorno" />
+        <span class="ayuda">Déjalo vacío si el viaje es solo de ida.</span>
+        @if (form.controls.fechaRetorno.errors?.['retornoInvalido']) {
+          <span class="error">El retorno no puede ser antes de la salida.</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="pasajeros">Cantidad de pasajeros</label>
+        <input id="pasajeros" type="number" min="1" max="120" class="control" formControlName="cantidadPasajeros" />
+        @if (form.controls.cantidadPasajeros.touched && form.controls.cantidadPasajeros.invalid) {
+          <span class="error">Entre 1 y 120 pasajeros.</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="km">Kilómetros estimados</label>
+        <input id="km" type="number" min="0.01" step="0.01" class="control" formControlName="kmEstimados" />
+        <span class="ayuda">Con esto se calcula el precio estimado del alquiler.</span>
+        @if (form.controls.kmEstimados.touched && form.controls.kmEstimados.invalid) {
+          <span class="error">Escribe los kilómetros estimados.</span>
+        }
+      </div>
+
+      <div class="campo completo">
+        <label for="fechaSolicitud">Fecha de la solicitud</label>
+        <input id="fechaSolicitud" type="date" class="control" [min]="hoy" formControlName="fechaSolicitud" />
+        <span class="ayuda">Con esta fecha se fija el precio por kilómetro vigente.</span>
+      </div>
+    </div>
+
+    <div class="acciones-form">
+      <button type="submit" class="btn primario" [disabled]="enviando()">
+        {{ enviando() ? 'Enviando…' : 'Enviar solicitud' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+<app-modal [abierto]="creado() !== null" titulo="Solicitud enviada"
+           ancho="chico" (cerrar)="solicitarOtro()">
+  @if (creado(); as a) {
+    <p class="ok">Tu solicitud de alquiler quedó registrada.</p>
+    <div class="datos-lista">
+      <div><dt>Recorrido</dt><dd>{{ a.origen }} → {{ a.destino }}</dd></div>
+      <div><dt>Salida</dt><dd>{{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+      <div><dt>Pasajeros</dt><dd>{{ a.cantidadPasajeros }}</dd></div>
+      <div><dt>Kilómetros</dt><dd>{{ a.kmEstimados }} km</dd></div>
+      @if (tarifa(a); as t) {
+        <div><dt>Precio por km</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
+      }
+      <div class="completo"><dt>Precio estimado</dt><dd>{{ a.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
+    </div>
+    <p class="secundario">
+      Estado: <span class="insignia aviso">Solicitado</span>. Un administrador revisará la solicitud y confirmará el precio.
+      @if (!esCajero) {
+        Cuando esté cotizada podrás pagarla desde <strong>Mis alquileres</strong>.
+      }
+    </p>
+  }
+  <div pie>
+    <button type="button" class="btn" (click)="solicitarOtro()">Solicitar otro</button>
+    @if (esCajero) {
+      <a class="btn primario" routerLink="/panel/alquileres" (click)="creado.set(null)">Ver alquileres</a>
+    } @else {
+      <a class="btn primario" routerLink="/panel/mis-alquileres" (click)="creado.set(null)">Mis alquileres</a>
+    }
+  </div>
+</app-modal>

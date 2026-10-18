@@ -1,0 +1,136 @@
+.rejilla-alquileres {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.alquiler {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.alquiler-encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  .alquiler-ruta {
+    display: block;
+    font-size: 15px;
+  }
+
+  .secundario {
+    display: block;
+    font-size: 12px;
+    color: var(--texto-suave);
+    margin-top: 2px;
+  }
+
+  .insignia {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+.alquiler-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  background: var(--superficie-alterna);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+
+  dt {
+    font-size: 12px;
+    color: var(--texto-suave);
+  }
+
+  dd {
+    margin: 2px 0 0;
+    font-weight: 500;
+    font-size: 13px;
+  }
+}
+
+.alquiler-precio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  .etiqueta-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .etiqueta {
+    font-size: 12px;
+    color: var(--texto-suave);
+  }
+
+  .tarifa {
+    font-size: 11px;
+    color: var(--texto-suave);
+  }
+
+  strong {
+    font-size: 16px;
+    color: var(--primario-hover);
+  }
+}
+
+.alquiler-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.alquiler-viaje {
+  margin: 0;
+  font-size: 13px;
+
+  .secundario {
+    color: var(--texto-suave);
+  }
+}
+
+.detalle-subtitulo {
+  margin: 18px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.detalle-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--borde);
+
+  .detalle-ruta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 600;
+
+    .flecha { color: var(--primario); }
+  }
+
+  .insignia {
+    flex: none;
+    white-space: nowrap;
+  }
+}

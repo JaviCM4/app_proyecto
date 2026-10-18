@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { Bus } from '../../core/models/bus.model';
 import { FilaReporte, MapaRutas } from '../../core/models/reporte.model';
 import { Sucursal } from '../../core/models/sucursal.model';
+import { Categoria } from '../../core/models/taller.model';
 import { Ruta } from '../../core/models/viaje.model';
 import { AuthService } from '../../core/services/auth.service';
 import { BusesService } from '../../core/services/buses.service';
 import { ReportesService } from '../../core/services/reportes.service';
 import { SucursalesService } from '../../core/services/sucursales.service';
+import { TallerService } from '../../core/services/taller.service';
 import { ViajesService } from '../../core/services/viajes.service';
 import { mensajeError } from '../../core/utils/errores-http';
 import { PaginadorComponent } from '../../shared/components/paginador/paginador.component';
@@ -23,8 +25,16 @@ interface Filtros {
   sucursalId: string;
   busId: string;
   rutaId: string;
+  categoriaId: string;
   estado: string;
   limite: number;
+}
+
+/** Sección de una tabla agrupada (por categoría o por bus). */
+interface Grupo {
+  clave: string;
+  filas: FilaReporte[];
+  subtotal: number;
 }
 
 /**
@@ -45,6 +55,7 @@ export class ReportesComponent implements OnInit {
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly busesServicio = inject(BusesService);
   private readonly viajesServicio = inject(ViajesService);
+  private readonly tallerServicio = inject(TallerService);
   private readonly avisos = inject(ToastService);
   private readonly locale = inject(LOCALE_ID);
   private readonly auth = inject(AuthService);
@@ -59,9 +70,10 @@ export class ReportesComponent implements OnInit {
 
   readonly sucursales = signal<Sucursal[]>([]);
   readonly buses = signal<Bus[]>([]);
+  readonly categorias = signal<Categoria[]>([]);
   private readonly rutas = signal<Ruta[]>([]);
 
-  filtros: Filtros = { desde: '', hasta: '', sucursalId: '', busId: '', rutaId: '', estado: '', limite: 10 };
+  filtros: Filtros = { desde: '', hasta: '', sucursalId: '', busId: '', rutaId: '', categoriaId: '', estado: '', limite: 10 };
 
   readonly filas = signal<FilaReporte[]>([]);
   readonly mapa = signal<MapaRutas | null>(null);
@@ -86,9 +98,50 @@ export class ReportesComponent implements OnInit {
     return total;
   });
 
+  /** true = la tabla se muestra en secciones (por categoría o por bus) con subtotales. */
+  readonly agrupado = computed(() => !!this.reporte()?.agrupar);
+
+  /** Secciones de la tabla agrupada: los valores distintos de la clave de agrupación. */
+  readonly grupos = computed<Grupo[]>(() => {
+    const ag = this.reporte()?.agrupar;
+    if (!ag) return [];
+    const mapa = new Map<string, FilaReporte[]>();
+    for (const fila of this.filas()) {
+      const clave = String(fila[ag.por] ?? '—');
+      const existente = mapa.get(clave);
+      if (existente) existente.push(fila);
+      else mapa.set(clave, [fila]);
+    }
+    return [...mapa.entries()].map(([clave, filas]) => ({
+      clave,
+      filas,
+      subtotal: filas.reduce((a, f) => a + Number(f[ag.subtotal] ?? 0), 0),
+    }));
+  });
+
+  /** Columnas que se muestran dentro de cada sección (sin la columna de agrupación). */
+  readonly columnasGrupo = computed<Columna[]>(() => {
+    const r = this.reporte();
+    if (!r) return [];
+    const por = r.agrupar?.por;
+    return por ? r.columnas.filter((c) => c.clave !== por) : r.columnas;
+  });
+
+  /** Suma del gran total de la tabla agrupada. */
+  readonly totalGeneral = computed(() => {
+    const clave = this.reporte()?.agrupar?.subtotal;
+    if (!clave) return 0;
+    return this.filas().reduce((a, f) => a + Number(f[clave] ?? 0), 0);
+  });
+
   ngOnInit(): void {
     this.sucursalesServicio.listar().subscribe({ next: (s) => this.sucursales.set(s) });
     this.viajesServicio.rutas(false).subscribe({ next: (r) => this.rutas.set(r) });
+    // Categorías de taller por si el reporte activo filtra por categoría (ADMIN_SISTEMA/ADMIN_SUCURSAL).
+    this.tallerServicio.categorias().subscribe({
+      next: (c) => this.categorias.set(c),
+      error: () => this.categorias.set([]),
+    });
     if (!this.esSistema && !this.sucursalPropia) {
       this.avisos.error('Tu cuenta no tiene una sucursal asignada.');
     }
@@ -121,7 +174,7 @@ export class ReportesComponent implements OnInit {
 
   elegir(codigo: string): void {
     this.codigo.set(codigo);
-    this.filtros = { ...this.filtros, busId: '', rutaId: '', estado: '' };
+    this.filtros = { ...this.filtros, busId: '', rutaId: '', categoriaId: '', estado: '' };
     this.filas.set([]);
     this.mapa.set(null);
     this.consultado.set(false);
@@ -130,7 +183,7 @@ export class ReportesComponent implements OnInit {
 
   ver(): void {
     const r = this.reporte();
-    if (!r || !this.listo()) return;
+    if (!r || !this.listo() || !this.rangoFechasValido()) return;
     this.cargando.set(true);
     this.servicio.datos<unknown>(r.ruta(this.sucursalReporte()), this.parametros(r)).subscribe({
       next: (json) => {
@@ -149,7 +202,7 @@ export class ReportesComponent implements OnInit {
 
   descargar(): void {
     const r = this.reporte();
-    if (!r || !this.listo()) return;
+    if (!r || !this.listo() || !this.rangoFechasValido()) return;
     this.cargando.set(true);
     this.servicio.pdf(r.ruta(this.sucursalReporte()), this.parametros(r), `${r.codigo}.pdf`).subscribe({
       next: (pdf) => {
@@ -164,7 +217,7 @@ export class ReportesComponent implements OnInit {
   }
 
   limpiar(): void {
-    this.filtros = { desde: '', hasta: '', sucursalId: '', busId: '', rutaId: '', estado: '', limite: 10 };
+    this.filtros = { desde: '', hasta: '', sucursalId: '', busId: '', rutaId: '', categoriaId: '', estado: '', limite: 10 };
     this.cargarBuses();
     this.ver();
   }
@@ -195,6 +248,11 @@ export class ReportesComponent implements OnInit {
     return columna.formato === 'dinero' && Number(fila[columna.clave]) < 0;
   }
 
+  /** Monto en quetzales (subtotales y total general de las tablas agrupadas). */
+  textoMonto(monto: number): string {
+    return formatCurrency(monto, this.locale, 'Q', 'GTQ', '1.2-2');
+  }
+
   private listo(): boolean {
     if (this.reporte()?.ambito === 'sucursal' && !this.sucursalReporte()) {
       if (this.esSistema) return false; // falta elegir la sucursal
@@ -211,9 +269,20 @@ export class ReportesComponent implements OnInit {
     if (r.filtros.includes('sucursal')) p['sucursalId'] = f.sucursalId;
     if (r.filtros.includes('bus')) p['busId'] = f.busId;
     if (r.filtros.includes('ruta')) p['rutaId'] = f.rutaId;
+    if (r.filtros.includes('categoria')) p['categoriaId'] = f.categoriaId;
     if (r.filtros.includes('estadoBus') || r.filtros.includes('estadoChofer')) p['estado'] = f.estado;
     if (r.filtros.includes('limite')) p['limite'] = f.limite;
     return p;
+  }
+
+  /** El rango de fechas debe ser coherente (desde ≤ hasta) antes de pedir el reporte. */
+  private rangoFechasValido(): boolean {
+    const { desde, hasta } = this.filtros;
+    if (this.usa('fechas') && desde && hasta && desde > hasta) {
+      this.avisos.error('La fecha inicial no puede ser posterior a la fecha final.');
+      return false;
+    }
+    return true;
   }
 
   private cargarBuses(): void {

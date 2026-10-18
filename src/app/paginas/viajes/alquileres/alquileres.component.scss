@@ -1,1 +1,36 @@
 /* Estilos propios de la página de alquileres (los generales viven en styles.scss). */
+
+.detalle-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--borde);
+
+  .detalle-ruta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 600;
+
+    .flecha { color: var(--primario); }
+  }
+
+  .insignia {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+.detalle-subtitulo {
+  margin: 18px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}

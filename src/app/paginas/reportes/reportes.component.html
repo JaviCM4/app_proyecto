@@ -76,6 +76,17 @@
           </select>
         </div>
       }
+      @if (usa('categoria')) {
+        <div class="campo">
+          <label for="categoria">Categoría</label>
+          <select id="categoria" class="control" [(ngModel)]="filtros.categoriaId">
+            <option value="">Todas</option>
+            @for (c of categorias(); track c.categoriaId) {
+              <option [value]="c.categoriaId">{{ c.nombre }}</option>
+            }
+          </select>
+        </div>
+      }
       @if (usa('estadoBus')) {
         <div class="campo">
           <label for="estado-bus">Estado</label>
@@ -125,6 +136,58 @@
     } @else {
       <div class="tarjeta tabla-vacia">{{ cargando() ? 'Cargando mapa…' : 'Sin datos.' }}</div>
     }
+  } @else if (agrupado()) {
+    <div class="tabla-agrupada">
+      @for (grupo of grupos(); track grupo.clave) {
+        <div class="grupo">
+          <h3 class="grupo-titulo">{{ r.agrupar?.etiqueta }}: {{ grupo.clave }}</h3>
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  @for (c of columnasGrupo(); track c.clave) {
+                    <th [class.numero]="c.formato === 'dinero' || c.formato === 'numero'">{{ c.etiqueta }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of grupo.filas; track $index) {
+                  <tr>
+                    @for (c of columnasGrupo(); track c.clave) {
+                      <td [class.numero]="c.formato === 'dinero' || c.formato === 'numero'" [class.negativo]="esNegativo(fila, c)">
+                        {{ valor(fila, c) }}
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="fila-subtotal">
+                  @for (c of columnasGrupo(); track c.clave; let primero = $first) {
+                    <td [class.numero]="c.formato === 'dinero' || c.formato === 'numero'">
+                      @if (primero) {
+                        Subtotal
+                      } @else if (c.clave === r.agrupar?.subtotal) {
+                        {{ textoMonto(grupo.subtotal) }}
+                      }
+                    </td>
+                  }
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      } @empty {
+        <div class="tarjeta tabla-vacia">{{ cargando() ? 'Cargando…' : consultado() ? 'No hay datos con esos filtros.' : '' }}</div>
+      }
+
+      @if (grupos().length) {
+        <div class="total-general">
+          <span>Total general</span>
+          <strong>{{ textoMonto(totalGeneral()) }}</strong>
+        </div>
+      }
+    </div>
   } @else {
     <div class="tabla-contenedor">
       <table class="tabla">
@@ -154,7 +217,7 @@
         </tbody>
         @if (totales(); as t) {
           <tfoot>
-            <tr>
+            <tr class="fila-total">
               @for (c of r.columnas; track c.clave; let primero = $first) {
                 <td [class.numero]="c.formato === 'dinero' || c.formato === 'numero'">
                   {{ t[c.clave] !== undefined ? valor(t, c) : primero ? 'Total' : '' }}

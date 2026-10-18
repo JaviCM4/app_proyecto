@@ -7,6 +7,11 @@ export function hoyGt(diasExtra = 0): string {
   return ahora.toISOString().slice(0, 10);
 }
 
+/** Fecha y hora actual de Guatemala como datetime-local (yyyy-MM-ddTHH:mm). */
+export function ahoraGt(): string {
+  return new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 16);
+}
+
 /**
  * Convierte un datetime-local ("2026-10-25T06:00") al OffsetDateTime que espera
  * Trips ("2026-10-25T06:00:00-06:00", hora de Guatemala).

@@ -34,6 +34,7 @@ export const MENU: GrupoMenu[] = [
       { texto: 'Sucursales', ruta: '/panel/sucursales', icono: 'sucursal', roles: ['ADMIN_SISTEMA'] },
       { texto: 'Usuarios', ruta: '/panel/usuarios', icono: 'usuarios', roles: ['ADMIN_SISTEMA'] },
       { texto: 'Tarifas de depreciación', ruta: '/panel/tarifas', icono: 'tarifa', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+      { texto: 'Precio de alquiler', ruta: '/panel/precio-alquiler', icono: 'tarifa', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
     ],
   },
   {
@@ -44,6 +45,7 @@ export const MENU: GrupoMenu[] = [
       { texto: 'Personal', ruta: '/panel/personal', icono: 'usuarios', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
       { texto: 'Rutas', ruta: '/panel/rutas', icono: 'ruta', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
       { texto: 'Viajes', ruta: '/panel/viajes', icono: 'boleto', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+      { texto: 'Mis viajes', ruta: '/panel/mis-viajes', icono: 'boleto', roles: ['CHOFER'] },
       { texto: 'Alquileres', ruta: '/panel/alquileres', icono: 'taller', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL', 'CAJERO'] },
     ],
   },
@@ -66,12 +68,15 @@ export const MENU: GrupoMenu[] = [
       { texto: 'Billetera digital', ruta: '/panel/cartera', icono: 'cartera', roles: ['CLIENTE'] },
       { texto: 'Comprar boletos', ruta: '/panel/comprar', icono: 'boleto', roles: ['CLIENTE'], soloCliente: true },
       { texto: 'Mis compras', ruta: '/panel/mis-compras', icono: 'boleto', roles: ['CLIENTE'], soloCliente: true },
+      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CLIENTE'], soloCliente: true },
+      { texto: 'Mis alquileres', ruta: '/panel/mis-alquileres', icono: 'taller', roles: ['CLIENTE'], soloCliente: true },
     ],
   },
   {
     titulo: 'Ventanilla',
     opciones: [
       { texto: 'Vender boletos', ruta: '/panel/mostrador', icono: 'boleto', roles: ['CAJERO', 'ADMIN_SUCURSAL'] },
+      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CAJERO'] },
       { texto: 'Ventas', ruta: '/panel/ventas', icono: 'reporte', roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
       { texto: 'Órdenes de alquiler', ruta: '/panel/ordenes', icono: 'tarifa', roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
     ],

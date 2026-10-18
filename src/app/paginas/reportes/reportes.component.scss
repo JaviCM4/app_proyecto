@@ -18,3 +18,41 @@
 }
 
 .negativo { color: var(--peligro); }
+
+.tabla-agrupada {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.grupo-titulo {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto, #0d1b2a);
+}
+
+.total-general {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #0d1b2a;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+/* Subtotal de cada sección: tono intermedio entre las filas normales y el total final. */
+.tabla tfoot tr.fila-subtotal td {
+  background: var(--primario-medio, #b9dbe0);
+  color: #0d1b2a;
+  border-top: 1px solid var(--primario, #3a7f8c);
+}
+
+/* Fila de total final de un reporte: el mismo color del "Total general". */
+.tabla tfoot tr.fila-total td {
+  background: #0d1b2a;
+  color: #ffffff;
+  border-top: 1px solid #0d1b2a;
+}
