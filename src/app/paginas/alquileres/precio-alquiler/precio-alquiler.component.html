@@ -1,0 +1,88 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Precio de alquiler</h1>
+    <p>Precio por kilómetro con el que se cotizan los alquileres privados de bus.</p>
+  </div>
+  @if (puedeCrear) {
+    <button type="button" class="btn primario" (click)="abrirNuevo()">+ Nuevo precio</button>
+  }
+</div>
+
+<div class="tarjeta vigente" [class.vacio]="!vigente()">
+  @if (vigente(); as p) {
+    <span>Precio vigente hoy</span>
+    <strong>{{ p.precioPorKm | currency: 'GTQ' : 'symbol-narrow' : '1.2-2' }} por km</strong>
+    <small>Desde el {{ p.vigenteDesde | date: "d 'de' MMMM 'de' y" : 'UTC' }}</small>
+  } @else {
+    <span>No hay un precio de alquiler vigente.</span>
+    <strong>Sin precio no se pueden crear solicitudes de alquiler.</strong>
+    @if (puedeCrear) {
+      <small>Registra uno con fecha de hoy (o anterior) para habilitar las solicitudes.</small>
+    } @else {
+      <small>Pídele al administrador del sistema que registre uno.</small>
+    }
+  }
+</div>
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Vigente desde</th>
+        <th class="numero">Precio por km</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (p of paginaActual().elementos; track p.configuracionId) {
+        <tr>
+          <td>{{ p.vigenteDesde | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+          <td class="numero">{{ p.precioPorKm | currency: 'GTQ' : 'symbol-narrow' : '1.2-2' }}</td>
+          <td class="acciones">
+            @if (p.configuracionId === vigente()?.configuracionId) {
+              <span class="insignia exito">En uso</span>
+            } @else if (p.vigenteDesde > (vigente()?.vigenteDesde ?? '')) {
+              <span class="insignia info">Programado</span>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="3" class="tabla-vacia">
+            {{ cargando() ? 'Cargando precios…' : 'No hay precios registrados.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador [pagina]="paginaActual().pagina" [tamano]="tamano()" [total]="paginaActual().total"
+               (cambioPagina)="pagina.set($event)" (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+@if (puedeCrear) {
+  <app-modal [abierto]="creando()" titulo="Nuevo precio de alquiler" ancho="chico" (cerrar)="creando.set(false)"
+             subtitulo="Se aplica a las solicitudes hechas desde la fecha indicada.">
+    <form id="form-precio" [formGroup]="form" (ngSubmit)="crear()" class="formulario">
+      <div class="campo">
+        <label for="precio">Precio por km (Q)</label>
+        <input id="precio" type="number" min="0.01" step="0.01" class="control" formControlName="precioPorKm"
+               [class.invalido]="form.controls.precioPorKm.touched && form.controls.precioPorKm.invalid" />
+        @if (form.controls.precioPorKm.touched && form.controls.precioPorKm.invalid) {
+          <span class="error">Escribe un precio mayor que cero.</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="desde">Vigente desde</label>
+        <input id="desde" type="date" class="control" formControlName="vigenteDesde" />
+        <span class="ayuda">Usa una fecha de hoy o anterior para que aplique de inmediato.</span>
+      </div>
+    </form>
+    <div pie>
+      <button type="button" class="btn" (click)="creando.set(false)">Cancelar</button>
+      <button type="submit" form="form-precio" class="btn primario" [disabled]="enviando()">
+        {{ enviando() ? 'Guardando…' : 'Guardar precio' }}
+      </button>
+    </div>
+  </app-modal>
+}

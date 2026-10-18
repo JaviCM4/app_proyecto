@@ -1,10 +1,11 @@
-import { DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Bus } from '../../../core/models/bus.model';
+import { catchError, forkJoin, of } from 'rxjs';
+import { Bus, BusDetalle } from '../../../core/models/bus.model';
 import { Chofer } from '../../../core/models/chofer.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
-import { Alquiler, EstadoAlquiler } from '../../../core/models/viaje.model';
+import { Alquiler, EstadoAlquiler, EstadoViaje } from '../../../core/models/viaje.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { BusesService } from '../../../core/services/buses.service';
@@ -23,7 +24,7 @@ const ESTADOS: EstadoAlquiler[] = ['SOLICITADO', 'COTIZADO', 'PAGADO', 'ASIGNADO
 @Component({
   selector: 'app-alquileres',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, ModalComponent, PaginadorComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent],
   templateUrl: './alquileres.component.html',
   styleUrl: './alquileres.component.scss',
 })
@@ -53,6 +54,9 @@ export class AlquileresComponent implements OnInit {
   readonly tamano = signal(10);
 
   readonly enDetalle = signal<Alquiler | null>(null);
+  /** Bus y chofer del viaje asignado, con marca/modelo/licencia (si el rol puede consultarlos). */
+  readonly busAsignado = signal<BusDetalle | null>(null);
+  readonly choferAsignado = signal<Chofer | null>(null);
   readonly porCotizar = signal<Alquiler | null>(null);
   readonly porAsignar = signal<Alquiler | null>(null);
   readonly porCancelar = signal<Alquiler | null>(null);
@@ -121,10 +125,50 @@ export class AlquileresComponent implements OnInit {
 
   verDetalle(a: Alquiler): void {
     this.enDetalle.set(a);
+    this.busAsignado.set(null);
+    this.choferAsignado.set(null);
+    if (!a.viaje) return;
+    // El viaje ya trae placa, chofer y fechas; se completa con marca/modelo y licencia si el rol los puede ver.
+    forkJoin({
+      bus: this.busesServicio.detalle(a.viaje.busId).pipe(catchError(() => of(null))),
+      chofer: this.choferesServicio.detalle(a.viaje.choferId).pipe(catchError(() => of(null))),
+    }).subscribe(({ bus, chofer }) => {
+      this.busAsignado.set(bus);
+      this.choferAsignado.set(chofer);
+    });
+  }
+
+  cerrarDetalle(): void {
+    this.enDetalle.set(null);
+    this.busAsignado.set(null);
+    this.choferAsignado.set(null);
+  }
+
+  /** Estado del viaje privado asignado. */
+  viajeTexto(e: EstadoViaje): string {
+    return e.charAt(0) + e.slice(1).replace('_', ' ').toLowerCase();
+  }
+
+  /** Bus del viaje: placa, marca, modelo y año (lo que se pudo consultar en Flota). */
+  busTexto(a: Alquiler): string {
+    const bus = this.busAsignado();
+    if (bus) return `${bus.placa} · ${bus.marca} ${bus.modelo} (${bus.anioFabricacion})`;
+    return a.viaje?.busPlaca ?? 'Por confirmar';
+  }
+
+  /** Chofer del viaje: nombre completo (lo que se pudo consultar en Flota). */
+  choferTexto(a: Alquiler): string {
+    return this.choferAsignado()?.nombreCompleto ?? a.viaje?.choferNombre ?? 'Por confirmar';
   }
 
   estadoTexto(e: EstadoAlquiler): string {
     return e.charAt(0) + e.slice(1).toLowerCase();
+  }
+
+  /** Tarifa por km aplicada al estimado (precioEstimado ÷ kmEstimados); explica de dónde sale el precio. */
+  tarifa(a: Alquiler): number | null {
+    if (!a.kmEstimados) return null;
+    return Math.round((a.precioEstimado / a.kmEstimados) * 100) / 100;
   }
 
   abrirCotizar(a: Alquiler): void {

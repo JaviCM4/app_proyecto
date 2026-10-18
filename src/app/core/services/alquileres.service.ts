@@ -10,15 +10,26 @@ import {
   CotizarAlquiler,
   FiltroAlquileres,
   NuevaConfigAlquiler,
+  NuevoAlquiler,
   ViajeDetalle,
 } from '../models/viaje.model';
 
-/** Alquileres de buses (Trips): cotizar y asignar es del administrador de sucursal. */
+/** Alquileres de buses (Trips): cualquier cliente los solicita; cotizar y asignar es del administrador. */
 @Injectable({ providedIn: 'root' })
 export class AlquileresService {
   private readonly http = inject(HttpClient);
   private readonly url = `${environment.apiUrl}/trips/alquileres`;
   private readonly config = `${environment.apiUrl}/trips/configuracion-alquiler`;
+
+  /** Solicita un alquiler (CLIENTE en línea; CAJERO en mostrador). */
+  solicitar(datos: NuevoAlquiler): Observable<Alquiler> {
+    return this.http.post<Alquiler>(this.url, datos);
+  }
+
+  /** Alquileres del cliente del token. */
+  mios(): Observable<Alquiler[]> {
+    return this.http.get<Alquiler[]>(`${this.url}/mios`);
+  }
 
   listar(filtro: FiltroAlquileres = {}): Observable<Alquiler[]> {
     let params = new HttpParams();
@@ -49,5 +60,10 @@ export class AlquileresService {
   /** Historial del precio por km (el vigente es el último). */
   historialPrecio(): Observable<ConfigAlquiler[]> {
     return this.http.get<ConfigAlquiler[]>(this.config);
+  }
+
+  /** Registra un precio por km desde una fecha (solo el administrador del sistema). */
+  registrarPrecio(datos: NuevaConfigAlquiler): Observable<ConfigAlquiler> {
+    return this.http.post<ConfigAlquiler>(this.config, datos);
   }
 }
