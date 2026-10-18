@@ -15,9 +15,15 @@
 
 .enlace-viajes { color: var(--texto-suave); }
 
+.derecha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
 .usuario {
   position: relative;
-  margin-left: auto;
 }
 
 .quien { height: 44px; gap: 10px; }

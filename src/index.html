@@ -6,6 +6,16 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    /* Tema guardado (TemaService) aplicado antes de pintar, para no parpadear en claro. */
+    (function () {
+      var t = 'claro';
+      try { t = localStorage.getItem('tema') || 'claro'; } catch (e) {}
+      if (t === 'sistema') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+      if (t !== 'oscuro' && t !== 'calido') t = 'claro';
+      document.documentElement.setAttribute('data-tema', t);
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

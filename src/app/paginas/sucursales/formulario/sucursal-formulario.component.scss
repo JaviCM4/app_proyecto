@@ -50,7 +50,7 @@
   }
 
   .actual button { color: var(--texto); font-weight: 600; }
-  .actual .numero { background: var(--primario); border-color: var(--primario); color: #fff; }
+  .actual .numero { background: var(--primario); border-color: var(--primario); color: var(--sobre-primario); }
   .hecho .numero { background: var(--primario-suave); border-color: var(--primario-medio); color: var(--primario-hover); }
 
   @media (max-width: 640px) {

@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { AvatarComponent } from '../../shared/components/avatar/avatar.component';
 import { IconoComponent } from '../../shared/components/icono/icono.component';
+import { SelectorTemaComponent } from '../../shared/components/selector-tema/selector-tema.component';
 import { RolTextoPipe } from '../../shared/pipes/rol-texto.pipe';
 import { LayoutService } from '../layout.service';
 import { MENU, puedeVer } from '../menu-lateral/menu.config';
@@ -10,7 +11,7 @@ import { MENU, puedeVer } from '../menu-lateral/menu.config';
 @Component({
   selector: 'app-barra-superior',
   standalone: true,
-  imports: [RouterLink, AvatarComponent, IconoComponent, RolTextoPipe],
+  imports: [RouterLink, AvatarComponent, IconoComponent, RolTextoPipe, SelectorTemaComponent],
   templateUrl: './barra-superior.component.html',
   styleUrl: './barra-superior.component.scss',
 })

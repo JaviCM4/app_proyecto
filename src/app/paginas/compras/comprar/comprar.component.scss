@@ -6,9 +6,9 @@
   margin: 12px 0;
 }
 
-.aviso-info { color: #555; }
+.aviso-info { color: var(--texto-suave); }
 .aviso-exito { color: green; font-weight: bold; }
-.aviso-error { color: #b00020; }
+.aviso-error { color: var(--peligro); }
 
 .acciones-modal {
   display: flex;

@@ -154,3 +154,16 @@ Servicios: `core/services/ventas.service.ts` y `core/services/ordenes-alquiler.s
 Las compras en linea y los pagos con cartera son asincronos: el POST devuelve 202
 pendiente y el front consulta cada 2 s con `seguirHastaFin(id)` hasta el estado final
 (`CONFIRMADA`/`PAGADA` o rechazo). La ventanilla (efectivo) es inmediata.
+
+## Temas (claro, oscuro, cálido)
+
+Arriba a la derecha (junto a la foto, y en el encabezado público) están los botones de tema: **claro**,
+**oscuro**, **cálido** (tonos sepia) y **como el sistema** (sigue el modo claro/oscuro del sistema operativo).
+
+- La elección se guarda en el navegador (`localStorage`, clave `tema`); si no se puede guardar, dura la sesión.
+- `core/services/tema.service.ts` pone `data-tema` en `<html>`; un script en `index.html` lo aplica antes de que
+  cargue Angular para que no parpadee en claro.
+- Los colores de cada tema están en `styles/_variables.scss`. Los componentes usan siempre `var(--...)`:
+  para un tema nuevo basta con agregar un bloque `:root[data-tema='nuevo'] { ... }` y su botón en
+  `shared/components/selector-tema`.
+

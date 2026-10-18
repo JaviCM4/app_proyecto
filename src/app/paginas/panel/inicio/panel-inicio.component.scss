@@ -20,5 +20,5 @@
   color: var(--texto);
   font-weight: 500;
 
-  &:hover { text-decoration: none; border-color: var(--borde-fuerte); background: #fcfcfd; }
+  &:hover { text-decoration: none; border-color: var(--borde-fuerte); background: var(--superficie-alterna); }
 }

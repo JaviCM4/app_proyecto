@@ -24,7 +24,7 @@
 .aviso-perfil {
   margin-bottom: 16px;
   padding: 12px 14px;
-  border: 1px solid #f0dcae;
+  border: 1px solid var(--aviso-borde);
   border-radius: var(--radio);
   background: var(--aviso-suave);
   color: var(--aviso);
