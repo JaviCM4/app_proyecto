@@ -1,0 +1,111 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Billetera del sistema</h1>
+    <p>Aquí entra el pago de cada compra en línea y de aquí sale cada reembolso.</p>
+  </div>
+  <button type="button" class="btn primario" (click)="mostrandoRetiro.set(true)">Retirar fondos</button>
+</div>
+
+<div class="resumen">
+  <div class="tarjeta saldo">
+    <span>Saldo de la plataforma</span>
+    <strong>{{ (billetera()?.saldo ?? 0) | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+    @if (billetera(); as b) {
+      <small>Actualizado {{ b.fechaActualizacion | date: "d 'de' MMMM, HH:mm" }}</small>
+    }
+  </div>
+  <div class="tarjeta dato">
+    <span>Total cobrado</span>
+    <strong class="entra">{{ (billetera()?.totalCobrado ?? 0) | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+    <small>Compras en línea de boletos y alquileres</small>
+  </div>
+  <div class="tarjeta dato">
+    <span>Total reembolsado</span>
+    <strong class="sale">{{ (billetera()?.totalDevuelto ?? 0) | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+    <small>Devuelto a las billeteras de los clientes</small>
+  </div>
+</div>
+
+<h2 class="titulo">Movimientos</h2>
+<div class="filtros">
+  <div class="campo">
+    <label for="bs-desde">Desde</label>
+    <input id="bs-desde" type="date" class="control" [(ngModel)]="desde" />
+  </div>
+  <div class="campo">
+    <label for="bs-hasta">Hasta</label>
+    <input id="bs-hasta" type="date" class="control" [(ngModel)]="hasta" [min]="desde" />
+  </div>
+  <div class="campo">
+    <label for="bs-tipo">Tipo</label>
+    <select id="bs-tipo" class="control" [ngModel]="tipo()" (ngModelChange)="tipo.set($event); pagina.set(1)">
+      <option value="">Todos</option>
+      <option value="COBRO">Cobros</option>
+      <option value="DEVOLUCION">Reembolsos</option>
+    </select>
+  </div>
+  <button type="button" class="btn primario" (click)="cargar()">Consultar</button>
+  <button type="button" class="btn" (click)="limpiarFechas()">Limpiar</button>
+</div>
+
+@if (desde || hasta) {
+  <p class="suave rango">
+    En el rango: {{ resumenRango().cantidad }} movimientos ·
+    cobros {{ resumenRango().cobros | currency: 'GTQ' : 'symbol-narrow' }} ·
+    reembolsos {{ resumenRango().devoluciones | currency: 'GTQ' : 'symbol-narrow' }}
+  </p>
+}
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Movimiento</th>
+        <th class="oculto-movil">Referencia</th>
+        <th class="numero">Monto</th>
+        <th class="numero">Saldo después</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of paginaActual().elementos; track m.id) {
+        <tr>
+          <td>{{ m.fechaMovimiento | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+          <td>{{ descripcion(m) }}</td>
+          <td class="oculto-movil"><code [title]="m.referenciaId ?? ''">{{ referencia(m) }}</code></td>
+          <td class="numero monto" [class.negativo]="m.tipo === 'DEVOLUCION'">
+            {{ m.tipo === 'DEVOLUCION' ? '−' : '+' }} {{ m.monto | currency: 'GTQ' : 'symbol-narrow' }}
+          </td>
+          <td class="numero">{{ m.saldoResultante | currency: 'GTQ' : 'symbol-narrow' }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="5" class="tabla-vacia">{{ cargando() ? 'Cargando movimientos…' : 'Todavía no hay movimientos en ese rango.' }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador [pagina]="paginaActual().pagina" [tamano]="tamano()" [total]="paginaActual().total"
+               (cambioPagina)="pagina.set($event)" (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+<app-modal [abierto]="mostrandoRetiro()" titulo="Retirar fondos" ancho="mediano" (cerrar)="mostrandoRetiro.set(false)"
+           subtitulo="Transferir el saldo de la plataforma a una cuenta bancaria">
+  <div class="retiro">
+    <div class="icono-retiro"><app-icono nombre="banco" [tamano]="28" /></div>
+    <p>
+      Aquí se integraría el retiro del dinero de la billetera del sistema: una transferencia a la cuenta
+      bancaria de la empresa o el pago a través de una pasarela de pagos.
+    </p>
+    <ul>
+      <li>Se elegiría la cuenta de destino y el monto (sin pasar del saldo disponible).</li>
+      <li>El banco o la pasarela confirmaría la transferencia y el retiro quedaría como un movimiento más.</li>
+      <li>El saldo siempre debe cubrir los reembolsos de las compras que todavía se pueden cancelar.</li>
+    </ul>
+    <p class="nota-suave">Por ahora no está habilitado: el saldo solo se consulta.</p>
+  </div>
+  <div pie>
+    <button type="button" class="btn primario" (click)="mostrandoRetiro.set(false)">Entendido</button>
+  </div>
+</app-modal>

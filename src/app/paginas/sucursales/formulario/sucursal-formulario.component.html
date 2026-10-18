@@ -75,8 +75,9 @@
 
     <!-- Paso 3: administrador (solo al crear) -->
     @if (paso() === 2 && esNueva()) {
-      <p class="suave intro">Esta persona administrará la sucursal. Le llegará un correo para crear su contraseña.</p>
-      <app-datos-cuenta [grupo]="form.controls.adminInicial" prefijo="a" />
+      <p class="suave intro">Esta persona administrará la sucursal.</p>
+      <app-cuenta-persona [grupo]="form.controls.adminInicial" prefijo="a" [(modo)]="modo" [(existente)]="existente"
+                          [correoEnUso]="correoEnUso()" />
       <div class="formulario-grilla mt">
         <div class="campo">
           <label for="fecha">Fecha de asignación</label>

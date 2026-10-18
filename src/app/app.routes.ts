@@ -6,7 +6,9 @@ import { rolGuard } from './core/guards/rol.guard';
 /**
  * Rutas de la aplicación.
  * - Layout público: inicio con viajes, login, registro y recuperación.
- * - Layout del panel (con sesión): menú lateral y las páginas según el rol.
+ * - Layout del panel (con sesión): menú lateral y las páginas según el rol (los mismos roles que en
+ *   layout/menu-lateral/menu.config.ts). Todas las cuentas tienen el rol CLIENTE: las páginas de cliente
+ *   (comprar, billetera, alquileres) son para todos.
  */
 export const routes: Routes = [
   {
@@ -33,6 +35,21 @@ export const routes: Routes = [
     children: [
       { path: '', title: 'Inicio', loadComponent: () => import('./paginas/panel/inicio/panel-inicio.component').then((m) => m.PanelInicioComponent) },
       {
+        path: 'mi-sucursal',
+        title: 'Mi sucursal',
+        canActivate: [rolGuard],
+        data: { roles: ['ADMIN_SUCURSAL'] },
+        loadComponent: () => import('./paginas/sucursales/mi-sucursal/mi-sucursal.component').then((m) => m.MiSucursalComponent),
+      },
+      {
+        path: 'billetera-sistema',
+        title: 'Billetera del sistema',
+        canActivate: [rolGuard],
+        data: { roles: ['ADMIN_SISTEMA'] },
+        loadComponent: () =>
+          import('./paginas/administracion/billetera-sistema/billetera-sistema.component').then((m) => m.BilleteraSistemaComponent),
+      },
+      {
         path: 'sucursales',
         title: 'Sucursales',
         canActivate: [rolGuard],
@@ -50,7 +67,7 @@ export const routes: Routes = [
         path: 'tarifas',
         title: 'Tarifas de depreciación',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SISTEMA'] },
         loadComponent: () => import('./paginas/tarifas/tarifas.component').then((m) => m.TarifasComponent),
       },
       {
@@ -64,7 +81,7 @@ export const routes: Routes = [
         path: 'taller',
         title: 'Servicios de taller',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/taller/servicios/servicios.component').then((m) => m.ServiciosComponent),
       },
       {
@@ -78,35 +95,35 @@ export const routes: Routes = [
         path: 'buses',
         title: 'Buses',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/flota/buses/buses.component').then((m) => m.BusesComponent),
       },
       {
         path: 'choferes',
         title: 'Choferes',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/flota/choferes/choferes.component').then((m) => m.ChoferesComponent),
       },
       {
         path: 'personal',
         title: 'Personal',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/flota/personal/personal.component').then((m) => m.PersonalComponent),
       },
       {
         path: 'rutas',
         title: 'Rutas',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/viajes/rutas/rutas.component').then((m) => m.RutasComponent),
       },
       {
         path: 'viajes',
         title: 'Viajes',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/viajes/viajes/viajes.component').then((m) => m.ViajesComponent),
       },
       {
@@ -120,7 +137,7 @@ export const routes: Routes = [
         path: 'alquileres',
         title: 'Alquileres',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL', 'CAJERO'] },
+        data: { roles: ['ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/viajes/alquileres/alquileres.component').then((m) => m.AlquileresComponent),
       },
       {
@@ -135,7 +152,7 @@ export const routes: Routes = [
         path: 'mis-alquileres',
         title: 'Mis alquileres',
         canActivate: [rolGuard],
-        data: { roles: ['CLIENTE'], soloCliente: true },
+        data: { roles: ['CLIENTE'] },
         loadComponent: () =>
           import('./paginas/alquileres/mis-alquileres/mis-alquileres.component').then((m) => m.MisAlquileresComponent),
       },
@@ -143,7 +160,7 @@ export const routes: Routes = [
         path: 'precio-alquiler',
         title: 'Precio de alquiler',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SISTEMA'] },
         loadComponent: () =>
           import('./paginas/alquileres/precio-alquiler/precio-alquiler.component').then((m) => m.PrecioAlquilerComponent),
       },
@@ -158,14 +175,14 @@ export const routes: Routes = [
         path: 'comprar',
         title: 'Comprar boletos',
         canActivate: [rolGuard],
-        data: { roles: ['CLIENTE'], soloCliente: true },
+        data: { roles: ['CLIENTE'] },
         loadComponent: () => import('./paginas/compras/comprar/comprar.component').then((m) => m.ComprarComponent),
       },
       {
         path: 'mis-compras',
         title: 'Mis compras',
         canActivate: [rolGuard],
-        data: { roles: ['CLIENTE'], soloCliente: true },
+        data: { roles: ['CLIENTE'] },
         loadComponent: () => import('./paginas/compras/mis-compras/mis-compras.component').then((m) => m.MisComprasComponent),
       },
       {
@@ -179,14 +196,14 @@ export const routes: Routes = [
         path: 'ventas',
         title: 'Ventas',
         canActivate: [rolGuard],
-        data: { roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
+        data: { roles: ['CAJERO', 'ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/ventas/ventas/ventas.component').then((m) => m.VentasComponent),
       },
       {
         path: 'ordenes',
         title: 'Órdenes de alquiler',
         canActivate: [rolGuard],
-        data: { roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
+        data: { roles: ['CAJERO', 'ADMIN_SUCURSAL'] },
         loadComponent: () => import('./paginas/ventas/ordenes/ordenes.component').then((m) => m.OrdenesComponent),
       },
       { path: 'perfil', title: 'Mi perfil', loadComponent: () => import('./paginas/cuenta/perfil/perfil.component').then((m) => m.PerfilComponent) },

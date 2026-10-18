@@ -13,7 +13,7 @@ export interface Coordenadas {
 
 /**
  * Mapa de Guatemala para elegir un punto con un clic (o arrastrando el marcador).
- * Devuelve la latitud y longitud redondeadas a 6 decimales.
+ * Devuelve la latitud y longitud redondeadas a 6 decimales. Con soloLectura solo muestra el punto.
  */
 @Component({
   selector: 'app-selector-ubicacion',
@@ -25,6 +25,10 @@ export class SelectorUbicacionComponent implements AfterViewInit, OnDestroy {
   readonly latitud = input<number | null>(null);
   readonly longitud = input<number | null>(null);
   readonly cambio = output<Coordenadas>();
+  /** Solo muestra el punto (sin clic ni arrastre), p. ej. en "Mi sucursal". */
+  readonly soloLectura = input(false);
+  /** Alto del mapa en píxeles. */
+  readonly alto = input(340);
 
   @ViewChild('contenedor', { static: true }) private contenedor!: ElementRef<HTMLDivElement>;
   private mapa?: L.Map;
@@ -39,7 +43,7 @@ export class SelectorUbicacionComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.mapa = L.map(this.contenedor.nativeElement, { maxBounds: LIMITES_GT.pad(0.3), minZoom: 6 }).setView(CENTRO_GT, 7);
     agregarCapaBase(this.mapa);
-    this.mapa.on('click', (e: L.LeafletMouseEvent) => this.elegir(e.latlng));
+    if (!this.soloLectura()) this.mapa.on('click', (e: L.LeafletMouseEvent) => this.elegir(e.latlng));
     this.colocar(this.latitud(), this.longitud(), true);
 
     // El mapa está dentro de un modal: se reajusta cuando cambia de tamaño o se vuelve visible.
@@ -65,8 +69,8 @@ export class SelectorUbicacionComponent implements AfterViewInit, OnDestroy {
     if (!this.marcador) {
       // Marcador dibujado con HTML (no depende de las imágenes por defecto de Leaflet).
       const icono = L.divIcon({ className: 'pin-ubicacion', html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 22] });
-      this.marcador = L.marker(punto, { icon: icono, draggable: true }).addTo(this.mapa);
-      this.marcador.on('dragend', () => this.elegir(this.marcador!.getLatLng()));
+      this.marcador = L.marker(punto, { icon: icono, draggable: !this.soloLectura() }).addTo(this.mapa);
+      if (!this.soloLectura()) this.marcador.on('dragend', () => this.elegir(this.marcador!.getLatLng()));
     } else {
       this.marcador.setLatLng(punto);
     }

@@ -92,23 +92,26 @@ Cada componente tiene sus 3 archivos (`.ts`, `.html`, `.scss`).
 
 ## Pantallas y roles
 
-El menú (`layout/menu-lateral/menu.config.ts`) y las rutas (`app.routes.ts`, `data.roles`) usan los mismos roles:
+El menú (`layout/menu-lateral/menu.config.ts`) y las rutas (`app.routes.ts`, `data.roles`) usan los mismos roles.
+Las vistas dependen de los roles de la cuenta, y **todas las cuentas tienen también el rol Cliente**: cualquiera
+puede comprar boletos, usar su billetera y ver sus compras y alquileres.
 
-| Pantalla | Ruta | Quién la ve |
-|---|---|---|
-| Inicio con viajes y asientos | `/` | todos (sin sesión) |
-| Entrar / crear cuenta (con correo o con Google) | `/login`, `/registro`, `/oauth/google/callback` | sin sesión |
-| Inicio del panel | `/panel` | todos con sesión |
-| Sucursales (nueva por pasos con mapa, ver detalle y personal, agregar, retirar y trasladar administradores) | `/panel/sucursales` | Administrador del sistema |
-| Usuarios (nuevo administrador del sistema o de sucursal; retirar o trasladar personal) | `/panel/usuarios` | Administrador del sistema |
-| Tarifas de depreciación | `/panel/tarifas` | Administrador del sistema (crea) y de sucursal (consulta) |
-| Reportes (del sistema / por sucursal) + mapa | `/panel/reportes` | Administrador del sistema y de sucursal |
-| Billetera digital (API `/wallet/cartera`, servicio wallet) | `/panel/cartera` | todas las cuentas (todas tienen el rol Cliente) |
-| Mi perfil, Seguridad | `/panel/perfil`, `/panel/seguridad` | todos con sesión |
+| Rol | Ve en el menú |
+|---|---|
+| Administrador del sistema | Administración (Sucursales, Usuarios, Billetera del sistema, Tarifas, Precio de alquiler, Categorías de gasto), Reportes |
+| Administrador de sucursal | Mi sucursal, Operación (Buses, Choferes, Personal, Rutas, Viajes, Alquileres), Taller, Reportes, Ventanilla |
+| Cajero | Ventanilla (Vender boletos, Solicitar alquiler en mostrador, Ventas, Órdenes de alquiler) |
+| Piloto | Mis viajes (registrar salida y llegada) |
+| Todos (rol Cliente) | Mis compras (Billetera digital, Comprar boletos, Mis compras, Solicitar alquiler, Mis alquileres), Mi perfil, Seguridad |
 
-Todas las cuentas tienen también el rol Cliente (para poder comprar con cartera). Las opciones marcadas con
-`soloCliente: true` (y las rutas con `data: { soloCliente: true }`) solo aparecen cuando el rol principal de la cuenta
-es Cliente, para que el personal no vea las opciones de cliente.
+- El cajero no ve "Solicitar alquiler" como cliente (`excepto: ['CAJERO']`): en el backend, un alquiler que pide un
+  cajero siempre es de mostrador.
+- Al asignar personal (nueva sucursal, agregar personal) se puede crear una **cuenta nueva** o elegir a alguien que
+  **ya tiene cuenta** (búsqueda por correo exacto, `GET /identity/usuarios/por-correo`). Lo mismo al agregar un
+  administrador del sistema, y en el detalle de un usuario está "Hacer administrador del sistema".
+- Quien recibe un rol nuevo debe cerrar sesión y volver a entrar (le llega un correo): el token vigente no lo tiene.
+- **Billetera del sistema** (`/panel/billetera-sistema`, API `/wallet/sistema`): solo consulta. El botón "Retirar
+  fondos" explica dónde se integraría la transferencia bancaria; no llama al backend.
 
 Perfil, Seguridad y Billetera digital también están en el menú que se abre al hacer clic en el usuario (arriba a la derecha).
 

@@ -1,0 +1,95 @@
+.pagina-encabezado .insignia { margin-left: 6px; vertical-align: middle; }
+
+.aviso-inactiva {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--aviso-borde);
+  border-radius: var(--radio-sm);
+  background: var(--aviso-suave);
+  color: var(--aviso);
+  font-size: 13px;
+}
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+
+  @media (max-width: 900px) { grid-template-columns: 1fr; }
+}
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  span { color: var(--texto-suave); font-size: 13px; }
+  strong { font-size: 28px; font-weight: 600; color: var(--primario-hover); }
+  small { color: var(--texto-tenue); font-size: 12px; }
+  .alerta { color: var(--aviso); font-weight: 500; }
+}
+
+.columnas {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 1000px) { grid-template-columns: 1fr; }
+
+  h2 { margin-bottom: 12px; }
+}
+
+.mapa { margin-top: 12px; }
+
+.equipo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--borde);
+
+    &:last-child { border-bottom: none; }
+  }
+
+  .persona {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    span { font-size: 12px; }
+  }
+
+  .tu { font-weight: 400; color: var(--texto-tenue); }
+}
+
+.titulo-accesos { margin: 24px 0 12px; }
+
+.accesos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.acceso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  color: var(--texto);
+  font-weight: 500;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover { border-color: var(--primario-medio); background: var(--primario-suave); text-decoration: none; }
+
+  app-icono { color: var(--primario); }
+}

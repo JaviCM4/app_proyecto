@@ -2,7 +2,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 
 /**
  * Grupo de campos de la cuenta que se crea en Identity (administrador de sucursal, cajero o piloto).
- * Se usa en "Nueva sucursal" y en "Agregar administrador".
+ * Se usa en "Nueva sucursal" y en "Agregar personal" (opción "Cuenta nueva").
  */
 export function grupoCuenta(fb: FormBuilder) {
   return fb.nonNullable.group({

@@ -22,6 +22,7 @@ const ICONOS: Record<string, string> = {
   luna: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
   taza: 'M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z M16 11h1.5a2.5 2.5 0 0 1 0 5H16 M8 3v3 M12 3v3',
   monitor: 'M3 4h18v12H3z M8 20h8 M12 16v4',
+  banco: 'M3 21h18 M4 18h16 M12 3l9 5H3z M6 10v6 M10 10v6 M14 10v6 M18 10v6',
 };
 
 @Component({

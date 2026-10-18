@@ -1,0 +1,102 @@
+@if (!sucursalId) {
+  <div class="pagina-encabezado">
+    <div>
+      <h1>Mi sucursal</h1>
+    </div>
+  </div>
+  <div class="tarjeta suave">
+    Tu cuenta todavía no tiene una sucursal asignada. Si te acaban de asignar, cierra sesión y vuelve a entrar.
+  </div>
+} @else {
+  @if (sucursal(); as s) {
+    <div class="pagina-encabezado">
+      <div>
+        <h1>{{ s.nombre }}</h1>
+        <p>
+          Código {{ s.codigo }} · {{ s.municipio }}, {{ s.departamento }}
+          <span class="insignia" [class.exito]="s.activa" [class.peligro]="!s.activa">{{ s.activa ? 'Activa' : 'Inactiva' }}</span>
+        </p>
+      </div>
+    </div>
+
+    @if (!s.activa) {
+      <div class="aviso-inactiva">
+        La sucursal está inactiva: no se pueden agregar buses, pilotos ni personal hasta que el administrador del sistema la active.
+      </div>
+    }
+
+    <div class="indicadores">
+      <div class="tarjeta indicador">
+        <span>Buses en servicio</span>
+        <strong>{{ flota().total }}</strong>
+        <small>{{ flota().activos }} disponibles · {{ flota().enRuta }} en ruta · {{ flota().enTaller }} en taller</small>
+      </div>
+      <div class="tarjeta indicador">
+        <span>Pilotos activos</span>
+        <strong>{{ pilotos().activos }}</strong>
+        @if (pilotos().vencidas > 0 || pilotos().porVencer > 0) {
+          <small class="alerta">
+            @if (pilotos().vencidas > 0) { {{ pilotos().vencidas }} con licencia vencida }
+            @if (pilotos().vencidas > 0 && pilotos().porVencer > 0) { · }
+            @if (pilotos().porVencer > 0) { {{ pilotos().porVencer }} por vencer en 30 días }
+          </small>
+        } @else {
+          <small>Licencias al día</small>
+        }
+      </div>
+      <div class="tarjeta indicador">
+        <span>Personal</span>
+        <strong>{{ personal().length }}</strong>
+        <small>{{ administradores() }} {{ administradores() === 1 ? 'administrador' : 'administradores' }} · {{ cajeros() }} {{ cajeros() === 1 ? 'cajero' : 'cajeros' }}</small>
+      </div>
+    </div>
+
+    <div class="columnas">
+      <section class="tarjeta">
+        <h2>Datos de la sucursal</h2>
+        <dl class="datos-lista">
+          <div><dt>Teléfono</dt><dd>{{ s.telefono || '—' }}</dd></div>
+          <div><dt>Coordenadas</dt><dd>{{ s.latitud | number: '1.4-6' }}, {{ s.longitud | number: '1.4-6' }}</dd></div>
+          <div class="completo"><dt>Dirección</dt><dd>{{ s.direccion }}</dd></div>
+        </dl>
+        <div class="mapa">
+          <app-selector-ubicacion [latitud]="s.latitud" [longitud]="s.longitud" [soloLectura]="true" [alto]="240" />
+        </div>
+        <p class="nota-suave">Para cambiar estos datos, comunícate con el administrador del sistema.</p>
+      </section>
+
+      <section class="tarjeta">
+        <div class="fila entre">
+          <h2>Equipo</h2>
+          <a routerLink="/panel/personal" class="btn chico">Gestionar</a>
+        </div>
+        <ul class="equipo">
+          @for (p of equipo(); track p.personalId) {
+            <li>
+              <app-avatar [nombre]="p.nombreCompleto" [tamano]="34" />
+              <div class="persona">
+                <strong>{{ p.nombreCompleto }} @if (p.usuarioId === usuarioId) { <span class="tu">(tú)</span> }</strong>
+                <span class="suave">{{ nombreRol[p.rol] }} · desde {{ p.fechaAsignacion | date: 'dd/MM/yyyy' : 'UTC' }}</span>
+              </div>
+            </li>
+          } @empty {
+            <li class="suave">{{ cargando() ? 'Cargando…' : 'Sin personal activo.' }}</li>
+          }
+        </ul>
+      </section>
+    </div>
+
+    <h2 class="titulo-accesos">Accesos rápidos</h2>
+    <div class="accesos">
+      @for (a of accesos; track a.ruta) {
+        <a class="tarjeta acceso" [routerLink]="a.ruta">
+          <app-icono [nombre]="a.icono" [tamano]="22" />
+          <span>{{ a.texto }}</span>
+        </a>
+      }
+    </div>
+  } @else {
+    <p class="suave">{{ cargando() ? 'Cargando tu sucursal…' : 'No se pudo cargar tu sucursal.' }}</p>
+  }
+}
+

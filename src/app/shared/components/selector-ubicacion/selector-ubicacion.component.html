@@ -1,4 +1,6 @@
 <div class="selector">
-  <div #contenedor class="mapa"></div>
-  <p class="ayuda">Haz clic en el mapa para marcar la ubicación. Puedes arrastrar el marcador para ajustarla.</p>
+  <div #contenedor class="mapa" [style.height.px]="alto()"></div>
+  @if (!soloLectura()) {
+    <p class="ayuda">Haz clic en el mapa para marcar la ubicación. Puedes arrastrar el marcador para ajustarla.</p>
+  }
 </div>

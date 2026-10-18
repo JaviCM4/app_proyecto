@@ -3,7 +3,7 @@
     <h1>Personal</h1>
     <p>Administradores y cajeros de la sucursal. Los pilotos se gestionan en Choferes.</p>
   </div>
-  <button type="button" class="btn primario" (click)="agregando.set(true)">+ Agregar personal</button>
+  <button type="button" class="btn primario" (click)="agregando.set(true)">{{ esSistema ? '+ Agregar personal' : '+ Agregar cajero' }}</button>
 </div>
 
 <div class="filtros">

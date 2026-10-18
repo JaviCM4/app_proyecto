@@ -1,0 +1,14 @@
+.aviso-en-uso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--aviso-borde);
+  border-radius: var(--radio-sm);
+  background: var(--aviso-suave);
+  color: var(--aviso);
+  font-size: 13px;
+}

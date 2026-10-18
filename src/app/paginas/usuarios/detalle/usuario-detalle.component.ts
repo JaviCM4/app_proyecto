@@ -63,6 +63,13 @@ export class UsuarioDetalleComponent {
   readonly esPiloto = computed(() => !!this.detalle()?.choferId);
   readonly acciones = computed(() => ACCIONES.filter((a) => a.estado !== this.detalle()?.estado));
 
+  /** Solo cuentas activas que no son personal, piloto ni ya administradores del sistema. */
+  readonly puedeSerAdmin = computed(() => {
+    const d = this.detalle();
+    return !!d && d.estado === 'ACTIVO' && !this.esPersonal() && !d.roles.includes('ADMIN_SISTEMA');
+  });
+  readonly confirmandoAdmin = signal(false);
+
   constructor() {
     effect(() => {
       const id = this.usuarioId();
@@ -98,6 +105,26 @@ export class UsuarioDetalleComponent {
     this.avisos.info('Los cambios en la cuenta pueden tardar unos segundos en verse.');
     this.cambiado.emit();
     this.cerrar.emit();
+  }
+
+  hacerAdministrador(): void {
+    const d = this.detalle();
+    if (!d) return;
+    this.procesando.set(true);
+    this.usuarios.hacerAdministradorSistema(d.usuarioId).subscribe({
+      next: (actualizado) => {
+        this.procesando.set(false);
+        this.confirmandoAdmin.set(false);
+        this.detalle.set(actualizado);
+        this.avisos.exito('Ahora es administrador del sistema. Le llegará un correo para que vuelva a iniciar sesión.');
+        this.cambiado.emit();
+      },
+      error: (e) => {
+        this.procesando.set(false);
+        this.confirmandoAdmin.set(false);
+        this.avisos.error(mensajeError(e, 'No se pudo hacer administrador a esta cuenta.'));
+      },
+    });
   }
 
   confirmar(): void {

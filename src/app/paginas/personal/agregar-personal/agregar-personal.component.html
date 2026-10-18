@@ -1,5 +1,5 @@
-<app-modal [abierto]="abierto()" titulo="Agregar administrador de sucursal" ancho="grande" (cerrar)="cerrar.emit()"
-           subtitulo="Se crea su cuenta y le llega un correo para crear su contraseña.">
+<app-modal [abierto]="abierto()" [titulo]="titulo" ancho="grande" (cerrar)="cerrar.emit()"
+           subtitulo="Puedes crearle una cuenta nueva o asignar a alguien que ya se registró en la plataforma.">
   <form id="form-personal" [formGroup]="form" (ngSubmit)="guardar()">
     <div class="formulario-grilla">
       <p class="formulario-seccion">Asignación</p>
@@ -24,14 +24,16 @@
         <label for="p-fecha">Fecha de asignación</label>
         <input id="p-fecha" type="date" class="control" formControlName="fechaAsignacion" />
       </div>
-      <p class="formulario-seccion">Datos de la persona</p>
+      <p class="formulario-seccion">Persona</p>
     </div>
-    <app-datos-cuenta [grupo]="form.controls.cuenta" prefijo="p" />
+    <app-cuenta-persona [grupo]="form.controls.cuenta" prefijo="p" [(modo)]="modo" [(existente)]="existente"
+                        [correoEnUso]="correoEnUso()" />
   </form>
   <div pie>
     <button type="button" class="btn" (click)="cerrar.emit()">Cancelar</button>
-    <button type="submit" form="form-personal" class="btn primario" [disabled]="enviando()">
-      {{ enviando() ? 'Guardando…' : 'Agregar' }}
+    <button type="submit" form="form-personal" class="btn primario"
+            [disabled]="enviando() || (modo() === 'existente' && !existente()?.puedeSerPersonal)">
+      {{ enviando() ? 'Guardando…' : textoBoton() }}
     </button>
   </div>
 </app-modal>

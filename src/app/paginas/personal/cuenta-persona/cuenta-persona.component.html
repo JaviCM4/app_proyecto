@@ -1,0 +1,25 @@
+<div class="modos" role="radiogroup" aria-label="Cuenta de la persona">
+  <button type="button" role="radio" class="modo" [class.activo]="modo() === 'nueva'" [attr.aria-checked]="modo() === 'nueva'"
+          (click)="cambiar('nueva')">
+    <strong>Cuenta nueva</strong>
+    <span>Se le crea una cuenta y le llega un correo para activarla.</span>
+  </button>
+  <button type="button" role="radio" class="modo" [class.activo]="modo() === 'existente'"
+          [attr.aria-checked]="modo() === 'existente'" (click)="cambiar('existente')">
+    <strong>Ya tiene cuenta</strong>
+    <span>Ya se registró en la plataforma: búscala por su correo.</span>
+  </button>
+</div>
+
+@if (modo() === 'nueva') {
+  @if (correoEnUso(); as correo) {
+    <div class="aviso-en-uso">
+      <span><strong>{{ correo }}</strong> ya tiene una cuenta en la plataforma.</span>
+      <button type="button" class="btn chico primario" (click)="usarCuentaExistente(correo)">Asignar esa cuenta</button>
+    </div>
+  }
+  <app-datos-cuenta [grupo]="grupo()" [prefijo]="prefijo()" />
+} @else {
+  <app-buscar-cuenta [prefijo]="prefijo()" [correoInicial]="correoParaBuscar" [(seleccion)]="existente" />
+  <p class="nota-suave">Conserva su contraseña, sus datos y su billetera. Le llegará un correo avisándole del nuevo puesto.</p>
+}

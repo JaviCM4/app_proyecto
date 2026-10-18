@@ -2,7 +2,16 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { ActualizarPerfil, EstadoUsuario, FiltroUsuarios, NuevoAdministradorSistema, Perfil, UsuarioDetalle, UsuarioResumen } from '../models/usuario.model';
+import {
+  ActualizarPerfil,
+  EstadoUsuario,
+  FiltroUsuarios,
+  NuevoAdministradorSistema,
+  Perfil,
+  UsuarioBusqueda,
+  UsuarioDetalle,
+  UsuarioResumen,
+} from '../models/usuario.model';
 
 /** Perfil propio y administración de usuarios (Identity). */
 @Injectable({ providedIn: 'root' })
@@ -45,6 +54,21 @@ export class UsuariosService {
   /** Crea otro administrador del sistema; le llega un correo para activar su cuenta. */
   crearAdministrador(datos: NuevoAdministradorSistema): Observable<UsuarioDetalle> {
     return this.http.post<UsuarioDetalle>(`${this.api}/usuarios/administradores-sistema`, datos);
+  }
+
+  /** Le da el rol de administrador del sistema a una cuenta que ya existe (le llega un correo de aviso). */
+  hacerAdministradorSistema(id: string): Observable<UsuarioDetalle> {
+    return this.http.post<UsuarioDetalle>(`${this.api}/usuarios/${id}/administrador-sistema`, null);
+  }
+
+  /**
+   * Busca una cuenta por su correo exacto (administrador del sistema o de sucursal), para asignarle un
+   * puesto sin crearle otra cuenta. 404 si no hay ninguna cuenta con ese correo.
+   */
+  buscarPorCorreo(correo: string): Observable<UsuarioBusqueda> {
+    return this.http.get<UsuarioBusqueda>(`${this.api}/usuarios/por-correo`, {
+      params: new HttpParams().set('correo', correo.trim()),
+    });
   }
 
   cambiarEstado(id: string, estado: EstadoUsuario): Observable<UsuarioDetalle> {

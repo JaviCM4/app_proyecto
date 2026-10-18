@@ -1,0 +1,43 @@
+.buscador {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+
+  .crece { flex: 1; }
+}
+
+.mensaje {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--texto-suave);
+
+  &.error { color: var(--peligro); }
+}
+
+.resultado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--primario-medio);
+  border-radius: var(--radio);
+  background: var(--primario-suave);
+
+  &.no-apta {
+    border-color: var(--peligro);
+    background: var(--peligro-suave);
+  }
+
+  .datos {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .motivo { font-size: 13px; color: var(--peligro); }
+}

@@ -1,0 +1,38 @@
+<div class="buscador">
+  <div class="campo crece">
+    <label [for]="prefijo() + '-correo-buscar'">Correo de la cuenta</label>
+    <input [id]="prefijo() + '-correo-buscar'" type="email" class="control" placeholder="persona@correo.com"
+           autocomplete="off" [value]="correo()" (input)="alEscribir($any($event.target).value)"
+           (keydown.enter)="alPresionarEnter($event)" />
+  </div>
+  <button type="button" class="btn" (click)="buscar()" [disabled]="buscando()">
+    {{ buscando() ? 'Buscando…' : 'Buscar' }}
+  </button>
+</div>
+
+@if (aviso(); as a) {
+  <p class="mensaje error">{{ a }}</p>
+}
+
+@if (noExiste()) {
+  <p class="mensaje">No hay ninguna cuenta con ese correo. Revisa que esté bien escrito o usa la opción <strong>Cuenta nueva</strong>.</p>
+}
+
+@if (seleccion(); as c) {
+  <div class="resultado" [class.no-apta]="validarPersonal() && !c.puedeSerPersonal">
+    <app-avatar [foto]="c.fotoUrl" [nombre]="c.nombreCompleto" [tamano]="44" />
+    <div class="datos">
+      <strong>{{ c.nombreCompleto }}</strong>
+      <span class="suave">{{ c.correo }}</span>
+      @if (validarPersonal()) {
+        @if (c.puedeSerPersonal) {
+          <span class="insignia exito">Se puede asignar</span>
+        } @else {
+          <span class="insignia peligro">No se puede asignar</span>
+          <span class="motivo">{{ c.motivo }}</span>
+        }
+      }
+    </div>
+    <button type="button" class="btn chico" (click)="limpiar()">Cambiar</button>
+  </div>
+}

@@ -60,3 +60,14 @@ export interface FiltroUsuarios {
   estado?: EstadoUsuario | '';
   q?: string;
 }
+
+/** Resultado de buscar una cuenta por correo exacto (para asignarle un puesto). */
+export interface UsuarioBusqueda {
+  usuarioId: string;
+  correo: string;
+  nombreCompleto: string;
+  fotoUrl: string | null;
+  /** Si puede ser administrador de sucursal o cajero; si no, motivo dice por qué. */
+  puedeSerPersonal: boolean;
+  motivo: string | null;
+}

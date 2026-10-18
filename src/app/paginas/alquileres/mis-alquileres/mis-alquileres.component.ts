@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { Alquiler, EstadoAlquiler, EstadoViaje } from '../../../core/models/viaje.model';
 import { OrdenAlquiler } from '../../../core/models/venta.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
@@ -53,6 +54,8 @@ export class MisAlquileresComponent implements OnInit {
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
+  /** En el backend, un alquiler que solicita un cajero es de mostrador: no lo puede pedir como cliente. */
+  readonly puedeSolicitar = !inject(AuthService).tieneRol('CAJERO');
   readonly zona = ZONA_GT;
 
   private readonly alquileres = signal<Alquiler[]>([]);

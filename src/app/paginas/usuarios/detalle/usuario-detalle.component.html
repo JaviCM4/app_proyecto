@@ -39,6 +39,9 @@
       <button type="button" class="btn" (click)="enAccion.set('trasladar')">Trasladar</button>
       <button type="button" class="btn peligro" (click)="enAccion.set('desactivar')">Retirar de la sucursal</button>
     }
+    @if (puedeSerAdmin()) {
+      <button type="button" class="btn" (click)="confirmandoAdmin.set(true)">Hacer administrador del sistema</button>
+    }
     @if (detalle() && !esPersonal()) {
       @for (a of acciones(); track a.estado) {
         <button type="button" class="btn" [class.peligro]="a.peligro" (click)="porConfirmar.set(a)">{{ a.texto }}</button>
@@ -60,3 +63,12 @@
 
 <app-accion-personal [personal]="enAccion() ? puesto() : null" [accion]="enAccion() ?? 'desactivar'"
                      (hecho)="alTerminarAccion()" (cerrar)="enAccion.set(null)" />
+
+<app-confirmacion
+  [abierto]="confirmandoAdmin()"
+  titulo="Hacer administrador del sistema"
+  [mensaje]="(detalle()?.nombres ?? '') + ' tendrá acceso a toda la administración de la plataforma. Le llegará un correo para que cierre sesión y vuelva a entrar.'"
+  textoAceptar="Hacer administrador"
+  [procesando]="procesando()"
+  (aceptar)="hacerAdministrador()"
+  (cancelar)="confirmandoAdmin.set(false)" />

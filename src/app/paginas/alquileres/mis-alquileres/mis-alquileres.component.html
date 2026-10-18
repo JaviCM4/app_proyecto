@@ -3,7 +3,9 @@
     <h1>Mis alquileres</h1>
     <p>Sigue tus solicitudes de bus. Puedes cancelar mientras sigan como solicitadas.</p>
   </div>
-  <a class="btn primario" routerLink="/panel/solicitar-alquiler">+ Solicitar alquiler</a>
+  @if (puedeSolicitar) {
+    <a class="btn primario" routerLink="/panel/solicitar-alquiler">+ Solicitar alquiler</a>
+  }
 </div>
 
 <div class="pestanas">
