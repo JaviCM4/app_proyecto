@@ -4,18 +4,13 @@
   <form id="form-accion-personal" [formGroup]="form" (ngSubmit)="confirmar()" class="formulario">
     @if (accion() === 'reintegrar') {
       <p class="suave">
-        Vuelve a trabajar con su misma cuenta (no se crea otra). Puede regresar a la misma sucursal o a otra,
-        y con el mismo puesto u otro. No debe estar trabajando en otra sucursal.
+        Vuelve a trabajar con su misma cuenta (no se crea otra) en esta sucursal, con el mismo puesto u otro.
+        No debe estar trabajando en otra sucursal.
       </p>
       <div class="campo">
         <label for="a-sucursal">Sucursal</label>
-        <select id="a-sucursal" class="control" formControlName="sucursalDestinoId"
-                [class.invalido]="form.controls.sucursalDestinoId.touched && form.controls.sucursalDestinoId.invalid">
-          <option value="" disabled>Elige una sucursal…</option>
-          @for (s of destinos(); track s.sucursalId) {
-            <option [value]="s.sucursalId">{{ s.nombre }}</option>
-          }
-        </select>
+        <input id="a-sucursal" class="control" [value]="sucursalPropia()" disabled />
+        <span class="ayuda">Se reintegra a su sucursal. Para cambiarlo de sucursal usa Trasladar después.</span>
       </div>
       <div class="campo">
         <label for="a-rol">Puesto</label>

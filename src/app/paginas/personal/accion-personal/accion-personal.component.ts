@@ -14,6 +14,7 @@ export type AccionPersonal = 'desactivar' | 'trasladar' | 'reintegrar';
 
 /**
  * Modal para retirar a una persona de su sucursal, trasladarla a otra o reintegrar a alguien retirado.
+ * El reintegro es siempre a la sucursal de la que se retiró (bloqueada): para llevarla a otra se usa trasladar.
  * Fleet no deja retirar al último administrador activo de una sucursal activa, ni reintegrar a quien
  * ya trabaja en otra sucursal o a una sucursal inactiva.
  */
@@ -43,6 +44,11 @@ export class AccionPersonalComponent {
   readonly titulo = computed(() =>
     ({ desactivar: 'Retirar de la sucursal', trasladar: 'Trasladar a otra sucursal', reintegrar: 'Reintegrar' })[this.accion()],
   );
+  /** Nombre de la sucursal a la que vuelve quien se reintegra (la suya, no se puede cambiar). */
+  readonly sucursalPropia = computed(() => {
+    const id = this.personal()?.sucursalId;
+    return this.sucursales().find((s) => s.sucursalId === id)?.nombre ?? 'Su sucursal';
+  });
   readonly puesto = computed(() => {
     const p = this.personal();
     return p ? NOMBRE_ROL[p.rol].toLowerCase() : '';
@@ -62,6 +68,9 @@ export class AccionPersonalComponent {
       this.form.reset({ fecha: hoyGt(), sucursalDestinoId: reintegro ? p.sucursalId : '', rol: p.rol });
       const destino = this.form.controls.sucursalDestinoId;
       destino.setValidators(this.accion() !== 'desactivar' ? Validators.required : null);
+      // Reintegro: la sucursal queda fija en la suya (getRawValue() la sigue enviando)
+      if (reintegro) destino.disable();
+      else destino.enable();
       destino.updateValueAndValidity();
       if (this.accion() !== 'desactivar') this.sucursalesServicio.listar(true).subscribe({ next: (s) => this.sucursales.set(s) });
     });
