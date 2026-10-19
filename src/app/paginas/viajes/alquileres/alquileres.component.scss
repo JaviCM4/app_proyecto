@@ -83,3 +83,30 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Ruta del alquiler en el modal de cotizar. */
+.detalle-ruta-cotizar {
+  font-weight: 600;
+  margin-bottom: 12px;
+
+  .flecha {
+    color: var(--texto-suave);
+  }
+}
+
+/* Asignar bus y chofer en PC: fotos a la derecha del formulario y más altas. */
+@media (min-width: 1024px) {
+  .dos-columnas .fotos-asignar {
+    margin-top: 0;
+
+    img,
+    .sin-foto {
+      height: 220px;
+    }
+  }
+}
+
+/* Separa el precio confirmado de la nota del estimado en el modal de cotizar. */
+.detalle-info #form-cotizar {
+  margin-top: 14px;
+}

@@ -21,6 +21,14 @@
   &.chico { max-width: 420px; }
   &.mediano { max-width: 640px; }
   &.grande { max-width: 860px; }
+  &.amplio { max-width: min(1180px, 94vw); }
+
+  /* En PC todos los modales se abren más grandes; en celular y tablet quedan como estaban. */
+  @media (min-width: 1024px) {
+    &.chico { max-width: 520px; }
+    &.mediano { max-width: 820px; }
+    &.grande { max-width: 1080px; }
+  }
 }
 
 .modal-encabezado {

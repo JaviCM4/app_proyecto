@@ -107,93 +107,100 @@
   (cambioPagina)="pagina.set($event)"
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
 
-<app-modal [abierto]="enDetalle() !== null" titulo="Detalle del alquiler" (cerrar)="cerrarDetalle()">
+<app-modal [abierto]="enDetalle() !== null" titulo="Detalle del alquiler"
+           [ancho]="pantallaGrande() ? 'amplio' : 'mediano'" (cerrar)="cerrarDetalle()">
   @if (enDetalle(); as d) {
     <div class="detalle-cabecera">
       <div class="detalle-ruta">{{ d.origen }} <span class="flecha">→</span> {{ d.destino }}</div>
       <span class="insignia" [class.exito]="d.estado === 'ASIGNADO' || d.estado === 'COMPLETADO'"
             [class.peligro]="d.estado === 'CANCELADO'">{{ estadoTexto(d.estado) }}</span>
     </div>
-
-    <div class="datos-lista">
-      <div><dt>Cliente</dt><dd>{{ d.clienteNombre }}</dd></div>
-      <div><dt>Pasajeros</dt><dd>{{ d.cantidadPasajeros }}</dd></div>
-      <div><dt>Canal</dt><dd>{{ d.canal === 'EN_LINEA' ? 'En línea' : 'Ventanilla' }}</dd></div>
-      <div><dt>NIT</dt><dd>{{ d.clienteNit ?? 'CF' }}</dd></div>
-      <div><dt>Correo</dt><dd>{{ d.clienteCorreo ?? '—' }}</dd></div>
-      <div><dt>Fecha de solicitud</dt><dd>{{ d.fechaSolicitud | date: 'dd/MM/yyyy' }}</dd></div>
-      <div><dt>Salida</dt><dd>{{ d.fechaSalida | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
-      <div><dt>Retorno</dt><dd>{{ d.fechaRetorno ? (d.fechaRetorno | date: 'dd/MM/yyyy HH:mm') : 'Solo ida' }}</dd></div>
-      <div><dt>Kilómetros estimados</dt><dd>{{ d.kmEstimados }} km</dd></div>
-      @if (tarifa(d); as t) {
-        <div><dt>Precio por km</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
-      }
-      <div><dt>Precio estimado</dt><dd>{{ d.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
-      <div>
-        <dt>Precio confirmado</dt>
-        <dd>{{ d.precioConfirmado !== null ? (d.precioConfirmado | currency: 'GTQ' : 'symbol-narrow') : 'Pendiente de cotización' }}</dd>
-      </div>
-    </div>
-
-    @if (tieneRecorrido(d)) {
-      <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
-      <app-mapa-recorrido
-        [origenLatitud]="d.origenLatitud"
-        [origenLongitud]="d.origenLongitud"
-        [destinoLatitud]="d.destinoLatitud"
-        [destinoLongitud]="d.destinoLongitud"
-        [origen]="d.origen"
-        [destino]="d.destino" />
-    }
-
-    <h3 class="detalle-subtitulo">Viaje asignado</h3>
-    @if (d.viaje; as v) {
-      <div class="datos-lista">
-        <div><dt>Estado del viaje</dt><dd>{{ viajeTexto(v.estado) }}</dd></div>
-        <div><dt>Bus</dt><dd>{{ busTexto(d) }}</dd></div>
-        <div><dt>Chofer</dt><dd>{{ choferTexto(d) }}</dd></div>
-        <div><dt>Capacidad</dt><dd>{{ v.capacidad }} asientos</dd></div>
-        <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
-        <div><dt>Llegada estimada</dt><dd>{{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
-        @if (choferAsignado(); as c) {
-          <div class="completo">
-            <dt>Licencia del chofer</dt>
-            <dd>Tipo {{ c.tipoLicencia }} · {{ c.numeroLicencia }} (vence {{ c.fechaVencimientoLicencia | date: 'dd/MM/yyyy' }})</dd>
+    <div class="detalle-con-mapa" [class.con-mapa]="tieneRecorrido(d)">
+      <div class="detalle-info">
+        <div class="datos-lista">
+          <div><dt>Cliente</dt><dd>{{ d.clienteNombre }}</dd></div>
+          <div><dt>Pasajeros</dt><dd>{{ d.cantidadPasajeros }}</dd></div>
+          <div><dt>Canal</dt><dd>{{ d.canal === 'EN_LINEA' ? 'En línea' : 'Ventanilla' }}</dd></div>
+          <div><dt>NIT</dt><dd>{{ d.clienteNit ?? 'CF' }}</dd></div>
+          <div><dt>Correo</dt><dd>{{ d.clienteCorreo ?? '—' }}</dd></div>
+          <div><dt>Fecha de solicitud</dt><dd>{{ d.fechaSolicitud | date: 'dd/MM/yyyy' }}</dd></div>
+          <div><dt>Salida</dt><dd>{{ d.fechaSalida | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+          <div><dt>Retorno</dt><dd>{{ d.fechaRetorno ? (d.fechaRetorno | date: 'dd/MM/yyyy HH:mm') : 'Solo ida' }}</dd></div>
+          <div><dt>Kilómetros estimados</dt><dd>{{ d.kmEstimados }} km</dd></div>
+          @if (tarifa(d); as t) {
+            <div><dt>Precio por km</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
+          }
+          <div><dt>Precio estimado</dt><dd>{{ d.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
+          <div>
+            <dt>Precio confirmado</dt>
+            <dd>{{ d.precioConfirmado !== null ? (d.precioConfirmado | currency: 'GTQ' : 'symbol-narrow') : 'Pendiente de cotización' }}</dd>
           </div>
+        </div>
+
+
+        <h3 class="detalle-subtitulo">Viaje asignado</h3>
+        @if (d.viaje; as v) {
+          <div class="datos-lista">
+            <div><dt>Estado del viaje</dt><dd>{{ viajeTexto(v.estado) }}</dd></div>
+            <div><dt>Bus</dt><dd>{{ busTexto(d) }}</dd></div>
+            <div><dt>Chofer</dt><dd>{{ choferTexto(d) }}</dd></div>
+            <div><dt>Capacidad</dt><dd>{{ v.capacidad }} asientos</dd></div>
+            <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+            <div><dt>Llegada estimada</dt><dd>{{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+            @if (choferAsignado(); as c) {
+              <div class="completo">
+                <dt>Licencia del chofer</dt>
+                <dd>Tipo {{ c.tipoLicencia }} · {{ c.numeroLicencia }} (vence {{ c.fechaVencimientoLicencia | date: 'dd/MM/yyyy' }})</dd>
+              </div>
+            }
+          </div>
+
+          <div class="fotos-viaje">
+            <figure>
+              @if (busAsignado()?.fotoUrl) {
+                <img [src]="busAsignado()!.fotoUrl" [alt]="'Bus ' + (v.busPlaca ?? '')" />
+              } @else {
+                <div class="sin-foto">Sin foto del bus</div>
+              }
+              <figcaption>Bus {{ v.busPlaca ?? 'por confirmar' }}</figcaption>
+            </figure>
+            <figure>
+              @if (fotoChofer()) {
+                <img [src]="fotoChofer()!" [alt]="'Chofer ' + (v.choferNombre ?? '')" />
+              } @else {
+                <div class="sin-foto">Sin foto del chofer</div>
+              }
+              <figcaption>Chofer {{ v.choferNombre ?? 'por confirmar' }}</figcaption>
+            </figure>
+          </div>
+        } @else if (d.estado === 'PAGADO') {
+          <p class="secundario">El alquiler ya está pagado: falta asignarle bus y chofer.</p>
+        } @else if (d.estado === 'COTIZADO') {
+          <p class="secundario">Cotizado: cuando el cliente pague con su cartera se podrá asignar el viaje.</p>
+        } @else if (d.estado === 'SOLICITADO') {
+          <p class="secundario">Solicitado: primero confirma el precio de la cotización.</p>
+        } @else {
+          <p class="secundario">Sin viaje asignado.</p>
+        }
+
+        @if (d.motivoCancelacion) {
+          <p class="secundario">Motivo de cancelación: {{ d.motivoCancelacion }}</p>
         }
       </div>
-
-      <div class="fotos-viaje">
-        <figure>
-          @if (busAsignado()?.fotoUrl) {
-            <img [src]="busAsignado()!.fotoUrl" [alt]="'Bus ' + (v.busPlaca ?? '')" />
-          } @else {
-            <div class="sin-foto">Sin foto del bus</div>
-          }
-          <figcaption>Bus {{ v.busPlaca ?? 'por confirmar' }}</figcaption>
-        </figure>
-        <figure>
-          @if (fotoChofer()) {
-            <img [src]="fotoChofer()!" [alt]="'Chofer ' + (v.choferNombre ?? '')" />
-          } @else {
-            <div class="sin-foto">Sin foto del chofer</div>
-          }
-          <figcaption>Chofer {{ v.choferNombre ?? 'por confirmar' }}</figcaption>
-        </figure>
-      </div>
-    } @else if (d.estado === 'PAGADO') {
-      <p class="secundario">El alquiler ya está pagado: falta asignarle bus y chofer.</p>
-    } @else if (d.estado === 'COTIZADO') {
-      <p class="secundario">Cotizado: cuando el cliente pague con su cartera se podrá asignar el viaje.</p>
-    } @else if (d.estado === 'SOLICITADO') {
-      <p class="secundario">Solicitado: primero confirma el precio de la cotización.</p>
-    } @else {
-      <p class="secundario">Sin viaje asignado.</p>
-    }
-
-    @if (d.motivoCancelacion) {
-      <p class="secundario">Motivo de cancelación: {{ d.motivoCancelacion }}</p>
-    }
+      @if (tieneRecorrido(d)) {
+        <div class="detalle-mapa">
+          <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
+          <app-mapa-recorrido
+            [origenLatitud]="d.origenLatitud"
+            [origenLongitud]="d.origenLongitud"
+            [destinoLatitud]="d.destinoLatitud"
+            [destinoLongitud]="d.destinoLongitud"
+            [origen]="d.origen"
+            [destino]="d.destino"
+            [alto]="pantallaGrande() ? 460 : 240" />
+        </div>
+      }
+    </div>
   }
   <div pie>
     <button type="button" class="btn" (click)="cerrarDetalle()">Cerrar</button>
@@ -203,37 +210,47 @@
 @if (puedeGestionar) {
   <app-modal [abierto]="porCotizar() !== null" titulo="Cotizar alquiler"
              subtitulo="Confirma el precio final, igual o ajustado al estimado."
-             ancho="chico" (cerrar)="porCotizar.set(null)">
+             [ancho]="pantallaGrande() && porCotizar() && tieneRecorrido(porCotizar()!) ? 'amplio' : 'chico'"
+             (cerrar)="porCotizar.set(null)">
     @if (porCotizar(); as c) {
-      <div class="datos-lista">
-        <div><dt>Kilómetros estimados</dt><dd>{{ c.kmEstimados }} km</dd></div>
-        @if (tarifa(c); as t) {
-          <div><dt>Precio por km</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
+      <div class="detalle-con-mapa" [class.con-mapa]="tieneRecorrido(c)">
+        <div class="detalle-info">
+          <div class="detalle-ruta-cotizar">{{ c.origen }} <span class="flecha">→</span> {{ c.destino }}</div>
+          <div class="datos-lista">
+            <div><dt>Cliente</dt><dd>{{ c.clienteNombre }}</dd></div>
+            <div><dt>Pasajeros</dt><dd>{{ c.cantidadPasajeros }}</dd></div>
+            <div><dt>Kilómetros estimados</dt><dd>{{ c.kmEstimados }} km</dd></div>
+            @if (tarifa(c); as t) {
+              <div><dt>Precio por km</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
+            }
+            <div class="completo"><dt>Precio estimado</dt><dd>{{ c.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
+          </div>
+          <p class="secundario">El estimado sale de multiplicar los kilómetros por el precio por km vigente.</p>
+          <form id="form-cotizar" [formGroup]="formCotizar" (ngSubmit)="cotizar()" class="formulario">
+            <div class="campo">
+              <label for="precio-confirmado">Precio confirmado (Q)</label>
+              <input id="precio-confirmado" type="number" min="0.01" step="0.01" class="control" formControlName="precioConfirmado" />
+              @if (formCotizar.controls.precioConfirmado.touched && formCotizar.controls.precioConfirmado.invalid) {
+                <span class="error">Escribe un precio mayor que cero.</span>
+              }
+            </div>
+          </form>
+        </div>
+        @if (tieneRecorrido(c)) {
+          <div class="detalle-mapa">
+            <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
+            <app-mapa-recorrido
+              [origenLatitud]="c.origenLatitud"
+              [origenLongitud]="c.origenLongitud"
+              [destinoLatitud]="c.destinoLatitud"
+              [destinoLongitud]="c.destinoLongitud"
+              [origen]="c.origen"
+              [destino]="c.destino"
+              [alto]="pantallaGrande() ? 400 : 180" />
+          </div>
         }
-        <div><dt>Precio estimado</dt><dd>{{ c.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
       </div>
-      <p class="secundario">El estimado sale de multiplicar los kilómetros por el precio por km vigente.</p>
-      @if (tieneRecorrido(c)) {
-        <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
-        <app-mapa-recorrido
-          [origenLatitud]="c.origenLatitud"
-          [origenLongitud]="c.origenLongitud"
-          [destinoLatitud]="c.destinoLatitud"
-          [destinoLongitud]="c.destinoLongitud"
-          [origen]="c.origen"
-          [destino]="c.destino"
-          [alto]="180" />
-      }
     }
-    <form id="form-cotizar" [formGroup]="formCotizar" (ngSubmit)="cotizar()" class="formulario">
-      <div class="campo">
-        <label for="precio-confirmado">Precio confirmado (Q)</label>
-        <input id="precio-confirmado" type="number" min="0.01" step="0.01" class="control" formControlName="precioConfirmado" />
-        @if (formCotizar.controls.precioConfirmado.touched && formCotizar.controls.precioConfirmado.invalid) {
-          <span class="error">Escribe un precio mayor que cero.</span>
-        }
-      </div>
-    </form>
     <div pie>
       <button type="button" class="btn" (click)="porCotizar.set(null)">Cancelar</button>
       <button type="submit" form="form-cotizar" class="btn primario" [disabled]="enviando()">
@@ -243,51 +260,53 @@
   </app-modal>
 
   <app-modal [abierto]="porAsignar() !== null" titulo="Asignar bus y chofer"
-             subtitulo="Se crea el viaje privado del alquiler." (cerrar)="porAsignar.set(null)">
-    <form id="form-asignar" [formGroup]="formAsignar" (ngSubmit)="asignar()" class="formulario">
-      <div class="campo">
-        <label for="a-bus">Bus</label>
-        <select id="a-bus" class="control" formControlName="busId">
-          <option value="">Elige el bus…</option>
-          @for (b of buses(); track b.busId) {
-            <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
-          }
-        </select>
-      </div>
-      <div class="campo">
-        <label for="a-chofer">Chofer</label>
-        <select id="a-chofer" class="control" formControlName="choferId">
-          <option value="">Elige el chofer…</option>
-          @for (c of choferes(); track c.choferId) {
-            <option [value]="c.choferId">{{ c.nombreCompleto }}</option>
-          }
-        </select>
-      </div>
-      <div class="campo">
-        <label for="a-llegada">Llegada estimada</label>
-        <input id="a-llegada" type="datetime-local" class="control" formControlName="llegadaEstimada" />
-      </div>
-    </form>
+             subtitulo="Se crea el viaje privado del alquiler." ancho="grande" (cerrar)="porAsignar.set(null)">
+    <div class="detalle-con-mapa dos-columnas">
+      <form id="form-asignar" [formGroup]="formAsignar" (ngSubmit)="asignar()" class="formulario">
+        <div class="campo">
+          <label for="a-bus">Bus</label>
+          <select id="a-bus" class="control" formControlName="busId">
+            <option value="">Elige el bus…</option>
+            @for (b of buses(); track b.busId) {
+              <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="a-chofer">Chofer</label>
+          <select id="a-chofer" class="control" formControlName="choferId">
+            <option value="">Elige el chofer…</option>
+            @for (c of choferes(); track c.choferId) {
+              <option [value]="c.choferId">{{ c.nombreCompleto }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
+          <label for="a-llegada">Llegada estimada</label>
+          <input id="a-llegada" type="datetime-local" class="control" formControlName="llegadaEstimada" />
+        </div>
+      </form>
 
-    <div class="fotos-asignar">
-      <figure>
-        @if (busElegido()?.fotoUrl) {
-          <img [src]="busElegido()!.fotoUrl" alt="Bus elegido" />
-        } @else {
-          <div class="sin-foto">Elige un bus para ver su foto</div>
-        }
-        <figcaption>
-          {{ busElegido() ? (busElegido()!.placa + ' · ' + busElegido()!.marca + ' ' + busElegido()!.modelo) : 'Bus' }}
-        </figcaption>
-      </figure>
-      <figure>
-        @if (fotoChoferAsignar()) {
-          <img [src]="fotoChoferAsignar()!" alt="Chofer elegido" />
-        } @else {
-          <div class="sin-foto">Elige un chofer para ver su foto</div>
-        }
-        <figcaption>{{ choferElegido()?.nombreCompleto ?? 'Chofer' }}</figcaption>
-      </figure>
+      <div class="fotos-asignar">
+        <figure>
+          @if (busElegido()?.fotoUrl) {
+            <img [src]="busElegido()!.fotoUrl" alt="Bus elegido" />
+          } @else {
+            <div class="sin-foto">Elige un bus para ver su foto</div>
+          }
+          <figcaption>
+            {{ busElegido() ? (busElegido()!.placa + ' · ' + busElegido()!.marca + ' ' + busElegido()!.modelo) : 'Bus' }}
+          </figcaption>
+        </figure>
+        <figure>
+          @if (fotoChoferAsignar()) {
+            <img [src]="fotoChoferAsignar()!" alt="Chofer elegido" />
+          } @else {
+            <div class="sin-foto">Elige un chofer para ver su foto</div>
+          }
+          <figcaption>{{ choferElegido()?.nombreCompleto ?? 'Chofer' }}</figcaption>
+        </figure>
+      </div>
     </div>
 
     <div pie>

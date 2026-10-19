@@ -104,60 +104,68 @@
     (cambioTamano)="tamano.set($event); pagina.set(1)" />
 }
 
-<app-modal [abierto]="enDetalle() !== null" titulo="Detalle del alquiler" (cerrar)="enDetalle.set(null)">
+<app-modal [abierto]="enDetalle() !== null" titulo="Detalle del alquiler"
+           [ancho]="pantallaGrande() ? 'amplio' : 'mediano'" (cerrar)="enDetalle.set(null)">
   @if (enDetalle(); as a) {
     <div class="detalle-cabecera">
       <div class="detalle-ruta">{{ a.origen }} <span class="flecha">→</span> {{ a.destino }}</div>
       <span [class]="'insignia ' + clase(a.estado)">{{ texto(a.estado) }}</span>
     </div>
-    <div class="datos-lista">
-      <div><dt>Cliente</dt><dd>{{ a.clienteNombre }}</dd></div>
-      <div><dt>Canal</dt><dd>{{ a.canal === 'EN_LINEA' ? 'En línea' : 'Ventanilla' }}</dd></div>
-      <div><dt>NIT</dt><dd>{{ a.clienteNit ?? 'CF' }}</dd></div>
-      <div><dt>Correo</dt><dd>{{ a.clienteCorreo ?? '—' }}</dd></div>
-      <div><dt>Salida</dt><dd>{{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
-      <div><dt>Retorno</dt><dd>{{ a.fechaRetorno ? (a.fechaRetorno | date: 'dd/MM/yyyy HH:mm' : zona) : 'Solo ida' }}</dd></div>
-      <div><dt>Pasajeros</dt><dd>{{ a.cantidadPasajeros }}</dd></div>
-      <div><dt>Kilómetros</dt><dd>{{ a.kmEstimados }} km</dd></div>
-      @if (tarifa(a); as t) {
-        <div><dt>Tarifa aplicada</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
-      }
-      <div><dt>Precio estimado</dt><dd>{{ a.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
-      <div><dt>Precio confirmado</dt><dd>{{ a.precioConfirmado !== null ? (a.precioConfirmado | currency: 'GTQ' : 'symbol-narrow') : '—' }}</dd></div>
-      @if (a.motivoCancelacion) {
-        <div class="completo"><dt>Motivo de cancelación</dt><dd>{{ a.motivoCancelacion }}</dd></div>
+    <div class="detalle-con-mapa" [class.con-mapa]="tieneRecorrido(a)">
+      <div class="detalle-info">
+        <div class="datos-lista">
+          <div><dt>Cliente</dt><dd>{{ a.clienteNombre }}</dd></div>
+          <div><dt>Canal</dt><dd>{{ a.canal === 'EN_LINEA' ? 'En línea' : 'Ventanilla' }}</dd></div>
+          <div><dt>NIT</dt><dd>{{ a.clienteNit ?? 'CF' }}</dd></div>
+          <div><dt>Correo</dt><dd>{{ a.clienteCorreo ?? '—' }}</dd></div>
+          <div><dt>Salida</dt><dd>{{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+          <div><dt>Retorno</dt><dd>{{ a.fechaRetorno ? (a.fechaRetorno | date: 'dd/MM/yyyy HH:mm' : zona) : 'Solo ida' }}</dd></div>
+          <div><dt>Pasajeros</dt><dd>{{ a.cantidadPasajeros }}</dd></div>
+          <div><dt>Kilómetros</dt><dd>{{ a.kmEstimados }} km</dd></div>
+          @if (tarifa(a); as t) {
+            <div><dt>Tarifa aplicada</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
+          }
+          <div><dt>Precio estimado</dt><dd>{{ a.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
+          <div><dt>Precio confirmado</dt><dd>{{ a.precioConfirmado !== null ? (a.precioConfirmado | currency: 'GTQ' : 'symbol-narrow') : '—' }}</dd></div>
+          @if (a.motivoCancelacion) {
+            <div class="completo"><dt>Motivo de cancelación</dt><dd>{{ a.motivoCancelacion }}</dd></div>
+          }
+        </div>
+        @if (ordenDe(a); as orden) {
+          @if (orden.estado === 'RECHAZADA') {
+            <p class="aviso-error">
+              Pago rechazado: {{ orden.motivoRechazo || 'saldo insuficiente' }}.
+              Puedes reintentarlo con el botón de abajo.
+            </p>
+          }
+        }
+        @if (a.viaje; as v) {
+          <h3 class="detalle-subtitulo">Viaje asignado</h3>
+          <div class="datos-lista">
+            <div><dt>Estado del viaje</dt><dd>{{ viajeTexto(v.estado) }}</dd></div>
+            <div><dt>Bus</dt><dd>{{ v.busPlaca ?? 'Por confirmar' }}</dd></div>
+            <div><dt>Chofer</dt><dd>{{ v.choferNombre ?? 'Por confirmar' }}</dd></div>
+            <div><dt>Capacidad</dt><dd>{{ v.capacidad }} asientos</dd></div>
+            <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+            <div><dt>Llegada estimada</dt><dd>{{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+          </div>
+        }
+        <p class="secundario">{{ aviso(a) }}</p>
+      </div>
+      @if (tieneRecorrido(a)) {
+        <div class="detalle-mapa">
+          <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
+          <app-mapa-recorrido
+            [origenLatitud]="a.origenLatitud"
+            [origenLongitud]="a.origenLongitud"
+            [destinoLatitud]="a.destinoLatitud"
+            [destinoLongitud]="a.destinoLongitud"
+            [origen]="a.origen"
+            [destino]="a.destino"
+            [alto]="pantallaGrande() ? 460 : 240" />
+        </div>
       }
     </div>
-    @if (tieneRecorrido(a)) {
-      <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
-      <app-mapa-recorrido
-        [origenLatitud]="a.origenLatitud"
-        [origenLongitud]="a.origenLongitud"
-        [destinoLatitud]="a.destinoLatitud"
-        [destinoLongitud]="a.destinoLongitud"
-        [origen]="a.origen"
-        [destino]="a.destino" />
-    }
-    @if (ordenDe(a); as orden) {
-      @if (orden.estado === 'RECHAZADA') {
-        <p class="aviso-error">
-          Pago rechazado: {{ orden.motivoRechazo || 'saldo insuficiente' }}.
-          Puedes reintentarlo con el botón de abajo.
-        </p>
-      }
-    }
-    @if (a.viaje; as v) {
-      <h3 class="detalle-subtitulo">Viaje asignado</h3>
-      <div class="datos-lista">
-        <div><dt>Estado del viaje</dt><dd>{{ viajeTexto(v.estado) }}</dd></div>
-        <div><dt>Bus</dt><dd>{{ v.busPlaca ?? 'Por confirmar' }}</dd></div>
-        <div><dt>Chofer</dt><dd>{{ v.choferNombre ?? 'Por confirmar' }}</dd></div>
-        <div><dt>Capacidad</dt><dd>{{ v.capacidad }} asientos</dd></div>
-        <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
-        <div><dt>Llegada estimada</dt><dd>{{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
-      </div>
-    }
-    <p class="secundario">{{ aviso(a) }}</p>
   }
   <div pie>
     <button type="button" class="btn" (click)="enDetalle.set(null)">Cerrar</button>

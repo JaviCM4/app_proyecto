@@ -22,3 +22,76 @@
   color: var(--exito);
   margin-bottom: 12px;
 }
+
+/* Resumen de la solicitud enviada (las columnas en PC las da .detalle-con-mapa de _base.scss). */
+.resumen-solicitud {
+  .estado {
+    margin-top: 14px;
+    line-height: 1.6;
+  }
+
+  .precio {
+    font-size: 20px;
+    font-weight: 700;
+  }
+}
+
+/* Aviso que ocupa todo el ancho de la grilla del formulario. */
+.completo-fila {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+}
+
+/* ¿Para quién es el alquiler? (cajero y administrador de sucursal) */
+.etiqueta-grupo {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.para-quien {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+
+  .opcion {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-sm);
+    background: var(--superficie);
+    cursor: pointer;
+
+    input {
+      margin-top: 3px;
+    }
+
+    span {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    small {
+      color: var(--texto-suave);
+      font-size: 12px;
+    }
+
+    &.activa {
+      border-color: var(--primario);
+      background: var(--primario-suave);
+    }
+
+    &.deshabilitada {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}

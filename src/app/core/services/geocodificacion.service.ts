@@ -30,6 +30,11 @@ interface RespuestaPhoton {
 /** Caja de Guatemala (minLon,minLat,maxLon,maxLat) para no proponer lugares de otros países. */
 const CAJA_GT = '-92.6,13.4,-88.0,18.1';
 
+/** Coordenada con 6 decimales (≈ 11 cm): lo máximo que acepta el backend (Trips valida 6 decimales). */
+export function seisDecimales(valor: number): number {
+  return Math.round(valor * 1e6) / 1e6;
+}
+
 /**
  * Búsqueda de lugares y geocodificación inversa con Photon (sin API key).
  *
@@ -70,8 +75,9 @@ export class GeocodificacionService {
   }
 
   private aLugar(f: CaracteristicaPhoton): Lugar {
+    // Photon devuelve 7 o más decimales: se recortan aquí para que ningún formulario mande de más
     const [longitud, latitud] = f.geometry.coordinates;
-    return { nombre: this.etiqueta(f), latitud, longitud };
+    return { nombre: this.etiqueta(f), latitud: seisDecimales(latitud), longitud: seisDecimales(longitud) };
   }
 
   /** Junta lo más útil del resultado en una etiqueta corta (lugar, ciudad). */

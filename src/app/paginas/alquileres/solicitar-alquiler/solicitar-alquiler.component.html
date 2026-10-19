@@ -13,7 +13,38 @@
     <div class="formulario-grilla">
       <div class="formulario-seccion">Datos de la solicitud</div>
 
-      @if (esCajero) {
+      @if (esVentanilla) {
+        <div class="campo completo-fila">
+          <span class="etiqueta-grupo">¿Para quién es el alquiler?</span>
+          <div class="para-quien" role="radiogroup" aria-label="Para quién es el alquiler">
+            <label class="opcion" [class.activa]="esPropia()" [class.deshabilitada]="!tieneCliente">
+              <input type="radio" name="paraQuien" [checked]="esPropia()" [disabled]="!tieneCliente"
+                     (change)="elegirParaQuien('propia')" />
+              <span>
+                <strong>Para mí</strong>
+                <small>{{ tieneCliente ? 'Con los datos de mi perfil.' : 'Tu cuenta no tiene el rol Cliente.' }}</small>
+              </span>
+            </label>
+            <label class="opcion" [class.activa]="!esPropia()">
+              <input type="radio" name="paraQuien" [checked]="!esPropia()" (change)="elegirParaQuien('otra')" />
+              <span>
+                <strong>Para otra persona</strong>
+                <small>Escribes sus datos a mano.</small>
+              </span>
+            </label>
+          </div>
+          @if (esCajero && esPropia()) {
+            <span class="ayuda">Se registra en ventanilla a tu nombre y lo pagas en efectivo en <strong>Órdenes de alquiler</strong>.</span>
+          }
+          @if (!esCajero && !esPropia()) {
+            <span class="ayuda">
+              Se registra en tu sucursal y queda en tus <strong>Mis alquileres</strong> con los datos de esa persona.
+            </span>
+          }
+        </div>
+      }
+
+      @if (sucursalBloqueada()) {
         <div class="campo">
           <label>Sucursal</label>
           <input class="control" [value]="sucursalFija()?.nombre ?? 'Tu sucursal'" disabled />
@@ -42,16 +73,23 @@
 
       <div class="formulario-seccion">Datos del cliente</div>
 
-      @if (esCajero) {
-        <div class="campo">
-          <label for="nit">NIT del cliente</label>
-          <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF" />
-          <span class="ayuda">Déjalo vacío para consumidor final (CF).</span>
-        </div>
+      @if (esPropia()) {
+        <p class="ayuda completo-fila">
+          La solicitud va a tu nombre con los datos de tu perfil. Para cambiarlos ve a
+          <a routerLink="/panel/perfil">Mi perfil</a>.
+        </p>
       }
 
       <div class="campo">
-        <label for="nombre">Nombre del cliente</label>
+        <label for="nit">{{ esPropia() ? 'NIT' : 'NIT del cliente (opcional)' }}</label>
+        <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF" />
+        <span class="ayuda">
+          {{ esPropia() ? 'Sale de tu perfil; sin NIT se registra como CF.' : 'Déjalo vacío para consumidor final (CF).' }}
+        </span>
+      </div>
+
+      <div class="campo">
+        <label for="nombre">{{ esPropia() ? 'Nombre' : 'Nombre del cliente' }}</label>
         <input id="nombre" class="control" formControlName="clienteNombre" maxlength="150" placeholder="Nombre completo" />
         @if (form.controls.clienteNombre.touched && form.controls.clienteNombre.invalid) {
           <span class="error">Escribe el nombre del cliente.</span>
@@ -59,7 +97,7 @@
       </div>
 
       <div class="campo">
-        <label for="correo">Correo (opcional)</label>
+        <label for="correo">{{ esPropia() ? 'Correo' : 'Correo (opcional)' }}</label>
         <input id="correo" type="email" class="control" formControlName="clienteCorreo" maxlength="150"
                placeholder="Para avisarle de la cotización" />
         @if (form.controls.clienteCorreo.touched && form.controls.clienteCorreo.invalid) {
@@ -150,45 +188,51 @@
 </div>
 
 <app-modal [abierto]="creado() !== null" titulo="Solicitud enviada"
-           ancho="chico" (cerrar)="solicitarOtro()">
+           [ancho]="pantallaGrande() ? 'amplio' : 'chico'" (cerrar)="solicitarOtro()">
   @if (creado(); as a) {
     <p class="ok">Tu solicitud de alquiler quedó registrada.</p>
-    <div class="datos-lista">
-      <div><dt>Recorrido</dt><dd>{{ a.origen }} → {{ a.destino }}</dd></div>
-      <div><dt>Salida</dt><dd>{{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
-      <div><dt>Pasajeros</dt><dd>{{ a.cantidadPasajeros }}</dd></div>
-      <div><dt>Kilómetros</dt><dd>{{ a.kmEstimados }} km</dd></div>
-      @if (tarifa(a); as t) {
-        <div><dt>Precio por km</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
+    <div class="detalle-con-mapa resumen-solicitud" [class.con-mapa]="tieneRecorrido(a)">
+      <div class="detalle-info">
+        <div class="datos-lista">
+          <div class="completo"><dt>Recorrido</dt><dd>{{ a.origen }} → {{ a.destino }}</dd></div>
+          <div><dt>Salida</dt><dd>{{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+          <div><dt>Pasajeros</dt><dd>{{ a.cantidadPasajeros }}</dd></div>
+          <div><dt>Kilómetros</dt><dd>{{ a.kmEstimados }} km</dd></div>
+          @if (tarifa(a); as t) {
+            <div><dt>Precio por km</dt><dd>{{ t | currency: 'GTQ' : 'symbol-narrow' }} / km</dd></div>
+          }
+          <div class="completo"><dt>Precio estimado</dt><dd class="precio">{{ a.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
+        </div>
+        <p class="secundario estado">
+          Estado: <span class="insignia aviso">Solicitado</span>. Un administrador revisará la solicitud y confirmará el precio.
+          @if (a.canal === 'EN_LINEA') {
+            Cuando esté cotizada podrás pagarla desde <strong>Mis alquileres</strong>.
+          } @else {
+            Cuando el administrador confirme el precio, podrás cobrarlo en efectivo desde
+            <strong>Órdenes de alquiler</strong>.
+          }
+        </p>
+      </div>
+      @if (tieneRecorrido(a)) {
+        <div class="detalle-mapa">
+          <app-mapa-recorrido
+            [origenLatitud]="a.origenLatitud"
+            [origenLongitud]="a.origenLongitud"
+            [destinoLatitud]="a.destinoLatitud"
+            [destinoLongitud]="a.destinoLongitud"
+            [origen]="a.origen"
+            [destino]="a.destino"
+            [alto]="pantallaGrande() ? 440 : 200" />
+        </div>
       }
-      <div class="completo"><dt>Precio estimado</dt><dd>{{ a.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
     </div>
-    @if (tieneRecorrido(a)) {
-      <app-mapa-recorrido
-        [origenLatitud]="a.origenLatitud"
-        [origenLongitud]="a.origenLongitud"
-        [destinoLatitud]="a.destinoLatitud"
-        [destinoLongitud]="a.destinoLongitud"
-        [origen]="a.origen"
-        [destino]="a.destino"
-        [alto]="200" />
-    }
-    <p class="secundario">
-      Estado: <span class="insignia aviso">Solicitado</span>. Un administrador revisará la solicitud y confirmará el precio.
-      @if (!esCajero) {
-        Cuando esté cotizada podrás pagarla desde <strong>Mis alquileres</strong>.
-      } @else {
-        Cuando el administrador confirme el precio, podrás cobrarlo en efectivo desde
-        <strong>Órdenes de alquiler</strong>.
-      }
-    </p>
   }
   <div pie>
     <button type="button" class="btn" (click)="solicitarOtro()">Solicitar otro</button>
-    @if (esCajero) {
-      <a class="btn primario" routerLink="/panel/alquileres" (click)="creado.set(null)">Ver alquileres</a>
-    } @else {
+    @if (creado()?.canal === 'EN_LINEA') {
       <a class="btn primario" routerLink="/panel/mis-alquileres" (click)="creado.set(null)">Mis alquileres</a>
+    } @else {
+      <a class="btn primario" routerLink="/panel/ordenes" (click)="creado.set(null)">Órdenes de alquiler</a>
     }
   </div>
 </app-modal>

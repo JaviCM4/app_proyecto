@@ -18,7 +18,8 @@ export class ModalComponent {
   readonly abierto = input(false);
   readonly titulo = input('');
   readonly subtitulo = input('');
-  readonly ancho = input<'chico' | 'mediano' | 'grande'>('mediano');
+  /** amplio: casi todo el ancho en PC (resúmenes con mapa); en celular ocupa la pantalla igual que los demás. */
+  readonly ancho = input<'chico' | 'mediano' | 'grande' | 'amplio'>('mediano');
   readonly cerrar = output<void>();
 
   @HostListener('document:keydown.escape')
