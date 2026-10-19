@@ -1,0 +1,31 @@
+.quien {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--borde);
+
+  div { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+  span { font-size: 13px; }
+}
+
+.opcional { font-weight: 400; color: var(--texto-tenue); }
+.mayusculas { text-transform: uppercase; }
+
+.salir {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.enlace {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--primario);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}

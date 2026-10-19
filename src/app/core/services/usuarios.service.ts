@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   ActualizarPerfil,
+  CompletarPerfil,
   EstadoUsuario,
   FiltroUsuarios,
   NuevoAdministradorSistema,
@@ -27,6 +28,11 @@ export class UsuariosService {
 
   actualizarPerfil(datos: ActualizarPerfil): Observable<Perfil> {
     return this.http.put<Perfil>(`${this.api}/perfil`, datos);
+  }
+
+  /** Cuenta creada con Google: guarda DPI, teléfono, dirección y NIT (opcional) para poder usar el portal. */
+  completarPerfil(datos: CompletarPerfil): Observable<Perfil> {
+    return this.http.put<Perfil>(`${this.api}/perfil/completar`, datos);
   }
 
   /** Sube la foto (JPG, PNG o WEBP, máx. 2 MB) y devuelve su URL para guardarla en el perfil. */

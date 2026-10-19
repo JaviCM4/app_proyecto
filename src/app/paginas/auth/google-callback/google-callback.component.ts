@@ -1,8 +1,6 @@
 import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
-import { UsuariosService } from '../../../core/services/usuarios.service';
 import { errorApi, mensajeError } from '../../../core/utils/errores-http';
 import { BotonGoogleComponent } from '../../../shared/components/boton-google/boton-google.component';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -26,7 +24,8 @@ const MENSAJES: Record<string, string> = {
 /**
  * Regreso del inicio con Google: FRONTEND_URL/oauth/google/callback?ticket=... (o ?error=CODIGO).
  * Cambia el ticket por la sesión; si la cuenta tiene doble factor, sigue a la pantalla del código.
- * Las cuentas nuevas de Google no tienen NIT, teléfono ni dirección: se manda a completar el perfil.
+ * Las cuentas nuevas de Google no tienen DPI, teléfono ni dirección: el guard perfilCompletoGuard las
+ * lleva a /completar-perfil antes de entrar al panel.
  */
 @Component({
   selector: 'app-google-callback',
@@ -36,7 +35,6 @@ const MENSAJES: Record<string, string> = {
 })
 export class GoogleCallbackComponent implements OnInit {
   private readonly auth = inject(AuthService);
-  private readonly usuarios = inject(UsuariosService);
   private readonly router = inject(Router);
   private readonly avisos = inject(ToastService);
 
@@ -70,18 +68,8 @@ export class GoogleCallbackComponent implements OnInit {
     });
   }
 
-  /** Con sesión: si al perfil le faltan datos (cuenta nueva de Google) se abre Mi perfil para completarlos. */
+  /** Con sesión: el panel decide (perfilCompletoGuard manda a completar el perfil si faltan datos). */
   private irAlPanel(): void {
-    this.usuarios
-      .perfil()
-      .pipe(catchError(() => of(null)))
-      .subscribe((p) => {
-        if (p && (!p.nit || !p.telefono || !p.direccion)) {
-          this.avisos.info('¡Bienvenido! Completa tu NIT, teléfono y dirección para poder comprar boletos.');
-          this.router.navigateByUrl('/panel/perfil', { replaceUrl: true });
-          return;
-        }
-        this.router.navigateByUrl('/panel', { replaceUrl: true });
-      });
+    this.router.navigateByUrl('/panel', { replaceUrl: true });
   }
 }

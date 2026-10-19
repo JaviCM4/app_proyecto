@@ -71,3 +71,11 @@ export interface UsuarioBusqueda {
   puedeSerPersonal: boolean;
   motivo: string | null;
 }
+
+/** Datos que completa una cuenta creada con Google (el NIT es opcional: sin NIT se factura como CF). */
+export interface CompletarPerfil {
+  nit: string;
+  dpi: string;
+  telefono: string;
+  direccion: string;
+}

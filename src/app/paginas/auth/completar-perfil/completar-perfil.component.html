@@ -1,0 +1,61 @@
+<div class="tarjeta caja-acceso ancha">
+  @if (auth.usuario(); as u) {
+    <div class="quien">
+      <app-avatar [foto]="u.fotoUrl" [nombre]="u.nombre" [tamano]="48" />
+      <div>
+        <strong>{{ u.nombre }}</strong>
+        <span class="suave">{{ u.correo }}</span>
+      </div>
+    </div>
+  }
+  <h1>Completa tu cuenta</h1>
+  <p class="descripcion">
+    Tu cuenta de Google ya está creada. Antes de entrar necesitamos estos datos para tus boletos y facturas.
+  </p>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="formulario-grilla">
+      <div class="campo">
+        <label for="cp-dpi">DPI</label>
+        <input id="cp-dpi" class="control" formControlName="dpi" inputmode="numeric" maxlength="13" autocomplete="off"
+               [class.invalido]="invalido('dpi')" />
+        @if (invalido('dpi')) {
+          <span class="error">{{ errorServidor('dpi') ?? 'Debe tener 13 dígitos.' }}</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="cp-nit">NIT <span class="opcional">(opcional)</span></label>
+        <input id="cp-nit" class="control mayusculas" formControlName="nit" placeholder="CF" autocomplete="off"
+               [class.invalido]="invalido('nit')" />
+        @if (invalido('nit')) {
+          <span class="error">{{ errorServidor('nit') ?? 'Máximo 20 caracteres.' }}</span>
+        } @else {
+          <span class="ayuda">Si no tienes, déjalo vacío: se usa CF (consumidor final).</span>
+        }
+      </div>
+      <div class="campo">
+        <label for="cp-telefono">Teléfono</label>
+        <input id="cp-telefono" class="control" formControlName="telefono" inputmode="numeric" autocomplete="tel"
+               [class.invalido]="invalido('telefono')" />
+        @if (invalido('telefono')) {
+          <span class="error">Solo números, mínimo 8.</span>
+        }
+      </div>
+      <div class="campo completo">
+        <label for="cp-direccion">Dirección</label>
+        <input id="cp-direccion" class="control" formControlName="direccion" autocomplete="street-address"
+               [class.invalido]="invalido('direccion')" />
+        @if (invalido('direccion')) {
+          <span class="error">Escribe tu dirección.</span>
+        }
+      </div>
+    </div>
+    <button type="submit" class="btn primario bloque" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Guardar y entrar' }}
+    </button>
+  </form>
+
+  <p class="salir suave">
+    ¿No eres tú? <button type="button" class="enlace" (click)="salir()">Cerrar sesión</button>
+  </p>
+</div>

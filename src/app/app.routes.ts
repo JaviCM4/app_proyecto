@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { invitadoGuard } from './core/guards/invitado.guard';
+import { perfilCompletoGuard, perfilPendienteGuard } from './core/guards/perfil-completo.guard';
 import { rolGuard } from './core/guards/rol.guard';
 
 /**
@@ -17,20 +18,27 @@ export const routes: Routes = [
     children: [
       { path: '', title: 'Viajes', loadComponent: () => import('./paginas/publico/inicio/inicio.component').then((m) => m.InicioComponent) },
       // Misma página de compra para invitados y clientes: sin sesión se deja elegir todo y al pagar se pide entrar.
-      { path: 'comprar', title: 'Comprar boletos', loadComponent: () => import('./paginas/compras/comprar/comprar.component').then((m) => m.ComprarComponent) },
+      { path: 'comprar', title: 'Comprar boletos', canActivate: [perfilCompletoGuard], loadComponent: () => import('./paginas/compras/comprar/comprar.component').then((m) => m.ComprarComponent) },
       { path: 'login', title: 'Entrar', canActivate: [invitadoGuard], loadComponent: () => import('./paginas/auth/login/login.component').then((m) => m.LoginComponent) },
       { path: 'registro', title: 'Crear cuenta', canActivate: [invitadoGuard], loadComponent: () => import('./paginas/auth/registro/registro.component').then((m) => m.RegistroComponent) },
       { path: 'verificar', title: 'Verificar código', canActivate: [invitadoGuard], loadComponent: () => import('./paginas/auth/verificar-codigo/verificar-codigo.component').then((m) => m.VerificarCodigoComponent) },
       { path: 'recuperar', title: 'Recuperar contraseña', canActivate: [invitadoGuard], loadComponent: () => import('./paginas/auth/recuperar/recuperar.component').then((m) => m.RecuperarComponent) },
       // Enlace de los correos de activación y recuperación: FRONTEND_URL/restablecer?token=...
       { path: 'restablecer', title: 'Crear contraseña', loadComponent: () => import('./paginas/auth/restablecer/restablecer.component').then((m) => m.RestablecerComponent) },
+      // Cuenta creada con Google sin DPI, teléfono ni dirección: los completa antes de entrar al panel.
+      {
+        path: 'completar-perfil',
+        title: 'Completa tu cuenta',
+        canActivate: [authGuard, perfilPendienteGuard],
+        loadComponent: () => import('./paginas/auth/completar-perfil/completar-perfil.component').then((m) => m.CompletarPerfilComponent),
+      },
       // Regreso del inicio con Google (Identity redirige a OAUTH_FRONTEND_URL/oauth/google/callback?ticket=...).
       { path: 'oauth/google/callback', title: 'Entrando con Google', loadComponent: () => import('./paginas/auth/google-callback/google-callback.component').then((m) => m.GoogleCallbackComponent) },
     ],
   },
   {
     path: 'panel',
-    canActivate: [authGuard],
+    canActivate: [authGuard, perfilCompletoGuard],
     loadComponent: () => import('./layout/privado/layout-privado.component').then((m) => m.LayoutPrivadoComponent),
     children: [
       { path: '', title: 'Inicio', loadComponent: () => import('./paginas/panel/inicio/panel-inicio.component').then((m) => m.PanelInicioComponent) },

@@ -10,6 +10,11 @@ export interface UsuarioSesion {
   sucursalId: string | null;
   choferId: string | null;
   fotoUrl: string | null;
+  /**
+   * false: cuenta creada con Google que aún no completó DPI, teléfono y dirección (no puede usar el portal).
+   * Las sesiones guardadas antes de este campo no lo traen: se toman como completas.
+   */
+  perfilCompleto?: boolean;
 }
 
 export interface Sesion {

@@ -7,7 +7,9 @@
 
     <nav class="acciones">
       <app-selector-tema />
-      @if (auth.autenticado()) {
+      @if (auth.usuario()?.perfilCompleto === false) {
+        <a routerLink="/completar-perfil" class="btn primario">Completar mi cuenta</a>
+      } @else if (auth.autenticado()) {
         <a routerLink="/panel" class="btn primario">Ir a mi panel</a>
       } @else {
         <a routerLink="/login" class="btn">Entrar</a>
