@@ -1,5 +1,6 @@
 <app-modal [abierto]="abierto()" [titulo]="titulo()" ancho="chico" (cerrar)="cancelar.emit()">
   <p>{{ mensaje() }}</p>
+  <ng-content />
   <div pie>
     <button type="button" class="btn" (click)="cancelar.emit()">Cancelar</button>
     <button type="button" class="btn" [class.peligro]="peligro()" [class.primario]="!peligro()"

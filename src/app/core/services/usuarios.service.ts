@@ -87,7 +87,19 @@ export class UsuariosService {
     });
   }
 
-  cambiarEstado(id: string, estado: EstadoUsuario): Observable<UsuarioDetalle> {
-    return this.http.patch<UsuarioDetalle>(`${this.api}/usuarios/${id}/estado`, { estado });
+  /**
+   * Cambia el estado de la cuenta. Para BLOQUEADO se puede indicar la duración en minutos: si se omite,
+   * el bloqueo no vence (solo lo quita activar la cuenta). El servidor acepta cualquier cuenta, sea
+   * cliente, personal de sucursal o piloto.
+   */
+  cambiarEstado(id: string, estado: EstadoUsuario, duracionMinutos?: number): Observable<UsuarioDetalle> {
+    const cuerpo: { estado: EstadoUsuario; duracionMinutos?: number } = { estado };
+    if (duracionMinutos) cuerpo.duracionMinutos = duracionMinutos;
+    return this.http.patch<UsuarioDetalle>(`${this.api}/usuarios/${id}/estado`, cuerpo);
+  }
+
+  /** Quita el bloqueo (por intentos fallidos o del administrador) y deja la cuenta activa. */
+  desbloquear(id: string): Observable<UsuarioDetalle> {
+    return this.http.post<UsuarioDetalle>(`${this.api}/usuarios/${id}/desbloquear`, null);
   }
 }
