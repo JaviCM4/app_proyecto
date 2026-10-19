@@ -23,14 +23,15 @@ export class BarraSuperiorComponent {
   readonly menuUsuario = signal(false);
 
   /**
-   * Opciones del menú de la cuenta: "Mi cuenta" y lo del cliente (billetera, compras y alquileres).
-   * Las acciones de ventanilla se quedan en la barra lateral para no repetirlas aquí.
+   * Opciones del menú de la cuenta: Mi perfil, la Billetera digital (toda cuenta con rol Cliente, sea o no
+   * personal) y Seguridad. Lo demás está en la barra lateral.
    */
   readonly opcionesCuenta = computed(() => {
     const roles = this.auth.usuario()?.roles ?? [];
-    return MENU.filter((g) => g.titulo === 'Mi cuenta' || g.titulo === 'Servicios' || g.titulo === 'Mis compras')
-      .flatMap((g) => g.opciones)
-      .filter((o) => puedeVer(o, roles) && (o.soloPrincipales !== undefined || o.roles.length === 0));
+    const opciones = MENU.flatMap((g) => g.opciones);
+    const buscar = (ruta: string) => opciones.find((o) => o.ruta === ruta);
+    return [buscar('/panel/perfil'), buscar('/panel/cartera'), buscar('/panel/seguridad')]
+      .filter((o): o is NonNullable<typeof o> => !!o && puedeVer(o, roles));
   });
 
   /** Cierra el desplegable al hacer clic fuera de él. */
