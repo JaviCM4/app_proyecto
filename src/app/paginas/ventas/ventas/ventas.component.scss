@@ -1,1 +1,11 @@
 /* Estilos propios del listado de ventas (usa las clases globales). */
+
+.sin-salto {
+  white-space: nowrap;
+}
+
+/* Estado del viaje junto a la hora de salida */
+td .secundario .insignia {
+  margin-left: 0.35rem;
+  font-size: 11px;
+}
