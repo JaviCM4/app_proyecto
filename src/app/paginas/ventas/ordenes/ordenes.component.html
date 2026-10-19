@@ -51,7 +51,7 @@
           </td>
           <td>{{ o.monto | currency }}</td>
           <td>
-            <span class="insignia" [class.exito]="o.estado === 'PAGADA'">{{ estadoTexto(o.estado) }}</span>
+            <span [class]="'insignia ' + estadoOrden[o.estado].clase">{{ estadoTexto(o.estado) }}</span>
           </td>
           <td class="acciones">
             <button type="button" class="btn chico" (click)="verDetalle(o)">Ver</button>
@@ -103,7 +103,7 @@
         }
       </p>
       <p>
-        Estado: <span class="insignia" [class.exito]="d.estado === 'PAGADA'">{{ estadoTexto(d.estado) }}</span>
+        Estado: <span [class]="'insignia ' + estadoOrden[d.estado].clase">{{ estadoTexto(d.estado) }}</span>
       </p>
       @if (d.motivoRechazo) {
         <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>

@@ -1,3 +1,4 @@
+import { CurrencyPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -19,7 +20,7 @@ type FiltroActiva = 'todas' | 'activas' | 'inactivas';
 @Component({
   selector: 'app-rutas',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, ModalComponent, ConfirmacionComponent, PaginadorComponent],
+  imports: [FormsModule, ReactiveFormsModule, CurrencyPipe, ModalComponent, ConfirmacionComponent, PaginadorComponent],
   templateUrl: './rutas.component.html',
   styleUrl: './rutas.component.scss',
 })

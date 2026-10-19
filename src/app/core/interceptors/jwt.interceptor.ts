@@ -3,7 +3,9 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ToastService } from '../../shared/services/toast.service';
 import { AuthService } from '../services/auth.service';
+import { errorApi } from '../utils/errores-http';
 
 let refrescando = false;
 
@@ -20,10 +22,13 @@ const PUBLICAS = [
 /**
  * Agrega el token a cada petición. Si el token venció (401), pide uno nuevo con el token de
  * refresco una sola vez y repite la petición; si tampoco se puede, cierra la sesión.
+ * Si el gateway responde SESION_REVOCADA (la retiraron o desactivaron), no intenta refrescar: cierra la
+ * sesión al instante y pide iniciar de nuevo (el token nuevo trae solo los roles que le quedan).
  */
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
+  const avisos = inject(ToastService);
   const token = auth.token();
   const esAuth = PUBLICAS.some((ruta) => req.url.includes(ruta));
   // Nunca se manda el token a servicios externos (mapas, geocodificación, etc.).
@@ -35,6 +40,15 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   return next(conToken).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status !== 401 || esAuth || esExterna || !token) return throwError(() => error);
+      if (errorApi(error)?.codigo === 'SESION_REVOCADA') {
+        // Solo la primera de varias peticiones a la vez cierra la sesión y avisa
+        if (auth.token()) {
+          auth.limpiar();
+          avisos.info('Tu acceso cambió. Vuelve a iniciar sesión para continuar.');
+          router.navigateByUrl('/login');
+        }
+        return throwError(() => error);
+      }
       if (refrescando || !auth.tieneRefresco()) {
         auth.limpiar();
         router.navigateByUrl('/login');

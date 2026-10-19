@@ -188,21 +188,46 @@
   </div>
 </app-modal>
 
-<app-modal [abierto]="detalleVisible()" titulo="Detalle del viaje" (cerrar)="cerrarDetalle()">
+<app-modal [abierto]="detalleVisible()" titulo="Detalle del viaje" ancho="mediano" (cerrar)="cerrarDetalle()"
+           [subtitulo]="enDetalle() ? enDetalle()!.origenNombre + ' → ' + enDetalle()!.destinoNombre : ''">
   @if (enDetalle(); as d) {
-    <p><strong>{{ d.origenNombre }} → {{ d.destinoNombre }}</strong></p>
-    <p class="secundario">
-      Bus {{ d.busPlaca ?? '—' }} · Chofer {{ d.choferNombre ?? '—' }} ·
-      Salida {{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }} ·
-      Llegada {{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}
-    </p>
+    <div class="detalle-viaje">
+      <figure class="bus-mini">
+        @if (fotoBus(); as foto) {
+          <a [href]="foto" target="_blank" rel="noopener" title="Ver la foto completa">
+            <img [src]="foto" [alt]="'Bus ' + (d.busPlaca ?? '')" loading="lazy" />
+          </a>
+        } @else {
+          <div class="sin-foto">Sin foto</div>
+        }
+        <figcaption>Bus <strong>{{ d.busPlaca ?? '—' }}</strong> · {{ d.capacidad }} asientos</figcaption>
+      </figure>
+      <dl class="datos-lista">
+        <div>
+          <dt>Estado</dt>
+          <dd>
+            <span class="insignia" [class.exito]="d.estado === 'PROGRAMADO'" [class.info]="d.estado === 'EN_RUTA'">
+              {{ d.estado === 'PROGRAMADO' ? 'Programado' : d.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }}
+            </span>
+          </dd>
+        </div>
+        <div><dt>Chofer</dt><dd>{{ d.choferNombre ?? '—' }}</dd></div>
+        <div><dt>Salida programada</dt><dd>{{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+        <div><dt>Llegada estimada</dt><dd>{{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+        @if (d.precioBoleto !== null) {
+          <div><dt>Precio del boleto</dt><dd>{{ d.precioBoleto | currency }}</dd></div>
+        }
+      </dl>
+    </div>
+
+    <h3 class="titulo-recorrido">Recorrido</h3>
     @if (d.salida) {
       <p>Salió el {{ d.salida.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' : zona }} con {{ d.salida.kmInicial }} km.</p>
     }
     @if (d.llegada) {
       <p>
         Llegó el {{ d.llegada.fechaHoraLlegada | date: 'dd/MM/yyyy HH:mm' : zona }} con {{ d.llegada.kmFinal }} km
-        ({{ d.llegada.kmRecorridos }} km recorridos, Q {{ d.llegada.costoCombustible }} de combustible).
+        ({{ d.llegada.kmRecorridos }} km recorridos, {{ d.llegada.costoCombustible | currency }} de combustible).
       </p>
     }
     @if (!d.salida && !d.llegada) {

@@ -1,8 +1,8 @@
 <div class="asientos-info">
   @if (resumen()) {
     <p><strong>{{ mapa()?.origenNombre }} → {{ mapa()?.destinoNombre }}</strong></p>
-    <p class="suave">Bus {{ mapa()?.busPlaca }} · {{ mapa()?.disponibles }} disponibles · {{ mapa()?.precioBoleto | currency:'Q ' }} c/u</p>
-    <p class="suave">Elegidos: {{ cantidad() }} · Total: {{ total() | currency:'Q ' }}
+    <p class="suave">Bus {{ mapa()?.busPlaca }} · {{ mapa()?.disponibles }} disponibles · {{ mapa()?.precioBoleto | currency }} c/u</p>
+    <p class="suave">Elegidos: {{ cantidad() }} · Total: {{ total() | currency }}
       @if (cantidad()) { <button type="button" class="btn chico" (click)="limpiar()">Limpiar</button> }
     </p>
   }

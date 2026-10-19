@@ -1,9 +1,10 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Cartera, MovimientoCartera, TipoMovimiento } from '../../../core/models/cartera.model';
+import { Cartera, MovimientoCartera, TipoMovimiento, ordenarMovimientos } from '../../../core/models/cartera.model';
 import { CarteraService } from '../../../core/services/cartera.service';
 import { mensajeError } from '../../../core/utils/errores-http';
+import { ZONA_GT } from '../../../core/utils/fechas';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
@@ -22,6 +23,7 @@ export class CarteraComponent implements OnInit {
   private readonly avisos = inject(ToastService);
 
   readonly cartera = signal<Cartera | null>(null);
+  readonly zona = ZONA_GT;
   private readonly movimientos = signal<MovimientoCartera[]>([]);
   readonly cargando = signal(true);
   readonly recargando = signal(false);
@@ -53,7 +55,7 @@ export class CarteraComponent implements OnInit {
     });
     this.servicio.movimientos(this.desde, this.hasta).subscribe({
       next: (lista) => {
-        this.movimientos.set(lista);
+        this.movimientos.set(ordenarMovimientos(lista));
         this.pagina.set(1);
         this.cargando.set(false);
       },

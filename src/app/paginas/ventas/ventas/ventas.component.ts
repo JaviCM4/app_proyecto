@@ -8,21 +8,25 @@ import {
   Historial,
   Venta,
 } from '../../../core/models/venta.model';
+import { Viaje } from '../../../core/models/viaje.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { VentasService } from '../../../core/services/ventas.service';
+import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
-import { hoyGt } from '../../../core/utils/fechas';
+import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { CANAL_VENTA, ESTADO_ORDEN_ALQUILER, ESTADO_VENTA, METODO_PAGO, textoViaje } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { normalizar, paginar } from '../../../shared/utils/paginacion';
 
 type FiltroEstado = 'TODAS' | EstadoVenta;
 type FiltroCanal = 'TODOS' | CanalVenta;
+type Pestana = 'ventas' | 'historial';
 
-/** Listado de ventas con filtros, detalle, cancelación e historial por NIT. */
+/** Ventas (filtros por estado, canal, fechas, viaje y cliente; detalle y cancelación) e historial por NIT, en pestañas. */
 @Component({
   selector: 'app-ventas',
   standalone: true,
@@ -41,6 +45,7 @@ type FiltroCanal = 'TODOS' | CanalVenta;
 export class VentasComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly servicio = inject(VentasService);
+  private readonly viajesServicio = inject(ViajesService);
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
@@ -50,6 +55,17 @@ export class VentasComponent implements OnInit {
 
   readonly estados: FiltroEstado[] = ['TODAS', 'PENDIENTE_PAGO', 'CONFIRMADA', 'RECHAZADA', 'CANCELADA', 'REEMBOLSADA'];
   readonly canales: FiltroCanal[] = ['TODOS', 'EN_LINEA', 'PRESENCIAL'];
+  readonly estadoVenta = ESTADO_VENTA;
+  readonly canalVenta = CANAL_VENTA;
+  readonly metodoPago = METODO_PAGO;
+  readonly estadoOrden = ESTADO_ORDEN_ALQUILER;
+
+  readonly pestana = signal<Pestana>('ventas');
+  readonly zona = ZONA_GT;
+
+  /** Viajes de la sucursal: dan la ruta y la salida de cada venta y alimentan el filtro por viaje. */
+  private readonly viajes = signal<Map<string, Viaje>>(new Map());
+  readonly viajeId = signal('');
 
   private readonly ventas = signal<Venta[]>([]);
   readonly sucursales = signal<Sucursal[]>([]);
@@ -81,10 +97,26 @@ export class VentasComponent implements OnInit {
     fechaCancelacion: [hoyGt(), Validators.required],
   });
 
+  /** Un viaje por cada uno que tiene ventas cargadas, del más reciente al más antiguo. */
+  readonly opcionesViaje = computed(() => {
+    const ids = [...new Set(this.ventas().map((v) => v.viajeId))];
+    return ids
+      .map((id) => ({ id, viaje: this.viajes().get(id) }))
+      .sort((a, b) => (b.viaje?.fechaSalidaProgramada ?? '').localeCompare(a.viaje?.fechaSalidaProgramada ?? ''))
+      .map(({ id, viaje }) => ({
+        id,
+        texto: viaje
+          ? textoViaje(viaje.origenNombre, viaje.destinoNombre, viaje.fechaSalidaProgramada)
+          : `Viaje ${id.slice(0, 8)}`,
+      }));
+  });
+
   readonly filtradas = computed(() => {
     const buscado = normalizar(this.texto());
+    const viaje = this.viajeId();
     return this.ventas().filter(
       (v) =>
+        (!viaje || v.viajeId === viaje) &&
         (!buscado ||
           normalizar(`${v.clienteNit ?? ''} ${v.clienteNombre ?? ''}`).includes(buscado)),
     );
@@ -100,6 +132,36 @@ export class VentasComponent implements OnInit {
       });
     }
     this.cargar();
+    this.cargarViajes();
+  }
+
+  cambiarSucursal(id: string): void {
+    this.sucursalId.set(id);
+    this.viajeId.set('');
+    this.cambiarFiltro();
+    this.cargarViajes();
+  }
+
+  filtrarViaje(id: string): void {
+    this.viajeId.set(id);
+    this.pagina.set(1);
+  }
+
+  /** Ruta y salida de la venta: del detalle si ya viene, si no del viaje de la sucursal. */
+  rutaDe(v: Venta): { texto: string; salida: string | null } | null {
+    if (v.viaje) return { texto: `${v.viaje.origenNombre} → ${v.viaje.destinoNombre}`, salida: v.viaje.fechaSalida };
+    const viaje = this.viajes().get(v.viajeId);
+    return viaje
+      ? { texto: `${viaje.origenNombre} → ${viaje.destinoNombre}`, salida: viaje.fechaSalidaProgramada }
+      : null;
+  }
+
+  private cargarViajes(): void {
+    this.viajesServicio.buscar({ sucursalId: this.sucursalId() || null }).subscribe({
+      next: (lista) => this.viajes.set(new Map(lista.map((v) => [v.viajeId, v]))),
+      // Sin viajes la tabla sigue funcionando; solo no muestra la ruta
+      error: () => this.viajes.set(new Map()),
+    });
   }
 
   cambiarFiltro(): void {

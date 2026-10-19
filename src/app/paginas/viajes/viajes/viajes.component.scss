@@ -1,1 +1,45 @@
 /* Estilos propios de la página de viajes (los generales viven en styles.scss). */
+
+.detalle-viaje {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+
+.bus-mini {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  img,
+  .sin-foto {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: contain;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie-alterna);
+  }
+
+  .sin-foto {
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    color: var(--texto-suave);
+  }
+
+  figcaption {
+    font-size: 13px;
+    color: var(--texto-suave);
+  }
+}
+
+.titulo-recorrido {
+  margin: 16px 0 6px;
+  font-size: 15px;
+}

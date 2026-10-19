@@ -1,4 +1,4 @@
-import { DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, ElementRef, OnDestroy, ViewChild, effect, input } from '@angular/core';
 import * as L from 'leaflet';
 import { MapaRutas } from '../../../core/models/reporte.model';
@@ -11,7 +11,7 @@ import { agregarCapaBase } from '../../../shared/utils/capa-base-mapa';
 @Component({
   selector: 'app-mapa-rutas',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, CurrencyPipe],
   templateUrl: './mapa-rutas.component.html',
   styleUrl: './mapa-rutas.component.scss',
 })

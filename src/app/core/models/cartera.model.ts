@@ -17,6 +17,17 @@ export interface MovimientoCartera {
   tipoReferencia: ReferenciaMovimiento;
   referenciaId: string | null;
   fechaMovimiento: string;
+  /** Fecha y hora en que se registró (desempata los movimientos del mismo día). */
+  fechaRegistro?: string | null;
+}
+
+/** Más reciente primero: por fecha del movimiento y, en el mismo día, por la hora en que se registró. */
+export function ordenarMovimientos(lista: MovimientoCartera[]): MovimientoCartera[] {
+  return [...lista].sort(
+    (a, b) =>
+      b.fechaMovimiento.localeCompare(a.fechaMovimiento) ||
+      (b.fechaRegistro ?? '').localeCompare(a.fechaRegistro ?? ''),
+  );
 }
 
 /** Billetera del sistema: recibe las compras en línea y paga los reembolsos (solo administrador del sistema). */

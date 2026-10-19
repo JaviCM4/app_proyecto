@@ -55,7 +55,7 @@
   <table class="tabla">
     <thead>
       <tr>
-        <th>Fecha</th>
+        <th>Fecha y hora</th>
         <th>Movimiento</th>
         <th class="numero">Monto</th>
         <th class="numero">Saldo después</th>
@@ -64,7 +64,12 @@
     <tbody>
       @for (m of paginaActual().elementos; track m.id) {
         <tr>
-          <td>{{ m.fechaMovimiento | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+          <td>
+            {{ m.fechaMovimiento | date: 'dd/MM/yyyy' : 'UTC' }}
+            @if (m.fechaRegistro) {
+              <span class="hora">{{ m.fechaRegistro | date: 'HH:mm' : zona }}</span>
+            }
+          </td>
           <td>{{ descripcion(m) }}</td>
           <td class="numero monto" [class.negativo]="signo(m) < 0">
             {{ signo(m) < 0 ? '−' : '+' }} {{ m.monto | currency: 'GTQ' : 'symbol-narrow' }}

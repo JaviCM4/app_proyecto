@@ -11,6 +11,7 @@ import { hoyGt } from '../../../core/utils/fechas';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { ESTADO_ORDEN_ALQUILER } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
 
@@ -33,6 +34,7 @@ type FiltroEstado = 'TODAS' | EstadoOrdenAlquiler;
   styleUrl: './ordenes.component.scss',
 })
 export class OrdenesComponent implements OnInit {
+  readonly estadoOrden = ESTADO_ORDEN_ALQUILER;
   private readonly auth = inject(AuthService);
   private readonly servicio = inject(OrdenesAlquilerService);
   private readonly sucursalesServicio = inject(SucursalesService);

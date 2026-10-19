@@ -5,11 +5,19 @@
   </div>
 </div>
 
+<div class="pestanas" role="tablist">
+  <button type="button" role="tab" [class.activa]="pestana() === 'ventas'" [attr.aria-selected]="pestana() === 'ventas'"
+          (click)="pestana.set('ventas')">Ventas</button>
+  <button type="button" role="tab" [class.activa]="pestana() === 'historial'" [attr.aria-selected]="pestana() === 'historial'"
+          (click)="pestana.set('historial')">Historial por NIT</button>
+</div>
+
+@if (pestana() === 'ventas') {
 <div class="filtros">
   @if (esSistema) {
     <div class="campo">
       <label for="sucursal">Sucursal</label>
-      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="sucursalId.set($event); cambiarFiltro()">
+      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
         <option value="">Todas</option>
         @for (s of sucursales(); track s.sucursalId) {
           <option [value]="s.sucursalId">{{ s.nombre }}</option>
@@ -21,7 +29,7 @@
     <label for="estado">Estado</label>
     <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="estado.set($event); cambiarFiltro()">
       @for (e of estados; track e) {
-        <option [value]="e">{{ e === 'TODAS' ? 'Todos' : e }}</option>
+        <option [value]="e">{{ e === 'TODAS' ? 'Todos' : estadoVenta[e].texto }}</option>
       }
     </select>
   </div>
@@ -29,7 +37,7 @@
     <label for="canal">Canal</label>
     <select id="canal" class="control" [ngModel]="canal()" (ngModelChange)="canal.set($event); cambiarFiltro()">
       @for (c of canales; track c) {
-        <option [value]="c">{{ c === 'TODOS' ? 'Todos' : c }}</option>
+        <option [value]="c">{{ c === 'TODOS' ? 'Todos' : canalVenta[c] }}</option>
       }
     </select>
   </div>
@@ -40,6 +48,15 @@
   <div class="campo">
     <label for="hasta">Hasta</label>
     <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event); cambiarFiltro()" />
+  </div>
+  <div class="campo crece">
+    <label for="viaje">Viaje</label>
+    <select id="viaje" class="control" [ngModel]="viajeId()" (ngModelChange)="filtrarViaje($event)">
+      <option value="">Todos los viajes</option>
+      @for (o of opcionesViaje(); track o.id) {
+        <option [value]="o.id">{{ o.texto }}</option>
+      }
+    </select>
   </div>
   <div class="campo crece">
     <label for="buscar">Cliente</label>
@@ -53,7 +70,7 @@
     <thead>
       <tr>
         <th>Cliente</th>
-        <th>Ruta</th>
+        <th>Viaje</th>
         <th>Canal</th>
         <th>Total</th>
         <th>Estado</th>
@@ -65,20 +82,22 @@
         <tr>
           <td>
             <strong>{{ v.clienteNombre || '—' }}</strong>
-            <div class="secundario">{{ v.clienteNit || 'Sin NIT' }}</div>
+            <div class="secundario">{{ v.clienteNit || 'CF' }}</div>
           </td>
           <td>
-            @if (v.viaje) {
-              {{ v.viaje.origenNombre }} → {{ v.viaje.destinoNombre }}
-              <div class="secundario">{{ v.viaje.fechaSalida | date: 'short' }}</div>
+            @if (rutaDe(v); as r) {
+              {{ r.texto }}
+              @if (r.salida) {
+                <div class="secundario">{{ r.salida | date: 'dd/MM/yyyy HH:mm' : zona }}</div>
+              }
             } @else {
               —
             }
           </td>
-          <td>{{ v.canal }}</td>
+          <td>{{ canalVenta[v.canal] }}</td>
           <td>{{ v.montoTotal | currency }}</td>
           <td>
-            <span class="insignia" [class.exito]="v.estado === 'CONFIRMADA'">{{ v.estado }}</span>
+            <span class="insignia" [class]="'insignia ' + estadoVenta[v.estado].clase">{{ estadoVenta[v.estado].texto }}</span>
           </td>
           <td class="acciones">
             <button type="button" class="btn chico" (click)="verDetalle(v)">Ver</button>
@@ -104,19 +123,13 @@
   [total]="paginaActual().total"
   (cambioPagina)="pagina.set($event)"
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
-
-<div class="pagina-encabezado">
-  <div>
-    <h1>Historial por NIT</h1>
-    <p>Ventas y alquileres pagados por un cliente de ventanilla.</p>
-  </div>
-</div>
-
+} @else {
+<p class="secundario">Ventas y alquileres pagados por un cliente de ventanilla.</p>
 <div class="filtros">
   <div class="campo crece">
     <label for="nit">NIT</label>
     <input id="nit" class="control" placeholder="NIT del cliente"
-           [ngModel]="nitHistorial()" (ngModelChange)="nitHistorial.set($event)" />
+           [ngModel]="nitHistorial()" (ngModelChange)="nitHistorial.set($event)" (keydown.enter)="buscarHistorial()" />
   </div>
   <div class="campo">
     <label>&nbsp;</label>
@@ -133,18 +146,18 @@
     <div class="tabla-contenedor">
       <table class="tabla">
         <thead>
-          <tr><th>Ruta</th><th>Asientos</th><th>Total</th><th>Estado</th></tr>
+          <tr><th>Viaje</th><th>Asientos</th><th>Total</th><th>Estado</th></tr>
         </thead>
         <tbody>
           @for (v of h.ventas; track v.ventaId) {
             <tr>
               <td>
                 {{ v.origenNombre || '—' }} → {{ v.destinoNombre || '—' }}
-                <div class="secundario">{{ v.fechaSalida | date: 'short' }} · {{ v.canal }}</div>
+                <div class="secundario">{{ v.fechaSalida ? (v.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }} · {{ canalVenta[v.canal] }}</div>
               </td>
-              <td>{{ v.asientos.join(', ') }}</td>
+              <td>{{ v.asientos.join(', ') || '—' }}</td>
               <td>{{ v.montoTotal | currency }}</td>
-              <td><span class="insignia" [class.exito]="v.estado === 'CONFIRMADA'">{{ v.estado }}</span></td>
+              <td><span [class]="'insignia ' + estadoVenta[v.estado].clase">{{ estadoVenta[v.estado].texto }}</span></td>
             </tr>
           } @empty {
             <tr><td colspan="4" class="tabla-vacia">Sin ventas para ese NIT.</td></tr>
@@ -163,10 +176,10 @@
             <tr>
               <td>
                 {{ a.origen }} → {{ a.destino }}
-                <div class="secundario">{{ a.fechaPago | date: 'short' }}</div>
+                <div class="secundario">{{ a.fechaPago ? (a.fechaPago | date: 'dd/MM/yyyy HH:mm' : zona) : 'Sin pagar' }}</div>
               </td>
               <td>{{ a.monto | currency }}</td>
-              <td><span class="insignia" [class.exito]="a.estado === 'PAGADA'">{{ a.estado }}</span></td>
+              <td><span [class]="'insignia ' + estadoOrden[a.estado].clase">{{ estadoOrden[a.estado].texto }}</span></td>
             </tr>
           } @empty {
             <tr><td colspan="3" class="tabla-vacia">Sin alquileres para ese NIT.</td></tr>
@@ -175,6 +188,7 @@
       </table>
     </div>
   </div>
+}
 }
 
 <app-modal
@@ -189,12 +203,17 @@
     <div class="datos-lista">
       <p>
         <strong>{{ d.clienteNombre || 'Sin nombre' }}</strong>
-        <span class="secundario"> · NIT: {{ d.clienteNit || '—' }} · {{ d.canal }} · {{ d.metodoPago || '—' }}</span>
+        <span class="secundario"> · NIT: {{ d.clienteNit || 'CF' }} · {{ canalVenta[d.canal] }} · {{ d.metodoPago ? metodoPago[d.metodoPago] : '—' }}</span>
       </p>
       <p class="secundario">
-        Total: {{ d.montoTotal | currency }} · Pagada: {{ d.fechaPago | date: 'short' }}
-        · Estado: <span class="insignia" [class.exito]="d.estado === 'CONFIRMADA'">{{ d.estado }}</span>
+        Total: {{ d.montoTotal | currency }} · Pagada: {{ d.fechaPago | date: 'dd/MM/yyyy' }}
+        · Estado: <span [class]="'insignia ' + estadoVenta[d.estado].clase">{{ estadoVenta[d.estado].texto }}</span>
       </p>
+      @if (rutaDe(d); as r) {
+        <p><strong>{{ r.texto }}</strong>
+          @if (r.salida) { <span class="secundario"> · Salida {{ r.salida | date: 'dd/MM/yyyy HH:mm' : zona }}</span> }
+        </p>
+      }
       @if (d.motivoRechazo) {
         <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>
       }

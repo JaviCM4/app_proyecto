@@ -51,7 +51,7 @@
           <td><strong>{{ r.origenNombre }}</strong></td>
           <td>{{ r.destinoNombre }}</td>
           <td>{{ r.distanciaKm }} km</td>
-          <td>Q {{ r.precioBoleto }}</td>
+          <td>{{ r.precioBoleto | currency }}</td>
           <td>
             <span class="insignia" [class.exito]="r.activa">{{ r.activa ? 'Activa' : 'Inactiva' }}</span>
           </td>

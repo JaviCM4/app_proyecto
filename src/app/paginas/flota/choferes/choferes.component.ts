@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Chofer, EstadoChofer, TipoLicencia } from '../../../core/models/chofer.model';
@@ -20,7 +20,7 @@ type FiltroEstadoChofer = 'todas' | EstadoChofer;
 @Component({
   selector: 'app-choferes',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, ModalComponent, PaginadorComponent, NuevoChoferComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, NuevoChoferComponent],
   templateUrl: './choferes.component.html',
   styleUrl: './choferes.component.scss',
 })
