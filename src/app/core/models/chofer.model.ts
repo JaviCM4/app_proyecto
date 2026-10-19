@@ -1,5 +1,5 @@
 /** Choferes (Fleet). La foto y el contacto viven en Identity. */
-import type { DatosCuenta } from './sucursal.model';
+import type { DatosCuenta, UsuarioExistente } from './sucursal.model';
 
 export type EstadoChofer = 'ACTIVO' | 'INACTIVO';
 export type TipoLicencia = 'A' | 'B' | 'C' | 'M' | 'E';
@@ -24,7 +24,9 @@ export interface NuevoChofer {
   fechaVencimientoLicencia: string;
   salarioBaseViaje: number;
   fechaRegistro: string;
-  cuenta: DatosCuenta;
+  /** Exactamente uno de los dos: cuenta nueva o una persona que ya tiene cuenta. */
+  cuenta?: DatosCuenta;
+  usuarioExistente?: UsuarioExistente;
 }
 
 export interface ActualizarChofer {

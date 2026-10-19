@@ -89,80 +89,8 @@
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
 
 <!-- Nuevo chofer -->
-<app-modal [abierto]="creando()" titulo="Nuevo chofer" ancho="grande" (cerrar)="creando.set(false)"
-           subtitulo="Se crea su cuenta y le llega un correo para crear su contraseña. La foto se sube antes de guardar.">
-  <form id="form-chofer-crear" [formGroup]="formCrear" (ngSubmit)="guardarCrear()" class="formulario">
-    <div class="formulario-grilla">
-      <p class="formulario-seccion">Datos laborales</p>
-      @if (esSistema) {
-        <div class="campo">
-          <label for="ch-nueva-sucursal">Sucursal</label>
-          <select id="ch-nueva-sucursal" class="control" formControlName="sucursalId">
-            <option value="" disabled>Elige una sucursal…</option>
-            @for (s of sucursales(); track s.sucursalId) {
-              <option [value]="s.sucursalId">{{ s.nombre }}</option>
-            }
-          </select>
-        </div>
-      } @else {
-        <p class="suave">Sucursal: {{ nombreSucursal(sucursalPropia) || 'tu sucursal' }}</p>
-      }
-      <div class="campo">
-        <label for="ch-licencia">Número de licencia</label>
-        <input id="ch-licencia" class="control mayusculas" formControlName="numeroLicencia" maxlength="30"
-               [class.invalido]="invalidoCrear('numeroLicencia')" />
-        @if (invalidoCrear('numeroLicencia')) {
-          <span class="error">{{ errorServidorCrear('numeroLicencia') ?? 'De 4 a 30 caracteres: letras, números o guion.' }}</span>
-        }
-      </div>
-      <div class="campo">
-        <label for="ch-tipo">Tipo de licencia</label>
-        <select id="ch-tipo" class="control" formControlName="tipoLicencia">
-          @for (t of tiposLicencia; track t) {
-            <option [value]="t">Tipo {{ t }}</option>
-          }
-        </select>
-      </div>
-      <div class="campo">
-        <label for="ch-vence">Vencimiento de la licencia</label>
-        <input id="ch-vence" type="date" class="control" formControlName="fechaVencimientoLicencia"
-               [class.invalido]="invalidoCrear('fechaVencimientoLicencia')" />
-        @if (invalidoCrear('fechaVencimientoLicencia')) {
-          <span class="error">Debe ser una fecha futura.</span>
-        }
-      </div>
-      <div class="campo">
-        <label for="ch-salario">Salario base por viaje (Q)</label>
-        <input id="ch-salario" type="number" class="control" formControlName="salarioBaseViaje" min="0.01" step="0.01"
-               [class.invalido]="invalidoCrear('salarioBaseViaje')" />
-        @if (invalidoCrear('salarioBaseViaje')) {
-          <span class="error">Debe ser mayor a 0.</span>
-        }
-      </div>
-      <div class="campo">
-        <label for="ch-fecha">Fecha de registro</label>
-        <input id="ch-fecha" type="date" class="control" formControlName="fechaRegistro" />
-      </div>
-      <div class="campo">
-        <label for="ch-foto">Foto del chofer</label>
-        <input id="ch-foto" type="file" class="control" accept="image/jpeg,image/png,image/webp" (change)="alElegirFoto($event)" />
-        @if (foto(); as f) {
-          <span class="ayuda">{{ f.name }}</span>
-        } @else {
-          <span class="ayuda">JPG, PNG o WEBP, máximo 2 MB. Opcional.</span>
-        }
-      </div>
-      <p class="formulario-seccion">Datos de la persona</p>
-    </div>
-    <app-datos-cuenta [grupo]="formCrear.controls.cuenta" prefijo="ch" />
-  </form>
-  <div pie>
-    <button type="button" class="btn" (click)="creando.set(false)">Cancelar</button>
-    <button type="submit" form="form-chofer-crear" class="btn primario" [disabled]="enviando()">
-      {{ enviando() ? 'Guardando…' : 'Registrar' }}
-    </button>
-  </div>
-</app-modal>
+<app-nuevo-chofer [abierto]="creando()" [sucursalId]="sucursalEfectiva() || null"
+                  (creado)="alCrear()" (cerrar)="creando.set(false)" />
 
 <!-- Detalle -->
 <app-modal [abierto]="viendo() !== null" ancho="grande" (cerrar)="viendo.set(null)"

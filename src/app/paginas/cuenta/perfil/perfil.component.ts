@@ -26,16 +26,16 @@ export class PerfilComponent implements OnInit {
   readonly guardando = signal(false);
   readonly subiendoFoto = signal(false);
 
-  /** Cuentas creadas con Google: llegan sin NIT, teléfono ni dirección (los pide la compra de boletos). */
+  /** Faltan teléfono o dirección (el NIT es opcional: sin él se factura como CF). */
   readonly incompleto = computed(() => {
     const p = this.perfil();
-    return !!p && (!p.nit || !p.telefono || !p.direccion);
+    return !!p && (!p.telefono || !p.direccion);
   });
 
   readonly form = inject(FormBuilder).nonNullable.group({
     nombres: ['', [Validators.required, Validators.maxLength(100)]],
     apellidos: ['', [Validators.required, Validators.maxLength(100)]],
-    nit: ['', [Validators.required, Validators.maxLength(20)]],
+    nit: ['', [Validators.maxLength(20)]],
     telefono: ['', [Validators.required, Validators.pattern(/^[0-9]{8,20}$/)]],
     direccion: ['', [Validators.required, Validators.maxLength(255)]],
   });

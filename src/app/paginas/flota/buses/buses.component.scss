@@ -1,1 +1,23 @@
 .acciones .btn + .btn { margin-left: 6px; }
+
+.foto-bus {
+  display: block;
+  margin-bottom: 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: var(--superficie-alterna);
+
+  img {
+    display: block;
+    width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+  }
+
+  &.vacia {
+    padding: 24px;
+    text-align: center;
+    color: var(--texto-suave);
+  }
+}

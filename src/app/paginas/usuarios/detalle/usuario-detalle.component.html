@@ -30,6 +30,9 @@
         </p>
       </div>
     }
+    @if (esPropia()) {
+      <p class="nota-suave mt">Es tu cuenta: no puedes desactivarla ni bloquearla tú mismo; pídeselo a otro administrador del sistema.</p>
+    }
   } @else {
     <p class="suave">Cargando…</p>
   }
@@ -42,7 +45,7 @@
     @if (puedeSerAdmin()) {
       <button type="button" class="btn" (click)="confirmandoAdmin.set(true)">Hacer administrador del sistema</button>
     }
-    @if (detalle() && !esPersonal()) {
+    @if (detalle() && !esPersonal() && !esPropia()) {
       @for (a of acciones(); track a.estado) {
         <button type="button" class="btn" [class.peligro]="a.peligro" (click)="porConfirmar.set(a)">{{ a.texto }}</button>
       }

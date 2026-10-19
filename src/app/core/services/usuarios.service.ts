@@ -9,6 +9,8 @@ import {
   FiltroUsuarios,
   NuevoAdministradorSistema,
   Perfil,
+  PuestoAsignable,
+  UsuarioAsignable,
   UsuarioBusqueda,
   UsuarioDetalle,
   UsuarioResumen,
@@ -71,9 +73,17 @@ export class UsuariosService {
    * Busca una cuenta por su correo exacto (administrador del sistema o de sucursal), para asignarle un
    * puesto sin crearle otra cuenta. 404 si no hay ninguna cuenta con ese correo.
    */
-  buscarPorCorreo(correo: string): Observable<UsuarioBusqueda> {
+  /** Cuentas activas que pueden tomar el puesto (las demás no aparecen). */
+  asignables(puesto: PuestoAsignable): Observable<UsuarioAsignable[]> {
+    return this.http.get<UsuarioAsignable[]>(`${this.api}/usuarios/asignables`, {
+      params: new HttpParams().set('puesto', puesto),
+    });
+  }
+
+  /** Busca una cuenta por correo exacto y dice si puede tomar el puesto (personal de sucursal o chofer). */
+  buscarPorCorreo(correo: string, puesto: PuestoAsignable = 'PERSONAL'): Observable<UsuarioBusqueda> {
     return this.http.get<UsuarioBusqueda>(`${this.api}/usuarios/por-correo`, {
-      params: new HttpParams().set('correo', correo.trim()),
+      params: new HttpParams().set('correo', correo.trim()).set('puesto', puesto),
     });
   }
 

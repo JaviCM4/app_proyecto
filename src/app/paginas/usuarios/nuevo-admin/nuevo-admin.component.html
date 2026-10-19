@@ -15,7 +15,7 @@
 
   @if (modo() === 'existente') {
     <form id="form-admin" (ngSubmit)="guardar()">
-      <app-buscar-cuenta prefijo="n" [validarPersonal]="false" [(seleccion)]="existente" />
+      <app-buscar-cuenta prefijo="n" puesto="ADMIN_SISTEMA" [(seleccion)]="existente" />
       <p class="nota-suave">Conserva su contraseña y sus datos. No puede ser personal de una sucursal ni piloto: si lo es, primero retíralo de su puesto.</p>
     </form>
   } @else {
@@ -61,7 +61,7 @@
   }
   <div pie>
     <button type="button" class="btn" (click)="cerrar.emit()">Cancelar</button>
-    <button type="submit" form="form-admin" class="btn primario" [disabled]="enviando() || (modo() === 'existente' && !existente())">
+    <button type="submit" form="form-admin" class="btn primario" [disabled]="enviando() || (modo() === 'existente' && !existente()?.puedeSerPersonal)">
       @if (enviando()) {
         Guardando…
       } @else {

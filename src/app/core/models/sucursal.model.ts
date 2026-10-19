@@ -47,6 +47,8 @@ export interface NuevaSucursal {
 export interface UsuarioExistente {
   solicitudId?: string;
   usuarioId: string;
+  /** Solo choferes: foto nueva; sin ella se usa la foto de perfil de la cuenta. */
+  fotoUrl?: string;
 }
 
 export interface ActualizarSucursal {

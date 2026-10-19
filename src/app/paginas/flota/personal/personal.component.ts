@@ -31,6 +31,7 @@ export class PersonalComponent implements OnInit {
 
   readonly esSistema = this.auth.tieneRol('ADMIN_SISTEMA');
   readonly sucursalPropia = this.auth.usuario()?.sucursalId ?? '';
+  private readonly miUsuarioId = this.auth.usuario()?.usuarioId ?? null;
 
   readonly sucursales = signal<Sucursal[]>([]);
   /** Sucursal del personal (el admin de sucursal siempre ve la suya). */
@@ -109,6 +110,14 @@ export class PersonalComponent implements OnInit {
    * Reintegrar solo se ofrece en la fila más reciente de cada persona que no esté activa
    * (si ya trabaja en otra sucursal, Fleet lo rechaza y se muestra el aviso).
    */
+  /**
+   * Nadie se retira ni se reintegra a sí mismo, y el administrador de sucursal solo gestiona cajeros
+   * (el servidor también lo valida).
+   */
+  puedeGestionar(p: PersonalSucursal): boolean {
+    return p.usuarioId !== this.miUsuarioId && (this.esSistema || p.rol === 'CAJERO');
+  }
+
   esUltimaAsignacion(p: PersonalSucursal): boolean {
     const suyas = this.personas().filter((x) => x.usuarioId === p.usuarioId);
     if (suyas.some((x) => x.activo)) return false;

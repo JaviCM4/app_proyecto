@@ -63,7 +63,9 @@
             }
           </td>
           <td class="acciones">
-            @if (p.activo) {
+            @if (!puedeGestionar(p)) {
+              <span class="secundario">—</span>
+            } @else if (p.activo) {
               <button type="button" class="btn chico peligro" (click)="enAccion.set({ persona: p, accion: 'desactivar' })">Retirar</button>
             } @else if (esUltimaAsignacion(p)) {
               <button type="button" class="btn chico" (click)="enAccion.set({ persona: p, accion: 'reintegrar' })">Reintegrar</button>

@@ -12,7 +12,7 @@
   @if (incompleto()) {
     <div class="aviso-perfil">
       <strong>Completa tu perfil.</strong>
-      Para comprar boletos necesitamos tu NIT, teléfono y dirección.
+      Para comprar boletos necesitamos tu teléfono y dirección.
     </div>
   }
   <div class="perfil">
@@ -48,10 +48,12 @@
           <input id="apellidos" class="control" formControlName="apellidos" [class.invalido]="invalido('apellidos')" />
         </div>
         <div class="campo">
-          <label for="nit">NIT</label>
-          <input id="nit" class="control" formControlName="nit" [class.invalido]="invalido('nit')" />
+          <label for="nit">NIT <span class="suave">(opcional)</span></label>
+          <input id="nit" class="control" formControlName="nit" placeholder="CF" [class.invalido]="invalido('nit')" />
           @if (form.controls.nit.errors?.['servidor']) {
             <span class="error">{{ form.controls.nit.errors?.['servidor'] }}</span>
+          } @else {
+            <span class="ayuda">Déjalo vacío si no tienes; se factura como CF.</span>
           }
         </div>
         <div class="campo">

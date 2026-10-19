@@ -20,6 +20,6 @@
   }
   <app-datos-cuenta [grupo]="grupo()" [prefijo]="prefijo()" />
 } @else {
-  <app-buscar-cuenta [prefijo]="prefijo()" [correoInicial]="correoParaBuscar" [(seleccion)]="existente" />
+  <app-buscar-cuenta [prefijo]="prefijo()" [puesto]="puesto()" [correoInicial]="correoParaBuscar" [(seleccion)]="existente" />
   <p class="nota-suave">Conserva su contraseña, sus datos y su billetera. Le llegará un correo avisándole del nuevo puesto.</p>
 }

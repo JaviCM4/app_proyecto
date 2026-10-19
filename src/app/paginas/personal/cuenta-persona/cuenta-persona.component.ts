@@ -1,6 +1,5 @@
-import { Component, effect, inject, input, model } from '@angular/core';
-import { UsuarioBusqueda } from '../../../core/models/usuario.model';
-import { AuthService } from '../../../core/services/auth.service';
+import { Component, effect, input, model } from '@angular/core';
+import { PuestoAsignable, UsuarioBusqueda } from '../../../core/models/usuario.model';
 import { BuscarCuentaComponent } from '../buscar-cuenta/buscar-cuenta.component';
 import { DatosCuentaComponent } from '../datos-cuenta/datos-cuenta.component';
 import { GrupoCuenta } from '../datos-cuenta/cuenta.form';
@@ -8,9 +7,9 @@ import { GrupoCuenta } from '../datos-cuenta/cuenta.form';
 export type ModoCuenta = 'nueva' | 'existente';
 
 /**
- * Cuenta de la persona que se asigna a una sucursal: crearle una cuenta nueva o elegir a alguien que ya
- * se registró (de la lista de cuentas, o por correo si quien asigna no puede verla). Con "ya tiene cuenta" el grupo de datos se deshabilita, así no
- * bloquea la validación del formulario padre.
+ * Cuenta de la persona que se asigna a una sucursal o como chofer: crearle una cuenta nueva o elegir a
+ * alguien que ya se registró (de la lista de cuentas que pueden tomar el puesto).
+ * Con "ya tiene cuenta" el grupo de datos se deshabilita, así no bloquea la validación del formulario padre.
  */
 @Component({
   selector: 'app-cuenta-persona',
@@ -26,10 +25,10 @@ export class CuentaPersonaComponent {
   readonly existente = model<UsuarioBusqueda | null>(null);
   /** Correo que el servidor rechazó por estar en uso: se ofrece asignar esa cuenta. */
   readonly correoEnUso = input<string | null>(null);
+  /** Personal de sucursal (por defecto) o chofer. */
+  readonly puesto = input<PuestoAsignable>('PERSONAL');
 
-  readonly ayudaExistente = inject(AuthService).tieneRol('ADMIN_SISTEMA')
-    ? 'Ya se registró en la plataforma: elígela de la lista.'
-    : 'Ya se registró en la plataforma: búscala por su correo.';
+  readonly ayudaExistente = 'Ya se registró en la plataforma: elígela de la lista.';
 
   /** Correo con el que se abre la búsqueda cuando se elige "Asignar esa cuenta". */
   correoParaBuscar: string | null = null;

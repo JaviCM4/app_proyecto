@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { PersonalSucursal, Sucursal } from '../../../core/models/sucursal.model';
 import { EstadoUsuario, UsuarioDetalle } from '../../../core/models/usuario.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { PersonalService } from '../../../core/services/personal.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
@@ -41,6 +42,7 @@ export class UsuarioDetalleComponent {
   private readonly personalServicio = inject(PersonalService);
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly avisos = inject(ToastService);
+  private readonly miUsuarioId = inject(AuthService).usuario()?.usuarioId ?? null;
 
   /** Id del usuario a mostrar (null = cerrado). */
   readonly usuarioId = input<string | null>(null);
@@ -62,6 +64,8 @@ export class UsuarioDetalleComponent {
   readonly esPersonal = computed(() => !!this.detalle()?.sucursalId || !!this.detalle()?.choferId);
   readonly esPiloto = computed(() => !!this.detalle()?.choferId);
   readonly acciones = computed(() => ACCIONES.filter((a) => a.estado !== this.detalle()?.estado));
+  /** Nadie cambia el estado de su propia cuenta (el servidor también lo rechaza). */
+  readonly esPropia = computed(() => !!this.detalle() && this.detalle()!.usuarioId === this.miUsuarioId);
 
   /** Solo cuentas activas que no son personal, piloto ni ya administradores del sistema. */
   readonly puedeSerAdmin = computed(() => {

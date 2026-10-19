@@ -12,16 +12,15 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { normalizar, paginar } from '../../../shared/utils/paginacion';
-import { DatosCuentaComponent } from '../../personal/datos-cuenta/datos-cuenta.component';
-import { grupoCuenta, valoresCuenta } from '../../personal/datos-cuenta/cuenta.form';
+import { NuevoChoferComponent } from './nuevo-chofer/nuevo-chofer.component';
 
 type FiltroEstadoChofer = 'todas' | EstadoChofer;
 
-/** Choferes de la sucursal: registro con cuenta, salario, licencia y desactivación. */
+/** Choferes de la sucursal: registro (cuenta nueva o existente), salario, licencia y desactivación. */
 @Component({
   selector: 'app-choferes',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, ModalComponent, PaginadorComponent, DatosCuentaComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, ModalComponent, PaginadorComponent, NuevoChoferComponent],
   templateUrl: './choferes.component.html',
   styleUrl: './choferes.component.scss',
 })
@@ -57,19 +56,8 @@ export class ChoferesComponent implements OnInit {
   readonly cargandoDetalle = signal(false);
 
   readonly enviando = signal(false);
-  readonly foto = signal<File | null>(null);
 
   readonly tiposLicencia: TipoLicencia[] = ['A', 'B', 'C', 'M', 'E'];
-
-  readonly formCrear = this.fb.nonNullable.group({
-    sucursalId: ['', Validators.required],
-    numeroLicencia: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(30), Validators.pattern(/^[A-Za-z0-9-]+$/)]],
-    tipoLicencia: ['B' as TipoLicencia, Validators.required],
-    fechaVencimientoLicencia: ['', Validators.required],
-    salarioBaseViaje: [null as number | null, [Validators.required, Validators.min(0.01)]],
-    fechaRegistro: [hoyGt(), Validators.required],
-    cuenta: grupoCuenta(this.fb),
-  });
 
   readonly formSalario = this.fb.nonNullable.group({
     salarioBaseViaje: [null as number | null, [Validators.required, Validators.min(0.01)]],
@@ -99,21 +87,6 @@ export class ChoferesComponent implements OnInit {
   readonly paginaActual = computed(() => paginar(this.filtrados(), this.pagina(), this.tamano()));
 
   constructor() {
-    effect(() => {
-      if (!this.creando()) return;
-      this.foto.set(null);
-      this.formCrear.reset({
-        sucursalId: this.sucursalEfectiva(),
-        numeroLicencia: '',
-        tipoLicencia: 'B',
-        fechaVencimientoLicencia: '',
-        salarioBaseViaje: null,
-        fechaRegistro: hoyGt(),
-      });
-      this.formCrear.controls.cuenta.reset({ nombres: '', apellidos: '', correo: '', dpi: '', nit: '', telefono: '', direccion: '' });
-      if (this.esSistema) this.formCrear.controls.sucursalId.enable();
-      else this.formCrear.controls.sucursalId.disable();
-    });
     effect(() => {
       const c = this.editandoSalario();
       if (!c) return;
@@ -189,81 +162,9 @@ export class ChoferesComponent implements OnInit {
     this.cargar();
   }
 
-  invalidoCrear(ruta: string): boolean {
-    const c = this.formCrear.get(ruta);
-    return !!c && c.touched && c.invalid;
-  }
-
-  errorServidorCrear(ruta: string): string | null {
-    return (this.formCrear.get(ruta)?.errors?.['servidor'] as string | undefined) ?? null;
-  }
-
-  alElegirFoto(evento: Event): void {
-    const input = evento.target as HTMLInputElement;
-    const archivo = input.files?.[0] ?? null;
-    if (!archivo) {
-      this.foto.set(null);
-      return;
-    }
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type) || archivo.size > 2 * 1024 * 1024) {
-      this.avisos.error('La foto debe ser JPG, PNG o WEBP y pesar máximo 2 MB.');
-      input.value = '';
-      return;
-    }
-    this.foto.set(archivo);
-  }
-
-  guardarCrear(): void {
-    if (this.formCrear.invalid) {
-      this.formCrear.markAllAsTouched();
-      return;
-    }
-    if (this.formCrear.controls.fechaVencimientoLicencia.value <= hoyGt()) {
-      this.formCrear.controls.fechaVencimientoLicencia.setErrors({ futura: true });
-      this.formCrear.controls.fechaVencimientoLicencia.markAsTouched();
-      this.avisos.error('La licencia debe vencer en una fecha futura.');
-      return;
-    }
-    const archivo = this.foto();
-    this.enviando.set(true);
-    if (archivo) {
-      this.servicio.subirFoto(archivo).subscribe({
-        next: (r) => this.crearChofer(r.fotoUrl),
-        error: (e) => {
-          this.enviando.set(false);
-          this.avisos.error(mensajeError(e, 'No se pudo subir la foto.'));
-        },
-      });
-    } else {
-      this.crearChofer(null);
-    }
-  }
-
-  private crearChofer(fotoUrl: string | null): void {
-    const v = this.formCrear.getRawValue();
-    this.servicio
-      .crear({
-        sucursalId: v.sucursalId,
-        numeroLicencia: v.numeroLicencia.trim().toUpperCase(),
-        tipoLicencia: v.tipoLicencia,
-        fechaVencimientoLicencia: v.fechaVencimientoLicencia,
-        salarioBaseViaje: Number(v.salarioBaseViaje),
-        fechaRegistro: v.fechaRegistro,
-        cuenta: fotoUrl ? { ...valoresCuenta(this.formCrear.controls.cuenta), fotoUrl } : valoresCuenta(this.formCrear.controls.cuenta),
-      })
-      .subscribe({
-        next: (c) => {
-          this.enviando.set(false);
-          this.creando.set(false);
-          this.avisos.exito(`${c.nombreCompleto} quedó registrado como piloto. Le llegará un correo para activar su cuenta.`);
-          this.cargar();
-        },
-        error: (e) => {
-          this.enviando.set(false);
-          marcarErroresServidor(this.formCrear, e);
-          this.avisos.error(mensajeError(e, 'No se pudo registrar el chofer.'));
-        },
-      });
+  alCrear(): void {
+    this.creando.set(false);
+    this.cargar();
   }
 
   guardarSalario(): void {

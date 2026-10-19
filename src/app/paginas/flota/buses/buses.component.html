@@ -238,13 +238,19 @@
     <p class="suave">Cargando detalle…</p>
   } @else {
     @if (detalle(); as d) {
+    @if (d.fotoUrl) {
+      <a class="foto-bus" [href]="d.fotoUrl" target="_blank" rel="noopener" title="Abrir la foto en otra pestaña">
+        <img [src]="d.fotoUrl" [alt]="'Foto del bus ' + d.placa" loading="lazy" />
+      </a>
+    } @else {
+      <p class="foto-bus vacia">Sin foto registrada.</p>
+    }
     <dl class="datos-lista">
       <div><dt>Estado</dt><dd><span class="insignia" [class.exito]="d.estado === 'ACTIVO'">{{ textoEstado(d.estado) }}</span></dd></div>
       <div><dt>Año</dt><dd>{{ d.anioFabricacion }}</dd></div>
       <div><dt>Capacidad</dt><dd>{{ d.capacidadPasajeros }} pasajeros</dd></div>
       <div><dt>Kilometraje</dt><dd>{{ d.kilometrajeActual }} km</dd></div>
       <div><dt>Sucursal</dt><dd>{{ nombreSucursal(d.sucursalId) || d.sucursalId }}</dd></div>
-      <div><dt>Foto</dt><dd><a [href]="d.fotoUrl" target="_blank" rel="noopener">Ver foto</a></dd></div>
     </dl>
 
     <h3>Últimos viajes</h3>

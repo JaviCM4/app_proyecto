@@ -23,30 +23,46 @@
            (keydown.enter)="alPresionarEnter($event)" />
   </div>
 
-  <div class="lista" role="listbox" [attr.aria-label]="'Cuentas registradas'" [attr.aria-busy]="cargandoLista()">
+  <div class="lista" role="listbox" aria-label="Cuentas que se pueden asignar" [attr.aria-busy]="cargandoLista()">
     @if (cargandoLista()) {
       <p class="vacio">Cargando cuentas…</p>
     } @else {
       @for (u of visibles(); track u.usuarioId) {
         <button type="button" role="option" class="fila" [disabled]="verificando() !== null"
                 [class.verificando]="verificando() === u.correo" (click)="elegir(u)">
-          <app-avatar [nombre]="u.nombre" [tamano]="32" />
+          <app-avatar [foto]="u.fotoUrl" [nombre]="u.nombreCompleto" [tamano]="32" />
           <span class="textos">
             <span class="correo">{{ u.correo }}</span>
-            <span class="detalle">{{ u.nombre }} · {{ u.roles | rolTexto }}</span>
+            <span class="detalle">{{ u.nombreCompleto }}</span>
           </span>
           @if (verificando() === u.correo) {
             <span class="estado">Verificando…</span>
           }
         </button>
       } @empty {
-        <p class="vacio">Ninguna cuenta activa coincide con «{{ correo() }}».</p>
+        <p class="vacio">
+          @if (correo()) {
+            Ninguna cuenta disponible coincide con «{{ correo() }}».
+          } @else {
+            No hay cuentas disponibles para este puesto.
+          }
+        </p>
       }
       @if (ocultas() > 0) {
         <p class="vacio">Y {{ ocultas() }} más: escribe para afinar la búsqueda.</p>
       }
     }
   </div>
+  @if (correoFueraDeLista(); as fuera) {
+    <p class="mensaje">
+      ¿No aparece?
+      <button type="button" class="enlace" (click)="buscar()" [disabled]="buscando()">
+        {{ buscando() ? 'Buscando…' : 'Ver por qué no se puede asignar ' + fuera }}
+      </button>
+    </p>
+  } @else {
+    <p class="mensaje">Solo aparecen las cuentas activas que pueden tomar este puesto.</p>
+  }
 } @else {
   <div class="buscador">
     <div class="campo crece">

@@ -88,3 +88,16 @@
   font-size: 13px;
   color: var(--texto-suave);
 }
+
+.enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primario);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+
+  &:disabled { cursor: progress; opacity: .7; }
+}

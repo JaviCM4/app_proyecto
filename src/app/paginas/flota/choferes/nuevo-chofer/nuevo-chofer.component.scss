@@ -1,0 +1,12 @@
+.etiqueta-suave {
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.foto-actual {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radio);
+  border: 1px solid var(--borde);
+}

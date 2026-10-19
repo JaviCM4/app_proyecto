@@ -61,6 +61,17 @@ export interface FiltroUsuarios {
   q?: string;
 }
 
+/** Puesto para el que se busca una cuenta existente (ADMIN_SISTEMA solo lo usa el administrador del sistema). */
+export type PuestoAsignable = 'PERSONAL' | 'CHOFER' | 'ADMIN_SISTEMA';
+
+/** Cuenta activa que puede tomar un puesto (lista para elegir sin escribir el correo). */
+export interface UsuarioAsignable {
+  usuarioId: string;
+  correo: string;
+  nombreCompleto: string;
+  fotoUrl: string | null;
+}
+
 /** Resultado de buscar una cuenta por correo exacto (para asignarle un puesto). */
 export interface UsuarioBusqueda {
   usuarioId: string;
