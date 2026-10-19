@@ -7,7 +7,7 @@
   <button type="button" role="radio" class="modo" [class.activo]="modo() === 'existente'"
           [attr.aria-checked]="modo() === 'existente'" (click)="cambiar('existente')">
     <strong>Ya tiene cuenta</strong>
-    <span>Ya se registró en la plataforma: búscala por su correo.</span>
+    <span>{{ ayudaExistente }}</span>
   </button>
 </div>
 
