@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { PersonalSucursal, Sucursal } from '../../../core/models/sucursal.model';
 import { EstadoUsuario, UsuarioDetalle } from '../../../core/models/usuario.model';
 import { AuthService } from '../../../core/services/auth.service';
@@ -21,19 +22,43 @@ interface AccionEstado {
   texto: string;
   pregunta: string;
   peligro: boolean;
+  /** Desbloquear usa el endpoint dedicado (no envía estado). */
+  desbloquea?: boolean;
+  /** Bloquear permite elegir cuánto dura. */
+  pideDuracion?: boolean;
 }
 
-const ACCIONES: AccionEstado[] = [
-  { estado: 'ACTIVO', texto: 'Activar', pregunta: 'La cuenta podrá volver a entrar al sistema.', peligro: false },
-  { estado: 'INACTIVO', texto: 'Desactivar', pregunta: 'La cuenta ya no podrá entrar al sistema.', peligro: true },
-  { estado: 'BLOQUEADO', texto: 'Bloquear', pregunta: 'La cuenta queda bloqueada y se cierran sus sesiones.', peligro: true },
+/** Una acción por transición: el panel muestra los 4 botones (activar, desactivar, bloquear, desbloquear). */
+const ACTIVAR: AccionEstado = {
+  estado: 'ACTIVO', texto: 'Activar', peligro: false,
+  pregunta: 'La cuenta podrá volver a entrar al sistema.',
+};
+const DESBLOQUEAR: AccionEstado = {
+  estado: 'ACTIVO', texto: 'Desbloquear', peligro: false, desbloquea: true,
+  pregunta: 'Se quita el bloqueo y la cuenta podrá volver a entrar de inmediato.',
+};
+const DESACTIVAR: AccionEstado = {
+  estado: 'INACTIVO', texto: 'Desactivar', peligro: true,
+  pregunta: 'La cuenta dejará de poder entrar al sistema hasta que la activen de nuevo.',
+};
+const BLOQUEAR: AccionEstado = {
+  estado: 'BLOQUEADO', texto: 'Bloquear', peligro: true, pideDuracion: true,
+  pregunta: 'Se cierran sus sesiones y no podrá entrar hasta que venza el bloqueo o la desbloqueen.',
+};
+
+/** 0 = sin vencimiento (solo lo quita desbloquear). */
+const DURACIONES = [
+  { valor: 15, texto: '15 minutos' },
+  { valor: 60, texto: '1 hora' },
+  { valor: 1440, texto: '24 horas' },
+  { valor: 0, texto: 'Sin vencimiento' },
 ];
 
 /** Modal con los datos de un usuario y las acciones para cambiar el estado de su cuenta. */
 @Component({
   selector: 'app-usuario-detalle',
   standalone: true,
-  imports: [ModalComponent, AvatarComponent, ConfirmacionComponent, RolTextoPipe, DatePipe, AccionPersonalComponent],
+  imports: [ModalComponent, AvatarComponent, ConfirmacionComponent, RolTextoPipe, DatePipe, AccionPersonalComponent, FormsModule],
   templateUrl: './usuario-detalle.component.html',
   styleUrl: './usuario-detalle.component.scss',
 })
@@ -60,10 +85,21 @@ export class UsuarioDetalleComponent {
   readonly sucursal = signal<Sucursal | null>(null);
   readonly enAccion = signal<AccionPersonal | null>(null);
 
-  /** El personal de sucursal y los pilotos se retiran desde Fleet (no se cambia el estado de la cuenta aquí). */
+  /** El personal de sucursal y los pilotos conservan su puesto en Fleet, pero su cuenta se maneja aquí. */
   readonly esPersonal = computed(() => !!this.detalle()?.sucursalId || !!this.detalle()?.choferId);
   readonly esPiloto = computed(() => !!this.detalle()?.choferId);
-  readonly acciones = computed(() => ACCIONES.filter((a) => a.estado !== this.detalle()?.estado));
+  /** Activar, desactivar, bloquear o desbloquear según el estado actual. */
+  readonly acciones = computed<AccionEstado[]>(() => {
+    switch (this.detalle()?.estado) {
+      case 'INACTIVO': return [ACTIVAR];
+      case 'BLOQUEADO': return [DESBLOQUEAR, DESACTIVAR];
+      case 'ACTIVO': return [BLOQUEAR, DESACTIVAR];
+      default: return [];
+    }
+  });
+  readonly duraciones = DURACIONES;
+  /** Duración elegida para el bloqueo (minutos); 0 = sin vencimiento. */
+  readonly duracion = signal(15);
   /** Nadie cambia el estado de su propia cuenta (el servidor también lo rechaza). */
   readonly esPropia = computed(() => !!this.detalle() && this.detalle()!.usuarioId === this.miUsuarioId);
 
@@ -131,12 +167,22 @@ export class UsuarioDetalleComponent {
     });
   }
 
+  /** Abre la confirmación; para bloquear, reinicia la duración por defecto. */
+  pedirConfirmacion(accion: AccionEstado): void {
+    if (accion.pideDuracion) this.duracion.set(15);
+    this.porConfirmar.set(accion);
+  }
+
   confirmar(): void {
     const accion = this.porConfirmar();
     const d = this.detalle();
     if (!accion || !d) return;
     this.procesando.set(true);
-    this.usuarios.cambiarEstado(d.usuarioId, accion.estado).subscribe({
+    const peticion = accion.desbloquea
+      ? this.usuarios.desbloquear(d.usuarioId)
+      : this.usuarios.cambiarEstado(d.usuarioId, accion.estado,
+          accion.pideDuracion && this.duracion() > 0 ? this.duracion() : undefined);
+    peticion.subscribe({
       next: (actualizado) => {
         this.procesando.set(false);
         this.porConfirmar.set(null);

@@ -1,0 +1,38 @@
+﻿[33mΓ¥»[39m Building...
+[32mΓ£ö[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                       [2m | [22m [1mRaw size[22m
+[32mchunk-B5AFMZWB.js[39m  [2m | [22m[2m-[22m                           [2m | [22m  [36m1.13 MB[39m[2m | [22m
+[32mchunk-KZBXUM4W.js[39m  [2m | [22m[2m-[22m                           [2m | [22m[36m269.05 kB[39m[2m | [22m
+[32mpolyfills.js[39m       [2m | [22m[2mpolyfills[22m                   [2m | [22m [36m89.77 kB[39m[2m | [22m
+[32mstyles.css[39m         [2m | [22m[2mstyles[22m                      [2m | [22m [36m25.79 kB[39m[2m | [22m
+[32mmain.js[39m            [2m | [22m[2mmain[22m                        [2m | [22m [36m21.30 kB[39m[2m | [22m
+[32mchunk-GCBVVSIL.js[39m  [2m | [22m[2m-[22m                           [2m | [22m  [36m5.20 kB[39m[2m | [22m
+[32mchunk-556FWZJ5.js[39m  [2m | [22m[2m-[22m                           [2m | [22m  [36m2.81 kB[39m[2m | [22m
+[32mchunk-YP43Q66R.js[39m  [2m | [22m[2m-[22m                           [2m | [22m  [36m2.75 kB[39m[2m | [22m
+[32mchunk-HQFAZEZ4.js[39m  [2m | [22m[2m-[22m                           [2m | [22m  [36m1.71 kB[39m[2m | [22m
+[32mchunk-BDNGXXO6.js[39m  [2m | [22m[2m-[22m                           [2m | [22m[36m487 bytes[39m[2m | [22m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m               [2m | [22m  [1m1.55 MB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                       [2m | [22m [1mRaw size[22m
+[32mchunk-46IPGVJ6.js[39m  [2m | [22m[2mmis-compras-component[22m       [2m | [22m[36m701.69 kB[39m[2m | [22m
+[32mchunk-FC25JYCE.js[39m  [2m | [22m[2m-[22m                           [2m | [22m[36m398.51 kB[39m[2m | [22m
+[32mchunk-IXTOKJG6.js[39m  [2m | [22m[2m-[22m                           [2m | [22m[36m387.88 kB[39m[2m | [22m
+[32mchunk-OQWFXFUX.js[39m  [2m | [22m[2mindex-es[22m                    [2m | [22m[36m371.03 kB[39m[2m | [22m
+[32mchunk-JJGIMWHT.js[39m  [2m | [22m[2m-[22m                           [2m | [22m[36m224.19 kB[39m[2m | [22m
+[32mchunk-W75DZEGZ.js[39m  [2m | [22m[2mreportes-component[22m          [2m | [22m [36m80.19 kB[39m[2m | [22m
+[32mchunk-KV3DXVH5.js[39m  [2m | [22m[2malquileres-component[22m        [2m | [22m [36m80.17 kB[39m[2m | [22m
+[32mchunk-TFTT6DPW.js[39m  [2m | [22m[2msolicitar-alquiler-component[22m[2m | [22m [36m76.49 kB[39m[2m | [22m
+[32mchunk-TU4WBVFH.js[39m  [2m | [22m[2msucursales-lista-component[22m  [2m | [22m [36m71.43 kB[39m[2m | [22m
+[32mchunk-BO4LX6E5.js[39m  [2m | [22m[2mviajes-component[22m            [2m | [22m [36m68.09 kB[39m[2m | [22m
+[32mchunk-KILJNBBG.js[39m  [2m | [22m[2mpurify-es[22m                   [2m | [22m [36m67.97 kB[39m[2m | [22m
+[32mchunk-Q7Q6B6YC.js[39m  [2m | [22m[2mchoferes-component[22m          [2m | [22m [36m66.66 kB[39m[2m | [22m
+[32mchunk-BZG2ED7E.js[39m  [2m | [22m[2mbuses-component[22m             [2m | [22m [36m64.58 kB[39m[2m | [22m
+[32mchunk-YYLTEIGO.js[39m  [2m | [22m[2musuarios-lista-component[22m    [2m | [22m [36m63.33 kB[39m[2m | [22m
+[32mchunk-FJJQWTRG.js[39m  [2m | [22m[2mventas-component[22m            [2m | [22m [36m61.53 kB[39m[2m | [22m
+[2m...and 57 more lazy chunks files. Use "--verbose" to show all the files.[22m
+
+Application bundle generation complete. [40.716 seconds]
+
+Output location: C:\Users\DELL\Escritorio\Transporte-Frontend\dist\transporte-frontend
+

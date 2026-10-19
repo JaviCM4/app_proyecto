@@ -23,9 +23,9 @@
         }
         <p class="suave">
           @if (esPiloto()) {
-            Los pilotos los da de baja el administrador de su sucursal.
+            Los pilotos los da de baja el administrador de su sucursal; aquí puedes bloquear o desactivar su cuenta.
           } @else {
-            Para quitarle el acceso, retíralo de la sucursal o trasládalo a otra. La sucursal debe conservar al menos un administrador.
+            Para cambiar su puesto, retíralo de la sucursal o trasládalo a otra (la sucursal debe conservar al menos un administrador). Aquí puedes bloquear o desactivar su cuenta.
           }
         </p>
       </div>
@@ -45,9 +45,9 @@
     @if (puedeSerAdmin()) {
       <button type="button" class="btn" (click)="confirmandoAdmin.set(true)">Hacer administrador del sistema</button>
     }
-    @if (detalle() && !esPersonal() && !esPropia()) {
-      @for (a of acciones(); track a.estado) {
-        <button type="button" class="btn" [class.peligro]="a.peligro" (click)="porConfirmar.set(a)">{{ a.texto }}</button>
+    @if (detalle() && !esPropia()) {
+      @for (a of acciones(); track a.texto) {
+        <button type="button" class="btn" [class.peligro]="a.peligro" (click)="pedirConfirmacion(a)">{{ a.texto }}</button>
       }
     }
     <button type="button" class="btn" (click)="cerrar.emit()">Cerrar</button>
@@ -62,7 +62,18 @@
   [peligro]="!!porConfirmar()?.peligro"
   [procesando]="procesando()"
   (aceptar)="confirmar()"
-  (cancelar)="porConfirmar.set(null)" />
+  (cancelar)="porConfirmar.set(null)">
+  @if (porConfirmar()?.pideDuracion) {
+    <div class="campo mt">
+      <label for="duracion">Duración del bloqueo</label>
+      <select id="duracion" class="control" [ngModel]="duracion()" (ngModelChange)="duracion.set($event)">
+        @for (d of duraciones; track d.valor) {
+          <option [ngValue]="d.valor">{{ d.texto }}</option>
+        }
+      </select>
+    </div>
+  }
+</app-confirmacion>
 
 <app-accion-personal [personal]="enAccion() ? puesto() : null" [accion]="enAccion() ?? 'desactivar'"
                      (hecho)="alTerminarAccion()" (cerrar)="enAccion.set(null)" />
