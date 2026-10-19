@@ -60,7 +60,7 @@
   <table class="tabla">
     <thead>
       <tr>
-        <th>Fecha</th>
+        <th>Fecha y hora</th>
         <th>Movimiento</th>
         <th class="oculto-movil">Referencia</th>
         <th class="numero">Monto</th>
@@ -70,7 +70,12 @@
     <tbody>
       @for (m of paginaActual().elementos; track m.id) {
         <tr>
-          <td>{{ m.fechaMovimiento | date: 'dd/MM/yyyy' : 'UTC' }}</td>
+          <td>
+            {{ m.fechaMovimiento | date: 'dd/MM/yyyy' : 'UTC' }}
+            @if (m.fechaRegistro) {
+              <span class="hora">{{ m.fechaRegistro | date: 'HH:mm' : zona }}</span>
+            }
+          </td>
           <td>{{ descripcion(m) }}</td>
           <td class="oculto-movil"><code [title]="m.referenciaId ?? ''">{{ referencia(m) }}</code></td>
           <td class="numero monto" [class.negativo]="m.tipo === 'DEVOLUCION'">

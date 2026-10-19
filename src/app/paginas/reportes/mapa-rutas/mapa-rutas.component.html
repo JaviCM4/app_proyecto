@@ -22,7 +22,7 @@
               <td>{{ r.origen ?? nombre(r.sucursalOrigenId) }}</td>
               <td>{{ r.destino ?? nombre(r.sucursalDestinoId) }}</td>
               <td class="numero">{{ r.distanciaKm | number: '1.0-2' }} km</td>
-              <td class="numero">Q{{ r.precioBoleto | number: '1.2-2' }}</td>
+              <td class="numero">{{ r.precioBoleto | currency }}</td>
               <td><span class="insignia" [class.exito]="r.activa">{{ r.activa ? 'Activa' : 'Inactiva' }}</span></td>
             </tr>
           }

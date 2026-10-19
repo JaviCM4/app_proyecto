@@ -1,21 +1,28 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { AlquilerHistorial, Historial, Venta } from '../../../core/models/venta.model';
+import { CurrencyPipe, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AlquilerHistorial, Historial, Venta, VentaHistorial } from '../../../core/models/venta.model';
 import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { CANAL_VENTA, ESTADO_ORDEN_ALQUILER, ESTADO_VENTA, textoViaje } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { descargarBoletoPdf } from '../../../shared/utils/boleto-pdf';
 import { paginar } from '../../../shared/utils/paginacion';
 
-/** Historial de compras del cliente: boletos y alquileres, con pago de alquileres pendientes. */
+/** Clave de un viaje en el historial (el historial no trae el id del viaje). */
+function claveViaje(v: VentaHistorial): string {
+  return `${v.origenNombre ?? ''}|${v.destinoNombre ?? ''}|${v.fechaSalida ?? ''}`;
+}
+
+/** Historial de compras del cliente en pestañas: boletos (con filtro por viaje) y alquileres, con pago de alquileres pendientes. */
 @Component({
   selector: 'app-mis-compras',
   standalone: true,
-  imports: [PaginadorComponent, ModalComponent, DatePipe],
+  imports: [FormsModule, PaginadorComponent, ModalComponent, DatePipe, CurrencyPipe],
   templateUrl: './mis-compras.component.html',
   styleUrl: './mis-compras.component.scss',
 })
@@ -33,9 +40,37 @@ export class MisComprasComponent implements OnInit {
   readonly ticket = signal<Venta | null>(null);
   readonly cargandoTicket = signal(false);
 
+  readonly estadoVenta = ESTADO_VENTA;
+  readonly canalVenta = CANAL_VENTA;
+  readonly estadoOrden = ESTADO_ORDEN_ALQUILER;
+
+  readonly pestana = signal<'boletos' | 'alquileres'>('boletos');
+  readonly viaje = signal('');
+
+  /** Un viaje por cada uno con boletos, del más reciente al más antiguo. */
+  readonly opcionesViaje = computed(() => {
+    const vistos = new Map<string, VentaHistorial>();
+    for (const v of this.historial()?.ventas ?? []) {
+      if (!vistos.has(claveViaje(v))) vistos.set(claveViaje(v), v);
+    }
+    return [...vistos.entries()]
+      .sort(([, a], [, b]) => (b.fechaSalida ?? '').localeCompare(a.fechaSalida ?? ''))
+      .map(([clave, v]) => ({ clave, texto: textoViaje(v.origenNombre, v.destinoNombre, v.fechaSalida) }));
+  });
+
+  readonly boletos = computed(() => {
+    const viaje = this.viaje();
+    return (this.historial()?.ventas ?? []).filter((v) => !viaje || claveViaje(v) === viaje);
+  });
+
   readonly pagina = signal(1);
   readonly tamano = signal(10);
-  readonly boletosPagina = computed(() => paginar(this.historial()?.ventas ?? [], this.pagina(), this.tamano()));
+  readonly boletosPagina = computed(() => paginar(this.boletos(), this.pagina(), this.tamano()));
+
+  filtrarViaje(clave: string): void {
+    this.viaje.set(clave);
+    this.pagina.set(1);
+  }
 
   ngOnInit(): void {
     this.cargar();

@@ -19,7 +19,26 @@
   </div>
 }
 
-<h2>Boletos</h2>
+<div class="pestanas" role="tablist">
+  <button type="button" role="tab" [class.activa]="pestana() === 'boletos'" [attr.aria-selected]="pestana() === 'boletos'"
+          (click)="pestana.set('boletos')">Boletos ({{ historial()?.ventas?.length ?? 0 }})</button>
+  <button type="button" role="tab" [class.activa]="pestana() === 'alquileres'" [attr.aria-selected]="pestana() === 'alquileres'"
+          (click)="pestana.set('alquileres')">Alquileres ({{ historial()?.alquileres?.length ?? 0 }})</button>
+</div>
+
+@if (pestana() === 'boletos') {
+<div class="filtros">
+  <div class="campo crece">
+    <label for="mc-viaje">Viaje</label>
+    <select id="mc-viaje" class="control" [ngModel]="viaje()" (ngModelChange)="filtrarViaje($event)">
+      <option value="">Todos los viajes</option>
+      @for (o of opcionesViaje(); track o.clave) {
+        <option [value]="o.clave">{{ o.texto }}</option>
+      }
+    </select>
+  </div>
+</div>
+
 <div class="tabla-contenedor">
   <table class="tabla">
     <thead>
@@ -35,12 +54,15 @@
     <tbody>
       @for (v of boletosPagina().elementos; track v.ventaId) {
         <tr>
-          <td><strong>{{ v.origenNombre || '—' }} → {{ v.destinoNombre || '—' }}</strong></td>
+          <td>
+            <strong>{{ v.origenNombre || '—' }} → {{ v.destinoNombre || '—' }}</strong>
+            <div class="secundario">{{ canalVenta[v.canal] }}</div>
+          </td>
           <td>{{ v.fechaSalida ? (v.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }}</td>
           <td>{{ v.asientos.length ? v.asientos.join(', ') : '—' }}</td>
-          <td>Q{{ v.montoTotal }}</td>
+          <td>{{ v.montoTotal | currency }}</td>
           <td>
-            <span class="insignia" [class.exito]="v.estado === 'CONFIRMADA'">{{ v.estado }}</span>
+            <span [class]="'insignia ' + estadoVenta[v.estado].clase">{{ estadoVenta[v.estado].texto }}</span>
           </td>
           <td class="acciones">
             <button type="button" class="btn chico" (click)="verTicket(v.ventaId)">Ver</button>
@@ -49,7 +71,7 @@
       } @empty {
         <tr>
           <td colspan="6" class="tabla-vacia">
-            {{ cargando() ? 'Cargando historial…' : 'Aún no tienes boletos.' }}
+            {{ cargando() ? 'Cargando historial…' : viaje() ? 'No tienes boletos de ese viaje.' : 'Aún no tienes boletos.' }}
           </td>
         </tr>
       }
@@ -63,13 +85,13 @@
   [total]="boletosPagina().total"
   (cambioPagina)="pagina.set($event)"
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
-
-<h2>Alquileres</h2>
+} @else {
 <div class="tabla-contenedor">
   <table class="tabla">
     <thead>
       <tr>
         <th>Ruta</th>
+        <th>Pago</th>
         <th>Monto</th>
         <th>Estado</th>
         <th class="acciones">Acciones</th>
@@ -79,9 +101,10 @@
       @for (a of historial()?.alquileres ?? []; track a.ordenId) {
         <tr>
           <td><strong>{{ a.origen }} → {{ a.destino }}</strong></td>
-          <td>Q{{ a.monto }}</td>
+          <td>{{ a.fechaPago ? (a.fechaPago | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }}</td>
+          <td>{{ a.monto | currency }}</td>
           <td>
-            <span class="insignia" [class.exito]="a.estado === 'PAGADA'">{{ a.estado }}</span>
+            <span [class]="'insignia ' + estadoOrden[a.estado].clase">{{ estadoOrden[a.estado].texto }}</span>
           </td>
           <td class="acciones">
             @if (a.estado === 'PENDIENTE_PAGO') {
@@ -99,7 +122,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="4" class="tabla-vacia">
+          <td colspan="5" class="tabla-vacia">
             {{ cargando() ? 'Cargando historial…' : 'Aún no tienes alquileres.' }}
           </td>
         </tr>
@@ -107,6 +130,7 @@
     </tbody>
   </table>
 </div>
+}
 
 <app-modal [abierto]="ticket() !== null || cargandoTicket()" titulo="Boleto de viaje" (cerrar)="ticket.set(null)">
   @if (cargandoTicket()) {
@@ -120,9 +144,9 @@
         <p class="ticket-hora">{{ t.viaje?.fechaSalida ? (t.viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }} · Bus {{ t.viaje?.busPlaca || '—' }}</p>
         <div class="ticket-cajas">
           <div><span>Asientos</span><strong>{{ asientosTicket(t) }}</strong></div>
-          <div><span>Total</span><strong>Q{{ t.montoTotal }}</strong></div>
+          <div><span>Total</span><strong>{{ t.montoTotal | currency }}</strong></div>
           <div><span>Pasajero</span><strong>{{ t.clienteNombre || historial()?.nombre || '—' }}</strong></div>
-          <div><span>Estado</span><strong>{{ t.estado }}</strong></div>
+          <div><span>Estado</span><strong>{{ estadoVenta[t.estado].texto }}</strong></div>
         </div>
         <p class="ticket-nota">NIT {{ t.clienteNit || 'CF' }} · Presenta este código al abordar. Llega 30 minutos antes.</p>
       </div>

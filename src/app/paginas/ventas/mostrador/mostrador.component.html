@@ -60,7 +60,7 @@
 
 @if (ventaConfirmada(); as venta) {
   <div class="datos-lista">
-    <h2>Venta confirmada <span class="insignia exito">{{ venta.estado }}</span></h2>
+    <h2>Venta confirmada <span class="insignia exito">Confirmada</span></h2>
     <p class="secundario">
       {{ venta.viaje?.origenNombre }} → {{ venta.viaje?.destinoNombre }}
       · Salida: {{ venta.viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}
@@ -102,7 +102,7 @@
         <tr>
           <td>
             <strong>{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
-            <div class="secundario">{{ v.estado }} · Capacidad: {{ v.capacidad }}</div>
+            <div class="secundario">{{ v.estado === 'PROGRAMADO' ? 'Programado' : v.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }} · Capacidad: {{ v.capacidad }}</div>
           </td>
           <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</td>
           <td>{{ v.busPlaca || '—' }}</td>

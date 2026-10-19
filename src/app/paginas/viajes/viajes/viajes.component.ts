@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Bus } from '../../../core/models/bus.model';
@@ -23,7 +23,7 @@ type FiltroEstado = 'TODAS' | EstadoViaje;
 @Component({
   selector: 'app-viajes',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, ModalComponent, PaginadorComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent],
   templateUrl: './viajes.component.html',
   styleUrl: './viajes.component.scss',
 })
@@ -59,6 +59,8 @@ export class ViajesComponent implements OnInit {
   readonly detalleVisible = signal(false);
   readonly enDetalle = signal<ViajeDetalle | null>(null);
   readonly cargandoDetalle = signal(false);
+  /** Foto del bus del viaje abierto en el detalle (null mientras carga o si no tiene). */
+  readonly fotoBus = signal<string | null>(null);
   readonly porEliminar = signal<Viaje | null>(null);
   readonly enSalida = signal<Viaje | null>(null);
   readonly enLlegada = signal<Viaje | null>(null);
@@ -177,6 +179,7 @@ export class ViajesComponent implements OnInit {
       next: (detalle) => {
         this.cargandoDetalle.set(false);
         this.enDetalle.set(detalle);
+        this.cargarFotoBus(detalle.busId);
       },
       error: (e) => {
         this.cargandoDetalle.set(false);
@@ -312,6 +315,7 @@ export class ViajesComponent implements OnInit {
           this.avisos.exito('Salida registrada. El viaje está en ruta.');
           this.detalleVisible.set(true);
           this.enDetalle.set(detalle);
+        this.cargarFotoBus(detalle.busId);
           this.cargarViajes();
         },
         error: (e) => {
@@ -349,6 +353,7 @@ export class ViajesComponent implements OnInit {
           this.avisos.exito('Llegada registrada. El viaje quedó completado.');
           this.detalleVisible.set(true);
           this.enDetalle.set(detalle);
+        this.cargarFotoBus(detalle.busId);
           this.cargarViajes();
         },
         error: (e) => {
@@ -362,6 +367,16 @@ export class ViajesComponent implements OnInit {
   cerrarDetalle(): void {
     this.detalleVisible.set(false);
     this.enDetalle.set(null);
+    this.fotoBus.set(null);
+  }
+
+  /** La foto del bus está en Fleet; si no se puede cargar el detalle se muestra sin ella. */
+  private cargarFotoBus(busId: string): void {
+    this.fotoBus.set(null);
+    this.busesServicio.detalle(busId).subscribe({
+      next: (bus) => this.fotoBus.set(bus.fotoUrl || null),
+      error: () => this.fotoBus.set(null),
+    });
   }
 
   /** Convierte un OffsetDateTime ("…T06:00:00-06:00") a datetime-local ("…T06:00"). */

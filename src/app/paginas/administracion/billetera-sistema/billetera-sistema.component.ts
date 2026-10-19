@@ -1,9 +1,10 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CarteraSistema, MovimientoCartera } from '../../../core/models/cartera.model';
+import { CarteraSistema, MovimientoCartera, ordenarMovimientos } from '../../../core/models/cartera.model';
 import { CarteraSistemaService } from '../../../core/services/cartera-sistema.service';
 import { mensajeError } from '../../../core/utils/errores-http';
+import { ZONA_GT } from '../../../core/utils/fechas';
 import { IconoComponent } from '../../../shared/components/icono/icono.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
@@ -28,6 +29,7 @@ export class BilleteraSistemaComponent implements OnInit {
   private readonly avisos = inject(ToastService);
 
   readonly billetera = signal<CarteraSistema | null>(null);
+  readonly zona = ZONA_GT;
   private readonly movimientos = signal<MovimientoCartera[]>([]);
   readonly cargando = signal(true);
   readonly mostrandoRetiro = signal(false);
@@ -59,7 +61,7 @@ export class BilleteraSistemaComponent implements OnInit {
     });
     this.servicio.movimientos(this.desde, this.hasta).subscribe({
       next: (lista) => {
-        this.movimientos.set(lista);
+        this.movimientos.set(ordenarMovimientos(lista));
         this.pagina.set(1);
         this.cargando.set(false);
       },

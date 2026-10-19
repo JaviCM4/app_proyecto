@@ -109,7 +109,7 @@
         }
         @if (ventaFinal()?.estado === 'CONFIRMADA') {
           <p class="aviso-exito">
-            Compra confirmada: {{ ventaFinal()!.boletos.length }} boleto(s) por Q{{ ventaFinal()!.montoTotal }}.
+            Compra confirmada: {{ ventaFinal()!.boletos.length }} boleto(s) por {{ ventaFinal()!.montoTotal | currency }}.
           </p>
         }
         @if (ventaFinal() && ventaFinal()!.estado !== 'PENDIENTE_PAGO' && ventaFinal()!.estado !== 'CONFIRMADA') {

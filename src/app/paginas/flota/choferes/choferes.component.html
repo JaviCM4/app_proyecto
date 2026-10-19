@@ -57,7 +57,7 @@
             <div class="secundario">Tipo {{ c.tipoLicencia }}</div>
           </td>
           <td>{{ c.fechaVencimientoLicencia | date: 'dd/MM/yyyy' : 'UTC' }}</td>
-          <td>Q {{ c.salarioBaseViaje }}</td>
+          <td>{{ c.salarioBaseViaje | currency }}</td>
           <td>
             <span class="insignia" [class.exito]="c.estado === 'ACTIVO'">{{ c.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span>
           </td>
@@ -108,7 +108,7 @@
       <div><dt>Sucursal</dt><dd>{{ nombreSucursal(d.sucursalId) || d.sucursalId }}</dd></div>
       <div><dt>Licencia</dt><dd>{{ d.numeroLicencia }} (Tipo {{ d.tipoLicencia }})</dd></div>
       <div><dt>Vencimiento</dt><dd>{{ d.fechaVencimientoLicencia | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
-      <div><dt>Salario base</dt><dd>Q {{ d.salarioBaseViaje }} por viaje</dd></div>
+      <div><dt>Salario base</dt><dd>{{ d.salarioBaseViaje | currency }} por viaje</dd></div>
       <div><dt>Usuario</dt><dd class="secundario">{{ d.usuarioId }}</dd></div>
     </dl>
     <p class="suave">El nombre, el correo y la foto se editan en el perfil de su cuenta (Identity).</p>

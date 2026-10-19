@@ -21,7 +21,7 @@
     <label for="estado">Estado</label>
     <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="estado.set($event); cambiarFiltro()">
       @for (e of estados; track e) {
-        <option [value]="e">{{ e === 'TODAS' ? 'Todos' : e }}</option>
+        <option [value]="e">{{ e === 'TODAS' ? 'Todos' : estadoOrden[e].texto }}</option>
       }
     </select>
   </div>
@@ -51,7 +51,7 @@
           </td>
           <td>{{ o.monto | currency }}</td>
           <td>
-            <span class="insignia" [class.exito]="o.estado === 'PAGADA'">{{ o.estado }}</span>
+            <span [class]="'insignia ' + estadoOrden[o.estado].clase">{{ estadoOrden[o.estado].texto }}</span>
           </td>
           <td class="acciones">
             <button type="button" class="btn chico" (click)="verDetalle(o)">Ver</button>
@@ -101,7 +101,7 @@
         }
       </p>
       <p>
-        Estado: <span class="insignia" [class.exito]="d.estado === 'PAGADA'">{{ d.estado }}</span>
+        Estado: <span [class]="'insignia ' + estadoOrden[d.estado].clase">{{ estadoOrden[d.estado].texto }}</span>
       </p>
       @if (d.motivoRechazo) {
         <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>
