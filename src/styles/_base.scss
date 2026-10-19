@@ -136,3 +136,28 @@ a {
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* Detalle con mapa (alquileres) o con fotos (.dos-columnas, asignar bus y chofer): apilado en celular; en PC (≥ 1024px) datos a la izquierda y el mapa
+   grande a la derecha, fijo mientras se recorren los datos. */
+.detalle-con-mapa {
+  display: grid;
+  gap: 16px;
+
+  @media (min-width: 1024px) {
+    &.con-mapa,
+    &.dos-columnas {
+      grid-template-columns: minmax(340px, 2fr) 3fr;
+      align-items: start;
+      gap: 24px;
+
+      .detalle-mapa {
+        position: sticky;
+        top: 0;
+      }
+
+      .detalle-mapa .detalle-subtitulo {
+        margin-top: 0;
+      }
+    }
+  }
+}

@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import * as L from 'leaflet';
-import { GeocodificacionService, Lugar } from '../../../core/services/geocodificacion.service';
+import { GeocodificacionService, Lugar, seisDecimales } from '../../../core/services/geocodificacion.service';
 import { agregarCapaBase } from '../../utils/capa-base-mapa';
 
 /** Centro y límites del mapa: Guatemala. */
@@ -152,7 +152,9 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Guarda el punto en el estado local, lo emite y refresca la línea y los km. */
-  private fijar(punto: Par, tipo: Punto): void {
+  private fijar(original: Par, tipo: Punto): void {
+    // Venga del buscador, de un clic o de arrastrar el pin, sale siempre con 6 decimales
+    const punto: Par = [seisDecimales(original[0]), seisDecimales(original[1])];
     if (tipo === 'ORIGEN') {
       this.origenActual = punto;
       this.origenCambio.emit(this.coordenadas(punto));
@@ -251,7 +253,7 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   }
 
   private redondear(latlng: L.LatLng): Par {
-    return [Math.round(latlng.lat * 1e6) / 1e6, Math.round(latlng.lng * 1e6) / 1e6];
+    return [seisDecimales(latlng.lat), seisDecimales(latlng.lng)];
   }
 
   private coordenadas([latitud, longitud]: Par): Coordenadas {

@@ -55,13 +55,27 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
     if (destino) this.marcador(destino, 'D', 'pin-destino');
     if (origen && destino) {
       L.polyline([origen, destino], { color: COLOR_RUTA, weight: 4, dashArray: '7 6' }).addTo(this.mapa);
+    }
+    this.encuadrar(origen, destino);
+
+    // Dentro de un modal el mapa nace con tamaño 0 (o cambia al pasar de celular a PC): al tomar su
+    // tamaño real se recalcula y se vuelve a encuadrar el recorrido, si no queda con el zoom de todo el país.
+    this.observador = new ResizeObserver(() => {
+      if (!this.mapa || this.contenedor.nativeElement.clientWidth === 0) return;
+      this.mapa.invalidateSize();
+      this.encuadrar(origen, destino);
+    });
+    this.observador.observe(this.contenedor.nativeElement);
+  }
+
+  /** Muestra los dos puntos con margen, o el único que haya con zoom de ciudad. */
+  private encuadrar(origen: L.LatLngTuple | null, destino: L.LatLngTuple | null): void {
+    if (!this.mapa) return;
+    if (origen && destino) {
       this.mapa.fitBounds(L.latLngBounds(origen, destino).pad(0.35));
-    } else {
+    } else if (origen ?? destino) {
       this.mapa.setView((origen ?? destino)!, 12);
     }
-
-    this.observador = new ResizeObserver(() => this.mapa?.invalidateSize());
-    this.observador.observe(this.contenedor.nativeElement);
   }
 
   ngOnDestroy(): void {

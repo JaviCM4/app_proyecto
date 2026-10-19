@@ -19,6 +19,7 @@ import { PaginadorComponent } from '../../../shared/components/paginador/paginad
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
+import { pantallaGrande } from '../../../shared/utils/pantalla';
 
 const ESTADOS: EstadoAlquiler[] = ['SOLICITADO', 'COTIZADO', 'PAGADO', 'ASIGNADO', 'COMPLETADO', 'CANCELADO'];
 
@@ -41,6 +42,8 @@ export class AlquileresComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   readonly esSistema = this.auth.tieneRol('ADMIN_SISTEMA');
+  /** En PC el detalle se abre amplio, con el mapa grande al lado de los datos. */
+  readonly pantallaGrande = pantallaGrande();
   readonly puedeGestionar = this.auth.tieneRol('ADMIN_SISTEMA', 'ADMIN_SUCURSAL');
 
   private readonly alquileres = signal<Alquiler[]>([]);
