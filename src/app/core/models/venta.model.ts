@@ -21,6 +21,8 @@ export interface Venta {
   metodoPago: MetodoPago | null;
   montoTotal: number;
   fechaPago: string;
+  /** Fecha y hora en que se registró la venta: ordena las del mismo día (la más reciente primero). */
+  fechaRegistro?: string | null;
   estado: EstadoVenta;
   motivoRechazo: string | null;
   motivoCancelacion: string | null;

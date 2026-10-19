@@ -53,8 +53,12 @@
     <label for="viaje">Viaje</label>
     <select id="viaje" class="control" [ngModel]="viajeId()" (ngModelChange)="filtrarViaje($event)">
       <option value="">Todos los viajes</option>
-      @for (o of opcionesViaje(); track o.id) {
-        <option [value]="o.id">{{ o.texto }}</option>
+      @for (g of gruposViaje(); track g.estado) {
+        <optgroup [label]="g.texto">
+          @for (o of g.opciones; track o.id) {
+            <option [value]="o.id">{{ o.texto }}</option>
+          }
+        </optgroup>
       }
     </select>
   </div>
@@ -69,6 +73,7 @@
   <table class="tabla">
     <thead>
       <tr>
+        <th>Fecha</th>
         <th>Cliente</th>
         <th>Viaje</th>
         <th>Canal</th>
@@ -80,6 +85,12 @@
     <tbody>
       @for (v of paginaActual().elementos; track v.ventaId) {
         <tr>
+          <td class="sin-salto">
+            {{ v.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}
+            @if (v.fechaRegistro) {
+              <div class="secundario">{{ v.fechaRegistro | date: 'HH:mm' : zona }}</div>
+            }
+          </td>
           <td>
             <strong>{{ v.clienteNombre || '—' }}</strong>
             <div class="secundario">{{ v.clienteNit || 'CF' }}</div>
@@ -87,9 +98,14 @@
           <td>
             @if (rutaDe(v); as r) {
               {{ r.texto }}
-              @if (r.salida) {
-                <div class="secundario">{{ r.salida | date: 'dd/MM/yyyy HH:mm' : zona }}</div>
-              }
+              <div class="secundario">
+                @if (r.salida) {
+                  Sale {{ r.salida | date: 'dd/MM/yyyy HH:mm' : zona }}
+                }
+                @if (estadoViajeDe(v); as ev) {
+                  <span class="insignia" [class]="'insignia ' + ev.clase">{{ ev.texto }}</span>
+                }
+              </div>
             } @else {
               —
             }
@@ -108,7 +124,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="6" class="tabla-vacia">
+          <td colspan="7" class="tabla-vacia">
             {{ cargando() ? 'Cargando ventas…' : 'No hay ventas que coincidan con los filtros.' }}
           </td>
         </tr>

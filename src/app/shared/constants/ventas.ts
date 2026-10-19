@@ -1,3 +1,4 @@
+import { EstadoViaje } from '../../core/models/viaje.model';
 import { CanalVenta, EstadoOrdenAlquiler, EstadoVenta, MetodoPago } from '../../core/models/venta.model';
 
 /** Texto e insignia de cada estado de venta (nunca se muestra el código). */
@@ -26,6 +27,22 @@ export const ESTADO_ORDEN_ALQUILER: Record<EstadoOrdenAlquiler, { texto: string;
   RECHAZADA: { texto: 'Rechazada', clase: 'peligro' },
   REEMBOLSADA: { texto: 'Reembolsada', clase: 'info' },
 };
+
+/** Estado de un viaje, en el orden en que se muestran (primero los que aún se pueden vender o están en curso). */
+export const ESTADO_VIAJE: Record<EstadoViaje, { texto: string; clase: string; orden: number }> = {
+  EN_RUTA: { texto: 'En ruta', clase: 'info', orden: 0 },
+  PROGRAMADO: { texto: 'Programado', clase: 'exito', orden: 1 },
+  COMPLETADO: { texto: 'Completado', clase: '', orden: 2 },
+};
+
+/** Más reciente primero: por fecha de pago y, el mismo día, por la hora en que se registró. */
+export function ordenarVentas<T extends { fechaPago: string | null; fechaRegistro?: string | null }>(lista: T[]): T[] {
+  return [...lista].sort(
+    (a, b) =>
+      (b.fechaPago ?? '').localeCompare(a.fechaPago ?? '') ||
+      (b.fechaRegistro ?? '').localeCompare(a.fechaRegistro ?? ''),
+  );
+}
 
 /** Texto de un viaje para listas y filtros: "Xela → Guate · 19/10/2026 08:00". */
 export function textoViaje(origen: string | null | undefined, destino: string | null | undefined,

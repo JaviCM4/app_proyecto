@@ -8,7 +8,7 @@ import {
   Historial,
   Venta,
 } from '../../../core/models/venta.model';
-import { Viaje } from '../../../core/models/viaje.model';
+import { EstadoViaje, Viaje } from '../../../core/models/viaje.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { VentasService } from '../../../core/services/ventas.service';
@@ -18,7 +18,15 @@ import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
-import { CANAL_VENTA, ESTADO_ORDEN_ALQUILER, ESTADO_VENTA, METODO_PAGO, textoViaje } from '../../../shared/constants/ventas';
+import {
+  CANAL_VENTA,
+  ESTADO_ORDEN_ALQUILER,
+  ESTADO_VENTA,
+  ESTADO_VIAJE,
+  METODO_PAGO,
+  ordenarVentas,
+  textoViaje,
+} from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { normalizar, paginar } from '../../../shared/utils/paginacion';
 
@@ -59,6 +67,7 @@ export class VentasComponent implements OnInit {
   readonly canalVenta = CANAL_VENTA;
   readonly metodoPago = METODO_PAGO;
   readonly estadoOrden = ESTADO_ORDEN_ALQUILER;
+  readonly estadoViaje = ESTADO_VIAJE;
 
   readonly pestana = signal<Pestana>('ventas');
   readonly zona = ZONA_GT;
@@ -97,17 +106,35 @@ export class VentasComponent implements OnInit {
     fechaCancelacion: [hoyGt(), Validators.required],
   });
 
-  /** Un viaje por cada uno que tiene ventas cargadas, del más reciente al más antiguo. */
-  readonly opcionesViaje = computed(() => {
+  /**
+   * Viajes que tienen ventas cargadas, agrupados por estado (En ruta, Programado, Completado).
+   * Programados y en ruta: el que sale antes primero; completados: el más reciente primero.
+   * Cada opción lleva la placa del bus para distinguir viajes de la misma ruta y hora.
+   */
+  readonly gruposViaje = computed(() => {
     const ids = [...new Set(this.ventas().map((v) => v.viajeId))];
-    return ids
-      .map((id) => ({ id, viaje: this.viajes().get(id) }))
-      .sort((a, b) => (b.viaje?.fechaSalidaProgramada ?? '').localeCompare(a.viaje?.fechaSalidaProgramada ?? ''))
-      .map(({ id, viaje }) => ({
+    const grupos = new Map<EstadoViaje | 'OTRO', { id: string; texto: string; salida: string }[]>();
+    for (const id of ids) {
+      const viaje = this.viajes().get(id);
+      const clave = viaje?.estado ?? 'OTRO';
+      const placa = viaje?.busPlaca ? ` · Bus ${viaje.busPlaca}` : '';
+      const opcion = {
         id,
+        salida: viaje?.fechaSalidaProgramada ?? '',
         texto: viaje
-          ? textoViaje(viaje.origenNombre, viaje.destinoNombre, viaje.fechaSalidaProgramada)
+          ? textoViaje(viaje.origenNombre, viaje.destinoNombre, viaje.fechaSalidaProgramada) + placa
           : `Viaje ${id.slice(0, 8)}`,
+      };
+      grupos.set(clave, [...(grupos.get(clave) ?? []), opcion]);
+    }
+    return [...grupos.entries()]
+      .sort(([a], [b]) => (a === 'OTRO' ? 9 : ESTADO_VIAJE[a].orden) - (b === 'OTRO' ? 9 : ESTADO_VIAJE[b].orden))
+      .map(([estado, opciones]) => ({
+        estado,
+        texto: estado === 'OTRO' ? 'Sin datos del viaje' : `${ESTADO_VIAJE[estado].texto} (${opciones.length})`,
+        opciones: opciones.sort((x, y) =>
+          estado === 'COMPLETADO' || estado === 'OTRO' ? y.salida.localeCompare(x.salida) : x.salida.localeCompare(y.salida),
+        ),
       }));
   });
 
@@ -156,6 +183,12 @@ export class VentasComponent implements OnInit {
       : null;
   }
 
+  /** Estado del viaje de la venta (Programado, En ruta, Completado), si se conoce. */
+  estadoViajeDe(v: Venta): { texto: string; clase: string } | null {
+    const estado = this.viajes().get(v.viajeId)?.estado;
+    return estado ? ESTADO_VIAJE[estado] : null;
+  }
+
   private cargarViajes(): void {
     this.viajesServicio.buscar({ sucursalId: this.sucursalId() || null }).subscribe({
       next: (lista) => this.viajes.set(new Map(lista.map((v) => [v.viajeId, v]))),
@@ -181,7 +214,7 @@ export class VentasComponent implements OnInit {
       })
       .subscribe({
         next: (lista) => {
-          this.ventas.set(lista);
+          this.ventas.set(ordenarVentas(lista));
           this.cargando.set(false);
         },
         error: (e) => {
