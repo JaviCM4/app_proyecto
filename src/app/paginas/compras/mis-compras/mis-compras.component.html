@@ -1,7 +1,7 @@
 <div class="pagina-encabezado">
   <div>
-    <h1>Mis compras</h1>
-    <p>Tus boletos y pagos de alquileres.</p>
+    <h1>Mis boletos</h1>
+    <p>Historial de tus boletos comprados y su estado.</p>
   </div>
   <button type="button" class="btn" (click)="cargar()" [disabled]="cargando()">Recargar</button>
 </div>
@@ -16,28 +16,17 @@
       <label>Nombre</label>
       <span class="control">{{ historial()!.nombre || '—' }}</span>
     </div>
+    <div class="campo crece">
+      <label for="mc-viaje">Viaje</label>
+      <select id="mc-viaje" class="control" [ngModel]="viaje()" (ngModelChange)="filtrarViaje($event)">
+        <option value="">Todos los viajes</option>
+        @for (o of opcionesViaje(); track o.clave) {
+          <option [value]="o.clave">{{ o.texto }}</option>
+        }
+      </select>
+    </div>
   </div>
 }
-
-<div class="pestanas" role="tablist">
-  <button type="button" role="tab" [class.activa]="pestana() === 'boletos'" [attr.aria-selected]="pestana() === 'boletos'"
-          (click)="pestana.set('boletos')">Boletos ({{ historial()?.ventas?.length ?? 0 }})</button>
-  <button type="button" role="tab" [class.activa]="pestana() === 'alquileres'" [attr.aria-selected]="pestana() === 'alquileres'"
-          (click)="pestana.set('alquileres')">Alquileres ({{ historial()?.alquileres?.length ?? 0 }})</button>
-</div>
-
-@if (pestana() === 'boletos') {
-<div class="filtros">
-  <div class="campo crece">
-    <label for="mc-viaje">Viaje</label>
-    <select id="mc-viaje" class="control" [ngModel]="viaje()" (ngModelChange)="filtrarViaje($event)">
-      <option value="">Todos los viajes</option>
-      @for (o of opcionesViaje(); track o.clave) {
-        <option [value]="o.clave">{{ o.texto }}</option>
-      }
-    </select>
-  </div>
-</div>
 
 <div class="tabla-contenedor">
   <table class="tabla">
@@ -85,52 +74,6 @@
   [total]="boletosPagina().total"
   (cambioPagina)="pagina.set($event)"
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
-} @else {
-<div class="tabla-contenedor">
-  <table class="tabla">
-    <thead>
-      <tr>
-        <th>Ruta</th>
-        <th>Pago</th>
-        <th>Monto</th>
-        <th>Estado</th>
-        <th class="acciones">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (a of historial()?.alquileres ?? []; track a.ordenId) {
-        <tr>
-          <td><strong>{{ a.origen }} → {{ a.destino }}</strong></td>
-          <td>{{ a.fechaPago ? (a.fechaPago | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }}</td>
-          <td>{{ a.monto | currency }}</td>
-          <td>
-            <span [class]="'insignia ' + estadoOrden[a.estado].clase">{{ estadoOrden[a.estado].texto }}</span>
-          </td>
-          <td class="acciones">
-            @if (a.estado === 'PENDIENTE_PAGO') {
-              <button
-                type="button"
-                class="btn chico primario"
-                [disabled]="pagandoId() === a.ordenId"
-                (click)="pagarAlquiler(a)">
-                {{ pagandoId() === a.ordenId ? 'Pagando…' : 'Pagar con cartera' }}
-              </button>
-            } @else {
-              <span class="secundario">—</span>
-            }
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="5" class="tabla-vacia">
-            {{ cargando() ? 'Cargando historial…' : 'Aún no tienes alquileres.' }}
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
-</div>
-}
 
 <app-modal [abierto]="ticket() !== null || cargandoTicket()" titulo="Boleto de viaje" (cerrar)="ticket.set(null)">
   @if (cargandoTicket()) {

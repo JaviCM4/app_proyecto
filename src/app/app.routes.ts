@@ -152,7 +152,7 @@ export const routes: Routes = [
         path: 'solicitar-alquiler',
         title: 'Solicitar alquiler',
         canActivate: [rolGuard],
-        data: { roles: ['CLIENTE', 'CAJERO'] },
+        data: { roles: ['CLIENTE', 'CAJERO'], rolesPrincipales: ['CLIENTE', 'CAJERO'] },
         loadComponent: () =>
           import('./paginas/alquileres/solicitar-alquiler/solicitar-alquiler.component').then((m) => m.SolicitarAlquilerComponent),
       },
@@ -188,7 +188,7 @@ export const routes: Routes = [
       },
       {
         path: 'mis-compras',
-        title: 'Mis compras',
+        title: 'Mis boletos',
         canActivate: [rolGuard],
         data: { roles: ['CLIENTE'] },
         loadComponent: () => import('./paginas/compras/mis-compras/mis-compras.component').then((m) => m.MisComprasComponent),

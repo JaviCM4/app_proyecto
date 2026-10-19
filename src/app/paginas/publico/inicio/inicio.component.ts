@@ -1,11 +1,9 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { Ruta, Viaje } from '../../../core/models/viaje.model';
-import { AuthService } from '../../../core/services/auth.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { mensajeError } from '../../../core/utils/errores-http';
@@ -26,14 +24,13 @@ interface Filtros {
 @Component({
   selector: 'app-inicio',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe, CurrencyPipe, PaginadorComponent, AsientosViajeComponent],
+  imports: [FormsModule, DatePipe, CurrencyPipe, PaginadorComponent, AsientosViajeComponent],
   templateUrl: './inicio.component.html',
   styleUrl: './inicio.component.scss',
 })
 export class InicioComponent implements OnInit {
   private readonly viajesServicio = inject(ViajesService);
   private readonly sucursalesServicio = inject(SucursalesService);
-  readonly auth = inject(AuthService);
   readonly zona = ZONA_GT;
 
   readonly sucursales = signal<Sucursal[]>([]);
@@ -49,6 +46,23 @@ export class InicioComponent implements OnInit {
   readonly pagina = signal(1);
   readonly tamano = signal(10);
   readonly viajeSeleccionado = signal<Viaje | null>(null);
+
+  /** Viaje a reabrir al volver del login (?abrirViaje=ID). */
+  readonly abrirViaje = input<string>();
+  private readonly autoAbierto = signal(false);
+
+  constructor() {
+    // Al volver del login con un viaje pendiente se abre otra vez su mapa de asientos.
+    effect(() => {
+      const id = this.abrirViaje();
+      if (!id || this.autoAbierto()) return;
+      const viaje = this.resultados().find((v) => v.viajeId === id);
+      if (viaje) {
+        this.viajeSeleccionado.set(viaje);
+        this.autoAbierto.set(true);
+      }
+    });
+  }
 
   /** Destino y texto se filtran aquí; origen y fechas los filtra el servidor. */
   readonly resultados = computed(() => {
@@ -83,7 +97,8 @@ export class InicioComponent implements OnInit {
     const f = { ...this.filtros };
     this.viajesServicio.buscar({ sucursalId: f.origenId, desde: f.desde, hasta: f.hasta }).subscribe({
       next: (viajes) => {
-        this.viajes.set(viajes);
+        // Mismo criterio que la pantalla de compra: solo viajes que todavía se pueden comprar.
+        this.viajes.set(viajes.filter((v) => this.vendible(v)));
         this.aplicados.set(f);
         this.pagina.set(1);
         this.cargando.set(false);
@@ -94,6 +109,13 @@ export class InicioComponent implements OnInit {
         this.cargando.set(false);
       },
     });
+  }
+
+  /** Un viaje es comprable si está programado y su salida aún no ha pasado. */
+  private vendible(v: Viaje): boolean {
+    if (v.estado !== 'PROGRAMADO') return false;
+    const salida = Date.parse(v.fechaSalidaProgramada);
+    return !Number.isNaN(salida) && salida > Date.now();
   }
 
   limpiar(): void {

@@ -72,15 +72,20 @@
           }
           @if (a.estado === 'COTIZADO') {
             @if (ordenDe(a); as orden) {
-              @if (orden.estado === 'PENDIENTE_PAGO') {
+              @if (orden.estado === 'PENDIENTE_PAGO' || orden.estado === 'RECHAZADA') {
                 <button type="button" class="btn chico primario" [disabled]="pagandoId() === orden.ordenId"
                         (click)="pagar(a)">
-                  {{ pagandoId() === orden.ordenId ? 'Pagando…' : 'Pagar con cartera' }}
+                  {{ pagandoId() === orden.ordenId ? 'Pagando…' : (orden.estado === 'RECHAZADA' ? 'Reintentar pago' : 'Pagar con cartera') }}
                 </button>
+                @if (orden.estado === 'RECHAZADA') {
+                  <span class="aviso-error">
+                    {{ orden.motivoRechazo || 'El pago anterior fue rechazado.' }} Puedes intentarlo de nuevo.
+                  </span>
+                }
+              } @else if (orden.estado === 'PAGADA') {
+                <span class="secundario">Pago confirmado</span>
               } @else {
-                <span class="secundario">
-                  {{ orden.estado === 'PAGADA' ? 'Pago confirmado' : 'Pago rechazado' }}
-                </span>
+                <span class="secundario">Pago reembolsado</span>
               }
             } @else {
               <span class="secundario">Preparando la orden de pago…</span>
@@ -123,6 +128,24 @@
         <div class="completo"><dt>Motivo de cancelación</dt><dd>{{ a.motivoCancelacion }}</dd></div>
       }
     </div>
+    @if (tieneRecorrido(a)) {
+      <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
+      <app-mapa-recorrido
+        [origenLatitud]="a.origenLatitud"
+        [origenLongitud]="a.origenLongitud"
+        [destinoLatitud]="a.destinoLatitud"
+        [destinoLongitud]="a.destinoLongitud"
+        [origen]="a.origen"
+        [destino]="a.destino" />
+    }
+    @if (ordenDe(a); as orden) {
+      @if (orden.estado === 'RECHAZADA') {
+        <p class="aviso-error">
+          Pago rechazado: {{ orden.motivoRechazo || 'saldo insuficiente' }}.
+          Puedes reintentarlo con el botón de abajo.
+        </p>
+      }
+    }
     @if (a.viaje; as v) {
       <h3 class="detalle-subtitulo">Viaje asignado</h3>
       <div class="datos-lista">
@@ -133,14 +156,8 @@
         <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
         <div><dt>Llegada estimada</dt><dd>{{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
       </div>
-    } @else if (a.estado === 'PAGADO') {
-      <p class="secundario">Pago confirmado. La sucursal asignará el bus y el chofer; aquí verás los datos.</p>
-    } @else {
-      <p class="secundario">Aún no hay bus ni chofer asignados.</p>
     }
-    <p class="secundario">
-      La sucursal confirma el precio; cuando esté cotizado lo pagas aquí con tu cartera.
-    </p>
+    <p class="secundario">{{ aviso(a) }}</p>
   }
   <div pie>
     <button type="button" class="btn" (click)="enDetalle.set(null)">Cerrar</button>
@@ -148,10 +165,10 @@
       @if (d.estado === 'SOLICITADO') {
         <button type="button" class="btn peligro" (click)="cancelarDesdeDetalle()">Cancelar alquiler</button>
       }
-      @if (d.estado === 'COTIZADO' && ordenDe(d)?.estado === 'PENDIENTE_PAGO') {
+      @if (d.estado === 'COTIZADO' && (ordenDe(d)?.estado === 'PENDIENTE_PAGO' || ordenDe(d)?.estado === 'RECHAZADA')) {
         <button type="button" class="btn primario" [disabled]="pagandoId() === ordenDe(d)?.ordenId"
                 (click)="pagar(d)">
-          {{ pagandoId() === ordenDe(d)?.ordenId ? 'Pagando…' : 'Pagar con cartera' }}
+          {{ pagandoId() === ordenDe(d)?.ordenId ? 'Pagando…' : (ordenDe(d)?.estado === 'RECHAZADA' ? 'Reintentar pago' : 'Pagar con cartera') }}
         </button>
       }
     }

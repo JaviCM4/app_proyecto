@@ -1,0 +1,95 @@
+.buscar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.buscar .control {
+  flex: 1;
+}
+
+.resultados {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    border-bottom: 1px solid var(--borde);
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover { background: var(--superficie-alterna); }
+  }
+
+  li:last-child button { border-bottom: none; }
+
+  .marca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--primario);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+.modo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.mapa {
+  height: 320px;
+  width: 100%;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.ayuda {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--texto-tenue);
+}
+
+/* Marcadores dibujados con HTML: O verde (origen) y D rojo (destino). */
+:host ::ng-deep .pin-recorrido span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+:host ::ng-deep .pin-origen span {
+  background: #16a34a;
+}
+
+:host ::ng-deep .pin-destino span {
+  background: #dc2626;
+}

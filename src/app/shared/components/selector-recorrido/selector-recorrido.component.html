@@ -1,0 +1,50 @@
+<div class="selector-recorrido">
+  <div class="buscar">
+    <input
+      type="text"
+      class="control"
+      placeholder="Buscar un lugar cercano (ej. Parque Central, Xela)"
+      [value]="texto()"
+      (input)="alEscribir($event)"
+      (keydown.enter)="$event.preventDefault(); buscar()" />
+    <button type="button" class="btn chico" [disabled]="buscando()" (click)="buscar()">
+      {{ buscando() ? 'Buscando…' : 'Buscar' }}
+    </button>
+  </div>
+
+  @if (resultados().length) {
+    <ul class="resultados">
+      @for (l of resultados(); track l.latitud + ',' + l.longitud) {
+        <li>
+          <button type="button" (click)="elegir(l)">
+            <span class="marca">{{ modo() === 'ORIGEN' ? 'O' : 'D' }}</span>
+            {{ l.nombre }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  <div class="modo">
+    <button type="button" class="btn chico" [class.primario]="modo() === 'ORIGEN'" (click)="modo.set('ORIGEN')">
+      Marcar origen
+    </button>
+    <button type="button" class="btn chico" [class.primario]="modo() === 'DESTINO'" (click)="modo.set('DESTINO')">
+      Marcar destino
+    </button>
+    <button type="button" class="btn chico" (click)="limpiar()">Limpiar</button>
+  </div>
+
+  <div #contenedor class="mapa"></div>
+
+  <p class="ayuda">
+    @if (!origenLatitud() && !destinoLatitud()) {
+      Busca un lugar o haz clic en el mapa para marcar el origen y luego el destino.
+    } @else if (!destinoLatitud()) {
+      Origen marcado. Ahora marca el destino.
+    } @else if (distancia() !== null) {
+      Recorrido marcado: {{ distancia() | number: '1.0-1' }} km en línea recta.
+      Puedes arrastrar los marcadores o buscar un lugar para ajustarlo.
+    }
+  </p>
+</div>

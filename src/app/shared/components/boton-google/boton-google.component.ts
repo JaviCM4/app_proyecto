@@ -1,6 +1,8 @@
 import { Component, inject, input, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { mensajeError } from '../../../core/utils/errores-http';
+import { recordarRegreso } from '../../../core/utils/regreso';
 import { ToastService } from '../../services/toast.service';
 
 /**
@@ -18,6 +20,7 @@ import { ToastService } from '../../services/toast.service';
 })
 export class BotonGoogleComponent {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly avisos = inject(ToastService);
 
   readonly texto = input('Continuar con Google');
@@ -34,11 +37,22 @@ export class BotonGoogleComponent {
   continuar(): void {
     this.yendo.set(true);
     this.auth.urlGoogle().subscribe({
-      next: ({ url }) => window.location.assign(url),
+      next: ({ url }) => {
+        // Google sale y regresa por /oauth/google/callback: se anota el destino para no perderlo.
+        recordarRegreso(this.volverActual());
+        window.location.assign(url);
+      },
       error: (e) => {
         this.yendo.set(false);
         this.avisos.error(mensajeError(e, 'El inicio con Google no está disponible por ahora.'));
       },
     });
+  }
+
+  /** A dónde volver: el ?volver= de la pantalla de login o el panel. */
+  private volverActual(): string {
+    const params = this.router.parseUrl(this.router.url).queryParams;
+    const volver = params['volver'];
+    return typeof volver === 'string' ? volver : '/panel';
   }
 }

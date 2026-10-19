@@ -24,6 +24,17 @@ body {
   filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9);
 }
 
+/*
+ * Leaflet usa z-index internos altos (paneles hasta 700, controles hasta 1000) que se salían
+ * por encima de la barra (20), el menú (30) y los modales (50), tapando ventanas emergentes.
+ * Un contexto de apilamiento propio encierra esos valores dentro del mapa.
+ */
+.leaflet-container {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
+
 h1,
 h2,
 h3 {

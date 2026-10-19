@@ -1,0 +1,13 @@
+<div class="mapa-recorrido">
+  <div #contenedor class="mapa" [style.height.px]="alto()" [class.sin-puntos]="!tienePuntos()"></div>
+
+  @if (tienePuntos()) {
+    <p class="leyenda">
+      <span class="punto origen">O</span> {{ origen() }}
+      <span class="flecha">→</span>
+      <span class="punto destino">D</span> {{ destino() }}
+    </p>
+  } @else {
+    <p class="sin-mapa">Esta solicitud no tiene el recorrido marcado en el mapa.</p>
+  }
+</div>

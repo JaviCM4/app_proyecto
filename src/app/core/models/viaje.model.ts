@@ -116,6 +116,11 @@ export interface Alquiler {
   clienteCorreo: string | null;
   origen: string;
   destino: string;
+  /** Coordenadas del recorrido marcadas por el cliente (null en solicitudes viejas). */
+  origenLatitud: number | null;
+  origenLongitud: number | null;
+  destinoLatitud: number | null;
+  destinoLongitud: number | null;
   fechaSalida: string;
   fechaRetorno: string | null;
   cantidadPasajeros: number;
@@ -165,6 +170,11 @@ export interface NuevoAlquiler {
   clienteCorreo?: string | null;
   origen: string;
   destino: string;
+  /** Coordenadas opcionales del origen y del destino marcadas en el mapa. */
+  origenLatitud?: number | null;
+  origenLongitud?: number | null;
+  destinoLatitud?: number | null;
+  destinoLongitud?: number | null;
   fechaSalida: string;
   /** null = solo ida. */
   fechaRetorno?: string | null;

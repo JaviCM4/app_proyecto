@@ -1,15 +1,32 @@
 .asientos-info { display: grid; gap: 0.25rem; margin-bottom: 0.75rem; }
-.leyenda { display: flex; align-items: center; justify-content: center; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.6rem; }
-.muestra { display: inline-block; width: 1rem; height: 1rem; border-radius: 0.3rem; border: 1px solid var(--asiento-borde); background: var(--asiento-libre); }
-.muestra.ocupado { background: var(--asiento-ocupado); }
+
+/* Referencias de color: van arriba del diagrama para no bajar a buscarlas. */
+.leyenda { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem 1rem; margin: 0 0 0.75rem; }
+.leyenda .item { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--texto-suave); }
+.muestra { width: 1rem; height: 1rem; flex: 0 0 auto; border-radius: 0.3rem; border: 1px solid var(--asiento-borde); background: var(--asiento-libre); }
+.muestra.ocupado {
+  background: var(--asiento-ocupado);
+  background-image: repeating-linear-gradient(45deg, transparent 0 5px, var(--asiento-ocupado-raya) 5px 6px);
+}
 .muestra.elegido { background: var(--asiento-elegido); border-color: var(--asiento-elegido-borde); }
 .muestra.piloto { background: var(--azul, #1B3A6B); border-color: var(--azul, #1B3A6B); }
+
 .bus { max-width: 22rem; margin: 0 auto; border: 2px solid var(--azul, #1B3A6B); border-radius: 1.5rem 1.5rem 1rem 1rem; padding: 0.75rem; background: var(--superficie); }
 .parabrisas { height: 0.9rem; border-radius: 0.6rem; background: linear-gradient(180deg, #bae6fd, #e0f2fe); margin-bottom: 0.6rem; }
 .fila-bus { display: grid; grid-template-columns: 1fr 1fr 1.75rem 1fr 1fr; gap: 0.45rem; margin-bottom: 0.45rem; align-items: stretch; }
 .pasillo { min-height: 2.2rem; }
-.piloto { display: inline-flex; align-items: center; justify-content: center; border-radius: 0.65rem; background: var(--azul, #1B3A6B); color: #fff; font-weight: 800; min-height: 2.2rem; }
+
+/* El puesto del piloto va como cuadro (antes se estiraba al ancho de un asiento). */
+.puesto-piloto {
+  display: inline-flex; align-items: center; justify-content: center;
+  justify-self: center; width: 2.2rem; height: 2.2rem;
+  border-radius: 0.55rem; background: var(--azul, #1B3A6B); color: #fff; font-weight: 800;
+}
+
 .asiento { border-radius: 0.65rem 0.65rem 0.35rem 0.35rem; border: 1px solid var(--asiento-borde); padding: 0.5rem 0; font-weight: 600; cursor: pointer; background: var(--asiento-libre); color: var(--texto); min-height: 2.2rem; }
 .asiento:hover:not(:disabled) { border-color: var(--asiento-elegido-borde); }
-.asiento.ocupado { background: var(--asiento-ocupado); color: var(--asiento-ocupado-texto); cursor: not-allowed; }
+.asiento.ocupado {
+  background: var(--asiento-ocupado); color: var(--asiento-ocupado-texto); cursor: not-allowed;
+  background-image: repeating-linear-gradient(45deg, transparent 0 5px, var(--asiento-ocupado-raya) 5px 6px);
+}
 .asiento.elegido { background: var(--asiento-elegido); border-color: var(--asiento-elegido-borde); color: var(--asiento-elegido-texto); }

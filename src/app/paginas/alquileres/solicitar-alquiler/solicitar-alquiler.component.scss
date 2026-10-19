@@ -6,6 +6,17 @@
   border-top: 1px solid var(--borde);
 }
 
+.mapa-solicitud {
+  margin-top: 22px;
+}
+
+/* Campos que se llenan solos desde el mapa (no editables). */
+.control.solo-lectura {
+  background: var(--fondo);
+  color: var(--texto-suave);
+  cursor: default;
+}
+
 .ok {
   font-weight: 600;
   color: var(--exito);

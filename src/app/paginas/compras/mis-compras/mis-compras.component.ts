@@ -1,14 +1,13 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AlquilerHistorial, Historial, Venta, VentaHistorial } from '../../../core/models/venta.model';
-import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
+import { Historial, Venta, VentaHistorial } from '../../../core/models/venta.model';
 import { VentasService } from '../../../core/services/ventas.service';
 import { mensajeError } from '../../../core/utils/errores-http';
-import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
+import { ZONA_GT } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
-import { CANAL_VENTA, ESTADO_ORDEN_ALQUILER, ESTADO_VENTA, textoViaje } from '../../../shared/constants/ventas';
+import { CANAL_VENTA, ESTADO_VENTA, textoViaje } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { descargarBoletoPdf } from '../../../shared/utils/boleto-pdf';
 import { paginar } from '../../../shared/utils/paginacion';
@@ -18,7 +17,7 @@ function claveViaje(v: VentaHistorial): string {
   return `${v.origenNombre ?? ''}|${v.destinoNombre ?? ''}|${v.fechaSalida ?? ''}`;
 }
 
-/** Historial de compras del cliente en pestañas: boletos (con filtro por viaje) y alquileres, con pago de alquileres pendientes. */
+/** Historial de boletos del cliente con filtro por viaje. Los alquileres tienen su propia página (Mis alquileres). */
 @Component({
   selector: 'app-mis-compras',
   standalone: true,
@@ -28,13 +27,11 @@ function claveViaje(v: VentaHistorial): string {
 })
 export class MisComprasComponent implements OnInit {
   private readonly ventas = inject(VentasService);
-  private readonly ordenes = inject(OrdenesAlquilerService);
   private readonly avisos = inject(ToastService);
 
   readonly zona = ZONA_GT;
   readonly historial = signal<Historial | null>(null);
   readonly cargando = signal(true);
-  readonly pagandoId = signal<string | null>(null);
 
   /** Boleto abierto como ticket (detalle completo). */
   readonly ticket = signal<Venta | null>(null);
@@ -42,9 +39,7 @@ export class MisComprasComponent implements OnInit {
 
   readonly estadoVenta = ESTADO_VENTA;
   readonly canalVenta = CANAL_VENTA;
-  readonly estadoOrden = ESTADO_ORDEN_ALQUILER;
 
-  readonly pestana = signal<'boletos' | 'alquileres'>('boletos');
   readonly viaje = signal('');
 
   /** Un viaje por cada uno con boletos, del más reciente al más antiguo. */
@@ -86,40 +81,6 @@ export class MisComprasComponent implements OnInit {
       error: (e) => {
         this.cargando.set(false);
         this.avisos.error(mensajeError(e, 'No se pudo cargar tu historial.'));
-      },
-    });
-  }
-
-  pagarAlquiler(orden: AlquilerHistorial): void {    if (this.pagandoId()) return;
-    this.pagandoId.set(orden.ordenId);
-    this.ordenes.pagarCartera(orden.ordenId, hoyGt()).subscribe({
-      next: () => {
-        this.avisos.info('Pago en proceso, confirmando el cobro a tu cartera…');
-        this.seguirHastaFin(orden.ordenId);
-      },
-      error: (e) => {
-        this.pagandoId.set(null);
-        this.avisos.error(mensajeError(e, 'No se pudo iniciar el pago.'));
-      },
-    });
-  }
-
-  private seguirHastaFin(ordenId: string): void {
-    this.ordenes.seguirHastaFin(ordenId).subscribe({
-      next: (o) => {
-        if (o.estado === 'PENDIENTE_PAGO') return;
-        this.pagandoId.set(null);
-        if (o.estado === 'PAGADA') {
-          this.avisos.exito('Alquiler pagado con tu cartera.');
-        } else {
-          this.avisos.error(o.motivoRechazo ?? 'El pago fue rechazado.');
-        }
-        this.cargar();
-      },
-      error: (e) => {
-        this.pagandoId.set(null);
-        this.avisos.error(mensajeError(e, 'No se pudo confirmar el pago.'));
-        this.cargar();
       },
     });
   }

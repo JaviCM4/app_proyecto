@@ -10,6 +10,7 @@ import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
@@ -44,7 +45,7 @@ const TEXTO_VIAJE: Record<EstadoViaje, string> = {
 @Component({
   selector: 'app-mis-alquileres',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, RouterLink],
+  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, RouterLink, MapaRecorridoComponent],
   templateUrl: './mis-alquileres.component.html',
   styleUrl: './mis-alquileres.component.scss',
 })
@@ -101,7 +102,7 @@ export class MisAlquileresComponent implements OnInit {
     });
   }
 
-  /** Órdenes de pago del cliente por alquiler; si falla, el pago sigue disponible en Mis compras. */
+  /** Órdenes de pago del cliente por alquiler; si falla, el pago simplemente no se ofrece. */
   private cargarOrdenes(): void {
     this.ordenesServicio.mias().subscribe({
       next: (lista) => {
@@ -117,6 +118,12 @@ export class MisAlquileresComponent implements OnInit {
   tarifa(a: Alquiler): number | null {
     if (!a.kmEstimados) return null;
     return Math.round((a.precioEstimado / a.kmEstimados) * 100) / 100;
+  }
+
+  /** ¿El alquiler tiene puntos del mapa? Las solicitudes viejas no los tienen. */
+  tieneRecorrido(a: Alquiler): boolean {
+    return (a.origenLatitud !== null && a.origenLongitud !== null)
+      || (a.destinoLatitud !== null && a.destinoLongitud !== null);
   }
 
   ordenDe(a: Alquiler): OrdenAlquiler | undefined {
@@ -180,6 +187,24 @@ export class MisAlquileresComponent implements OnInit {
 
   total(a: Alquiler): number {
     return a.precioConfirmado ?? a.precioEstimado;
+  }
+
+  /** Explica en qué momento va el alquiler; así el texto siempre tiene sentido (no se pide pagar algo ya pagado). */
+  aviso(a: Alquiler): string {
+    switch (a.estado) {
+      case 'SOLICITADO':
+        return 'La sucursal está revisando tu solicitud y confirmará el precio.';
+      case 'COTIZADO':
+        return 'El precio ya está confirmado: paga con tu cartera para reservar el bus y el piloto.';
+      case 'PAGADO':
+        return 'Pago confirmado. La sucursal asignará el bus y el piloto; aquí verás los datos.';
+      case 'ASIGNADO':
+        return 'Bus y piloto asignados. ¡Te esperamos en la salida!';
+      case 'COMPLETADO':
+        return 'Viaje completado. ¡Gracias por viajar con nosotros!';
+      case 'CANCELADO':
+        return 'Solicitud cancelada. No se realizó ningún cobro.';
+    }
   }
 
   abrirCancelar(a: Alquiler): void {

@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { mensajeError } from '../../../core/utils/errores-http';
+import { limpiarRegreso, regresoPendiente } from '../../../core/utils/regreso';
 import { ToastService } from '../../../shared/services/toast.service';
 
 /** Segundo paso del login cuando la cuenta tiene verificación en dos pasos. */
@@ -38,7 +39,11 @@ export class VerificarCodigoComponent implements OnInit {
     }
     this.enviando.set(true);
     this.auth.verificarCodigo(this.correo, this.form.getRawValue().codigo).subscribe({
-      next: () => this.router.navigateByUrl('/panel'),
+      next: () => {
+        const destino = regresoPendiente();
+        limpiarRegreso();
+        this.router.navigateByUrl(destino);
+      },
       error: (e) => {
         this.enviando.set(false);
         this.avisos.error(mensajeError(e, 'El código no es válido.'));

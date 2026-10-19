@@ -3,7 +3,7 @@
     <h1>Solicitar alquiler</h1>
     <p>
       Pide un bus completo para tu recorrido. Un administrador de sucursal revisa la solicitud y
-      confirma el precio antes de que la pagues.
+      confirma el precio antes de que la pagues. El origen, el destino y los kilómetros salen del mapa.
     </p>
   </div>
 </div>
@@ -11,16 +11,16 @@
 <div class="tarjeta">
   <form [formGroup]="form" (ngSubmit)="solicitar()">
     <div class="formulario-grilla">
-      <div class="formulario-seccion">Sucursal</div>
+      <div class="formulario-seccion">Datos de la solicitud</div>
 
       @if (esCajero) {
-        <div class="campo completo">
+        <div class="campo">
           <label>Sucursal</label>
           <input class="control" [value]="sucursalFija()?.nombre ?? 'Tu sucursal'" disabled />
           <span class="ayuda">Los alquileres de ventanilla se registran en tu propia sucursal.</span>
         </div>
       } @else {
-        <div class="campo completo">
+        <div class="campo">
           <label for="sucursal">Sucursal que te atenderá</label>
           <select id="sucursal" class="control" formControlName="sucursalId">
             <option value="">Elige la sucursal…</option>
@@ -34,6 +34,12 @@
         </div>
       }
 
+      <div class="campo">
+        <label for="fechaSolicitud">Fecha de la solicitud</label>
+        <input id="fechaSolicitud" type="date" class="control" [min]="hoy" formControlName="fechaSolicitud" />
+        <span class="ayuda">Con esta fecha se fija el precio por kilómetro vigente.</span>
+      </div>
+
       <div class="formulario-seccion">Datos del cliente</div>
 
       @if (esCajero) {
@@ -44,7 +50,7 @@
         </div>
       }
 
-      <div class="campo" [class.completo]="!esCajero">
+      <div class="campo">
         <label for="nombre">Nombre del cliente</label>
         <input id="nombre" class="control" formControlName="clienteNombre" maxlength="150" placeholder="Nombre completo" />
         @if (form.controls.clienteNombre.touched && form.controls.clienteNombre.invalid) {
@@ -60,22 +66,42 @@
           <span class="error">Escribe un correo válido.</span>
         }
       </div>
+    </div>
 
+    <div class="mapa-solicitud">
+      <div class="formulario-seccion">Recorrido en el mapa</div>
+      <app-selector-recorrido
+        [origenLatitud]="origenMapa()?.latitud ?? null"
+        [origenLongitud]="origenMapa()?.longitud ?? null"
+        [destinoLatitud]="destinoMapa()?.latitud ?? null"
+        [destinoLongitud]="destinoMapa()?.longitud ?? null"
+        (origenCambio)="alCambiarOrigen($event)"
+        (destinoCambio)="alCambiarDestino($event)"
+        (distanciaKm)="alCambiarDistancia($event)"
+        (nombreOrigen)="alSugerirOrigen($event)"
+        (nombreDestino)="alSugerirDestino($event)" />
+      <p class="ayuda">
+        Busca un lugar o haz clic en el mapa para marcar el origen y luego el destino. El nombre y
+        los kilómetros se toman del recorrido marcado; no se escriben a mano.
+      </p>
+    </div>
+
+    <div class="formulario-grilla">
       <div class="formulario-seccion">Recorrido</div>
 
       <div class="campo">
         <label for="origen">Origen</label>
-        <input id="origen" class="control" formControlName="origen" maxlength="255" placeholder="De dónde sale" />
+        <input id="origen" class="control solo-lectura" formControlName="origen" readonly placeholder="Se marca en el mapa" />
         @if (form.controls.origen.touched && form.controls.origen.invalid) {
-          <span class="error">Escribe el origen.</span>
+          <span class="error">Marca el origen en el mapa.</span>
         }
       </div>
 
       <div class="campo">
         <label for="destino">Destino</label>
-        <input id="destino" class="control" formControlName="destino" maxlength="255" placeholder="A dónde va" />
+        <input id="destino" class="control solo-lectura" formControlName="destino" readonly placeholder="Se marca en el mapa" />
         @if (form.controls.destino.touched && form.controls.destino.invalid) {
-          <span class="error">Escribe el destino.</span>
+          <span class="error">Marca el destino en el mapa.</span>
         }
       </div>
 
@@ -106,17 +132,12 @@
 
       <div class="campo">
         <label for="km">Kilómetros estimados</label>
-        <input id="km" type="number" min="0.01" step="0.01" class="control" formControlName="kmEstimados" />
-        <span class="ayuda">Con esto se calcula el precio estimado del alquiler.</span>
+        <input id="km" type="number" class="control solo-lectura" formControlName="kmEstimados" readonly
+               placeholder="Se calcula con el mapa" />
+        <span class="ayuda">Se calcula con la distancia en línea recta del recorrido marcado.</span>
         @if (form.controls.kmEstimados.touched && form.controls.kmEstimados.invalid) {
-          <span class="error">Escribe los kilómetros estimados.</span>
+          <span class="error">Marca el origen y el destino para calcular los kilómetros.</span>
         }
-      </div>
-
-      <div class="campo completo">
-        <label for="fechaSolicitud">Fecha de la solicitud</label>
-        <input id="fechaSolicitud" type="date" class="control" [min]="hoy" formControlName="fechaSolicitud" />
-        <span class="ayuda">Con esta fecha se fija el precio por kilómetro vigente.</span>
       </div>
     </div>
 
@@ -142,10 +163,23 @@
       }
       <div class="completo"><dt>Precio estimado</dt><dd>{{ a.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
     </div>
+    @if (tieneRecorrido(a)) {
+      <app-mapa-recorrido
+        [origenLatitud]="a.origenLatitud"
+        [origenLongitud]="a.origenLongitud"
+        [destinoLatitud]="a.destinoLatitud"
+        [destinoLongitud]="a.destinoLongitud"
+        [origen]="a.origen"
+        [destino]="a.destino"
+        [alto]="200" />
+    }
     <p class="secundario">
       Estado: <span class="insignia aviso">Solicitado</span>. Un administrador revisará la solicitud y confirmará el precio.
       @if (!esCajero) {
         Cuando esté cotizada podrás pagarla desde <strong>Mis alquileres</strong>.
+      } @else {
+        Cuando el administrador confirme el precio, podrás cobrarlo en efectivo desde
+        <strong>Órdenes de alquiler</strong>.
       }
     </p>
   }

@@ -68,6 +68,24 @@ export class OrdenesComponent implements OnInit {
 
   readonly paginaActual = computed(() => paginar(this.ordenes(), this.pagina(), this.tamano()));
 
+  /** Nombre claro del estado de la orden (PENDIENTE_PAGO = alquiler ya cotizado, por cobrar). */
+  estadoTexto(estado: EstadoOrdenAlquiler): string {
+    switch (estado) {
+      case 'PENDIENTE_PAGO':
+        return 'Por cobrar';
+      case 'PAGADA':
+        return 'Pagada';
+      case 'RECHAZADA':
+        return 'Rechazada';
+      case 'REEMBOLSADA':
+        return 'Reembolsada';
+    }
+  }
+
+  textoFiltro(estado: FiltroEstado): string {
+    return estado === 'TODAS' ? 'Todos' : this.estadoTexto(estado);
+  }
+
   ngOnInit(): void {
     if (this.esSistema) {
       this.sucursalesServicio.listar().subscribe({
