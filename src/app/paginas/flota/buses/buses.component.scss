@@ -8,11 +8,13 @@
   overflow: hidden;
   background: var(--superficie-alterna);
 
+  /* La foto completa, sin recortes: se ajusta al ancho o al alto, lo que llegue primero */
   img {
     display: block;
     width: 100%;
-    max-height: 280px;
-    object-fit: cover;
+    height: auto;
+    max-height: 420px;
+    object-fit: contain;
   }
 
   &.vacia {
