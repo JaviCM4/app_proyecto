@@ -2,6 +2,7 @@ import { Component, OnInit, inject, input, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { errorApi, mensajeError } from '../../../core/utils/errores-http';
+import { limpiarRegreso, regresoPendiente } from '../../../core/utils/regreso';
 import { BotonGoogleComponent } from '../../../shared/components/boton-google/boton-google.component';
 import { ToastService } from '../../../shared/services/toast.service';
 
@@ -68,8 +69,16 @@ export class GoogleCallbackComponent implements OnInit {
     });
   }
 
-  /** Con sesión: el panel decide (perfilCompletoGuard manda a completar el perfil si faltan datos). */
+  /**
+   * Con sesión: vuelve a la página de donde venía. Si la cuenta de Google todavía no completó su
+   * perfil, perfilCompletoGuard la lleva a /completar-perfil antes de dejarla entrar al panel.
+   */
   private irAlPanel(): void {
-    this.router.navigateByUrl('/panel', { replaceUrl: true });
+    const destino = regresoPendiente();
+    limpiarRegreso();
+    if (this.auth.usuario()?.perfilCompleto === false) {
+      this.avisos.info('¡Bienvenido! Completa tu DPI, teléfono y dirección para poder usar el portal.');
+    }
+    this.router.navigateByUrl(destino, { replaceUrl: true });
   }
 }

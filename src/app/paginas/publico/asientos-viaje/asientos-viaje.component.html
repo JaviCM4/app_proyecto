@@ -1,32 +1,63 @@
-<app-modal [abierto]="!!viaje()" titulo="Asientos del viaje" ancho="mediano" (cerrar)="cerrar.emit()"
+<app-modal [abierto]="!!viaje()" titulo="Comprar boletos" ancho="grande" (cerrar)="cerrarModal()"
            [subtitulo]="viaje() ? viaje()!.origenNombre + ' → ' + viaje()!.destinoNombre : ''">
   @if (cargando()) {
     <p class="suave">Cargando asientos…</p>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
+  } @else {
+    @if (mapa(); as m) {
+      <div class="compra-grid">
+        <div class="compra-info">
+          <p><strong>Salida</strong><br />{{ m.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</p>
+          <p><strong>Bus</strong><br />{{ m.busPlaca }} · {{ m.disponibles }} disponibles</p>
+          <p><strong>Precio</strong><br />{{ m.precioBoleto | currency: 'GTQ' : 'symbol-narrow' }} c/u</p>
+          <p><strong>Elegidos</strong><br />{{ elegidos().length ? elegidos().join(', ') : '—' }}</p>
+          <p class="total"><strong>Total: {{ (m.precioBoleto * elegidos().length) | currency: 'GTQ' : 'symbol-narrow' }}</strong></p>
+
+          @if (pendiente() && !ventaFinal()) {
+            <p class="aviso-info">Boletos reservados, cobrando a tu cartera…</p>
+          }
+          @if (cobrando()) {
+            <p class="aviso-info">Confirmando el cobro, espera un momento…</p>
+          }
+          @if (ventaFinal()?.estado === 'CONFIRMADA') {
+            <p class="aviso-exito">
+              Compra confirmada: {{ ventaFinal()!.boletos.length }} boleto(s) por Q{{ ventaFinal()!.montoTotal }}.
+            </p>
+          }
+          @if (ventaFinal() && ventaFinal()!.estado !== 'PENDIENTE_PAGO' && ventaFinal()!.estado !== 'CONFIRMADA') {
+            <p class="aviso-error">Compra {{ ventaFinal()!.estado }}: {{ ventaFinal()!.motivoRechazo || 'sin motivo indicado.' }}</p>
+          }
+          @if (fallo()) {
+            <p class="aviso-error">{{ fallo() }}</p>
+          }
+          @if (invitado()) {
+            <p class="suave">Entra a tu cuenta para comprar. Mientras tanto puedes ver los asientos.</p>
+          }
+        </div>
+
+        <app-selector-asientos [mapa]="m" [resumen]="false" [bloqueado]="invitado()" [maximo]="60"
+                               (seleccion)="alElegir($event)" />
+      </div>
+    } @else {
+      <p class="tabla-vacia">No se pudo cargar el mapa de asientos.</p>
+    }
   }
-  @if (mapa(); as m) {
-    <div class="resumen">
-      <span>{{ m.fechaSalida | date: "EEEE d 'de' MMMM, HH:mm" : zona }}</span>
-      <span><strong>{{ m.disponibles }}</strong> de {{ m.capacidad }} disponibles</span>
-      <span>{{ m.precioBoleto | currency: 'GTQ' : 'symbol-narrow' }} por asiento</span>
-    </div>
 
-    <div class="leyenda">
-      <span><i class="asiento libre"></i> Disponible</span>
-      <span><i class="asiento ocupado"></i> Ocupado</span>
-    </div>
-
-    <div class="bus">
-      @for (a of m.asientos; track a.numero) {
-        <span class="asiento" [class.libre]="a.estado === 'DISPONIBLE'" [class.ocupado]="a.estado === 'OCUPADO'">
-          {{ a.numero }}
-        </span>
+  <div pie class="acciones-modal">
+    <button type="button" class="btn" [disabled]="comprando() || cobrando()" (click)="cerrarModal()">Cerrar</button>
+    @if (mapa()) {
+      @if (invitado()) {
+        <button type="button" class="btn primario" (click)="irALogin()">Entrar para comprar</button>
+      } @else if (fallo() || (ventaFinal() && ventaFinal()!.estado !== 'CONFIRMADA' && ventaFinal()!.estado !== 'PENDIENTE_PAGO')) {
+        <button type="button" class="btn primario" [disabled]="comprando() || cobrando()" (click)="reintentar()">
+          Reintentar
+        </button>
+      } @else if (!ventaFinal() || ventaFinal()!.estado === 'PENDIENTE_PAGO') {
+        <button type="button" class="btn primario" [disabled]="elegidos().length === 0 || comprando() || cobrando()" (click)="comprar()">
+          {{ comprando() ? 'Reservando…' : (cobrando() ? 'Cobrando…' : 'Comprar') }}
+        </button>
       }
-    </div>
-  }
-
-  <div pie>
-    <button type="button" class="btn" (click)="cerrar.emit()">Cerrar</button>
+    }
   </div>
 </app-modal>

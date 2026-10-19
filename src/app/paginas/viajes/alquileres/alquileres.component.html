@@ -135,6 +135,17 @@
       </div>
     </div>
 
+    @if (tieneRecorrido(d)) {
+      <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
+      <app-mapa-recorrido
+        [origenLatitud]="d.origenLatitud"
+        [origenLongitud]="d.origenLongitud"
+        [destinoLatitud]="d.destinoLatitud"
+        [destinoLongitud]="d.destinoLongitud"
+        [origen]="d.origen"
+        [destino]="d.destino" />
+    }
+
     <h3 class="detalle-subtitulo">Viaje asignado</h3>
     @if (d.viaje; as v) {
       <div class="datos-lista">
@@ -150,6 +161,25 @@
             <dd>Tipo {{ c.tipoLicencia }} · {{ c.numeroLicencia }} (vence {{ c.fechaVencimientoLicencia | date: 'dd/MM/yyyy' }})</dd>
           </div>
         }
+      </div>
+
+      <div class="fotos-viaje">
+        <figure>
+          @if (busAsignado()?.fotoUrl) {
+            <img [src]="busAsignado()!.fotoUrl" [alt]="'Bus ' + (v.busPlaca ?? '')" />
+          } @else {
+            <div class="sin-foto">Sin foto del bus</div>
+          }
+          <figcaption>Bus {{ v.busPlaca ?? 'por confirmar' }}</figcaption>
+        </figure>
+        <figure>
+          @if (fotoChofer()) {
+            <img [src]="fotoChofer()!" [alt]="'Chofer ' + (v.choferNombre ?? '')" />
+          } @else {
+            <div class="sin-foto">Sin foto del chofer</div>
+          }
+          <figcaption>Chofer {{ v.choferNombre ?? 'por confirmar' }}</figcaption>
+        </figure>
       </div>
     } @else if (d.estado === 'PAGADO') {
       <p class="secundario">El alquiler ya está pagado: falta asignarle bus y chofer.</p>
@@ -183,6 +213,17 @@
         <div><dt>Precio estimado</dt><dd>{{ c.precioEstimado | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
       </div>
       <p class="secundario">El estimado sale de multiplicar los kilómetros por el precio por km vigente.</p>
+      @if (tieneRecorrido(c)) {
+        <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
+        <app-mapa-recorrido
+          [origenLatitud]="c.origenLatitud"
+          [origenLongitud]="c.origenLongitud"
+          [destinoLatitud]="c.destinoLatitud"
+          [destinoLongitud]="c.destinoLongitud"
+          [origen]="c.origen"
+          [destino]="c.destino"
+          [alto]="180" />
+      }
     }
     <form id="form-cotizar" [formGroup]="formCotizar" (ngSubmit)="cotizar()" class="formulario">
       <div class="campo">
@@ -227,6 +268,28 @@
         <input id="a-llegada" type="datetime-local" class="control" formControlName="llegadaEstimada" />
       </div>
     </form>
+
+    <div class="fotos-asignar">
+      <figure>
+        @if (busElegido()?.fotoUrl) {
+          <img [src]="busElegido()!.fotoUrl" alt="Bus elegido" />
+        } @else {
+          <div class="sin-foto">Elige un bus para ver su foto</div>
+        }
+        <figcaption>
+          {{ busElegido() ? (busElegido()!.placa + ' · ' + busElegido()!.marca + ' ' + busElegido()!.modelo) : 'Bus' }}
+        </figcaption>
+      </figure>
+      <figure>
+        @if (fotoChoferAsignar()) {
+          <img [src]="fotoChoferAsignar()!" alt="Chofer elegido" />
+        } @else {
+          <div class="sin-foto">Elige un chofer para ver su foto</div>
+        }
+        <figcaption>{{ choferElegido()?.nombreCompleto ?? 'Chofer' }}</figcaption>
+      </figure>
+    </div>
+
     <div pie>
       <button type="button" class="btn" (click)="porAsignar.set(null)">Cancelar</button>
       <button type="submit" form="form-asignar" class="btn primario" [disabled]="enviando()">

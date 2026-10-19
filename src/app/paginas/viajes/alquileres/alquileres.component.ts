@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { catchError, forkJoin, of } from 'rxjs';
 import { Bus, BusDetalle } from '../../../core/models/bus.model';
@@ -11,10 +11,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { BusesService } from '../../../core/services/buses.service';
 import { ChoferesService } from '../../../core/services/choferes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { UsuariosService } from '../../../core/services/usuarios.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { fechaHoraGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
 
@@ -24,7 +26,7 @@ const ESTADOS: EstadoAlquiler[] = ['SOLICITADO', 'COTIZADO', 'PAGADO', 'ASIGNADO
 @Component({
   selector: 'app-alquileres',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, MapaRecorridoComponent],
   templateUrl: './alquileres.component.html',
   styleUrl: './alquileres.component.scss',
 })
@@ -34,6 +36,7 @@ export class AlquileresComponent implements OnInit {
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly busesServicio = inject(BusesService);
   private readonly choferesServicio = inject(ChoferesService);
+  private readonly usuariosServicio = inject(UsuariosService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
@@ -57,6 +60,12 @@ export class AlquileresComponent implements OnInit {
   /** Bus y chofer del viaje asignado, con marca/modelo/licencia (si el rol puede consultarlos). */
   readonly busAsignado = signal<BusDetalle | null>(null);
   readonly choferAsignado = signal<Chofer | null>(null);
+  /** Foto del chofer asignado (vive en Identity, ligada a su usuario). */
+  readonly fotoChofer = signal<string | null>(null);
+  /** Vista previa al asignar: bus y chofer elegidos. */
+  readonly busElegido = signal<Bus | null>(null);
+  readonly choferElegido = signal<Chofer | null>(null);
+  readonly fotoChoferAsignar = signal<string | null>(null);
   readonly porCotizar = signal<Alquiler | null>(null);
   readonly porAsignar = signal<Alquiler | null>(null);
   readonly porCancelar = signal<Alquiler | null>(null);
@@ -84,6 +93,16 @@ export class AlquileresComponent implements OnInit {
     this.sucursalesServicio.listar().subscribe({
       next: (lista) => this.sucursales.set(lista),
       error: (e) => this.avisos.error(mensajeError(e, 'No se pudieron cargar las sucursales.')),
+    });
+    // Vista previa con foto al elegir bus/chofer en el modal de asignación.
+    this.formAsignar.controls.busId.valueChanges.subscribe((id) => {
+      this.busElegido.set(this.buses().find((b) => b.busId === id) ?? null);
+    });
+    this.formAsignar.controls.choferId.valueChanges.subscribe((id) => {
+      const chofer = this.choferes().find((c) => c.choferId === id) ?? null;
+      this.choferElegido.set(chofer);
+      this.fotoChoferAsignar.set(null);
+      this.cargarFoto(chofer?.usuarioId ?? null, this.fotoChoferAsignar);
     });
     this.cargar();
   }
@@ -127,6 +146,7 @@ export class AlquileresComponent implements OnInit {
     this.enDetalle.set(a);
     this.busAsignado.set(null);
     this.choferAsignado.set(null);
+    this.fotoChofer.set(null);
     if (!a.viaje) return;
     // El viaje ya trae placa, chofer y fechas; se completa con marca/modelo y licencia si el rol los puede ver.
     forkJoin({
@@ -135,6 +155,7 @@ export class AlquileresComponent implements OnInit {
     }).subscribe(({ bus, chofer }) => {
       this.busAsignado.set(bus);
       this.choferAsignado.set(chofer);
+      this.cargarFoto(chofer?.usuarioId ?? null, this.fotoChofer);
     });
   }
 
@@ -142,6 +163,25 @@ export class AlquileresComponent implements OnInit {
     this.enDetalle.set(null);
     this.busAsignado.set(null);
     this.choferAsignado.set(null);
+    this.fotoChofer.set(null);
+  }
+
+  /** ¿El alquiler tiene puntos del mapa? Las solicitudes viejas no los tienen. */
+  tieneRecorrido(a: Alquiler): boolean {
+    return (a.origenLatitud !== null && a.origenLongitud !== null)
+      || (a.destinoLatitud !== null && a.destinoLongitud !== null);
+  }
+
+  /** La foto del chofer está en su perfil de Identity (la ven ADMIN_SISTEMA y ADMIN_SUCURSAL). */
+  private cargarFoto(usuarioId: string | null, destino: WritableSignal<string | null>): void {
+    if (!usuarioId) {
+      destino.set(null);
+      return;
+    }
+    this.usuariosServicio
+      .detalle(usuarioId)
+      .pipe(catchError(() => of(null)))
+      .subscribe((usuario) => destino.set(usuario?.fotoUrl ?? null));
   }
 
   /** Estado del viaje privado asignado. */
@@ -203,6 +243,9 @@ export class AlquileresComponent implements OnInit {
 
   abrirAsignar(a: Alquiler): void {
     this.formAsignar.reset({ busId: '', choferId: '', llegadaEstimada: '' });
+    this.busElegido.set(null);
+    this.choferElegido.set(null);
+    this.fotoChoferAsignar.set(null);
     this.porAsignar.set(a);
     this.busesServicio.listar(a.sucursalId, 'ACTIVO').subscribe({
       next: (lista) => this.buses.set(lista),

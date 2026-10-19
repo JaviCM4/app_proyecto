@@ -1,6 +1,6 @@
 <section class="presentacion">
   <h1>Viajes programados</h1>
-  <p>Consulta los horarios, el precio y los asientos disponibles. Para comprar, entra con tu cuenta.</p>
+  <p>Consulta horarios y precios. Pulsa <strong>Comprar</strong> para ver los asientos: si tienes sesión puedes elegirlos y pagar; si no, puedes verlos y entrar cuando quieras comprar.</p>
 </section>
 
 <form class="tarjeta buscador" (ngSubmit)="buscar()">
@@ -86,11 +86,7 @@
         </div>
 
         <div class="acciones">
-          <button type="button" class="btn chico" (click)="viajeSeleccionado.set(v)">Ver asientos</button>
-          <a routerLink="/comprar" class="btn chico primario">Comprar</a>
-          @if (!auth.autenticado()) {
-            <a routerLink="/login" class="btn chico">Entrar para comprar</a>
-          }
+          <button type="button" class="btn chico primario" (click)="viajeSeleccionado.set(v)">Comprar</button>
         </div>
       </li>
     }

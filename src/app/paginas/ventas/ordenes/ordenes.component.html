@@ -1,7 +1,7 @@
 <div class="pagina-encabezado">
   <div>
     <h1>Órdenes de alquiler</h1>
-    <p>Cobros de viajes privados: ver detalle y registrar el pago en efectivo.</p>
+    <p>Cobros de alquileres ya cotizados por la sucursal: revisa el detalle y registra el pago en efectivo.</p>
   </div>
 </div>
 
@@ -21,7 +21,7 @@
     <label for="estado">Estado</label>
     <select id="estado" class="control" [ngModel]="estado()" (ngModelChange)="estado.set($event); cambiarFiltro()">
       @for (e of estados; track e) {
-        <option [value]="e">{{ e === 'TODAS' ? 'Todos' : e }}</option>
+        <option [value]="e">{{ textoFiltro(e) }}</option>
       }
     </select>
   </div>
@@ -33,7 +33,7 @@
       <tr>
         <th>Cliente</th>
         <th>Ruta</th>
-        <th>Monto</th>
+        <th>Precio cotizado</th>
         <th>Estado</th>
         <th class="acciones">Acciones</th>
       </tr>
@@ -51,12 +51,14 @@
           </td>
           <td>{{ o.monto | currency }}</td>
           <td>
-            <span class="insignia" [class.exito]="o.estado === 'PAGADA'">{{ o.estado }}</span>
+            <span class="insignia" [class.exito]="o.estado === 'PAGADA'">{{ estadoTexto(o.estado) }}</span>
           </td>
           <td class="acciones">
             <button type="button" class="btn chico" (click)="verDetalle(o)">Ver</button>
-            @if (o.estado === 'PENDIENTE_PAGO') {
+            @if (o.estado === 'PENDIENTE_PAGO' && o.metodoPago !== 'CARTERA') {
               <button type="button" class="btn chico" (click)="abrirPagar(o)">Pagar en efectivo</button>
+            } @else if (o.estado === 'PENDIENTE_PAGO') {
+              <span class="secundario">Cobrando con cartera…</span>
             }
           </td>
         </tr>
@@ -92,7 +94,7 @@
         <span class="secundario"> · NIT: {{ d.clienteNit || '—' }} · {{ d.clienteCorreo || 'Sin correo' }}</span>
       </p>
       <p class="secundario">
-        {{ d.origen }} → {{ d.destino }} · Monto: {{ d.monto | currency }}
+        {{ d.origen }} → {{ d.destino }} · Precio cotizado: {{ d.monto | currency }}
         @if (d.metodoPago) {
           · {{ d.metodoPago }}
         }
@@ -101,7 +103,7 @@
         }
       </p>
       <p>
-        Estado: <span class="insignia" [class.exito]="d.estado === 'PAGADA'">{{ d.estado }}</span>
+        Estado: <span class="insignia" [class.exito]="d.estado === 'PAGADA'">{{ estadoTexto(d.estado) }}</span>
       </p>
       @if (d.motivoRechazo) {
         <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>
@@ -111,8 +113,10 @@
   }
   <div pie>
     @if (enDetalle(); as e) {
-      @if (e.estado === 'PENDIENTE_PAGO') {
+      @if (e.estado === 'PENDIENTE_PAGO' && e.metodoPago !== 'CARTERA') {
         <button type="button" class="btn primario chico" (click)="abrirPagar(e)">Pagar en efectivo</button>
+      } @else if (e.estado === 'PENDIENTE_PAGO') {
+        <span class="secundario">Cobrando con cartera…</span>
       }
       <button type="button" class="btn chico" (click)="enDetalle.set(null)">Cerrar</button>
     }

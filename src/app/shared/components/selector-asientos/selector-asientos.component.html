@@ -7,10 +7,16 @@
     </p>
   }
 </div>
+<p class="leyenda">
+  <span class="item"><span class="muestra libre"></span> Libre</span>
+  <span class="item"><span class="muestra ocupado"></span> Ocupado</span>
+  <span class="item"><span class="muestra elegido"></span> Elegido</span>
+  <span class="item"><span class="muestra piloto"></span> Piloto</span>
+</p>
 <div class="bus">
   <div class="parabrisas"></div>
   <div class="fila-bus">
-    <span class="piloto" title="Piloto">P</span>
+    <span class="puesto-piloto" title="Piloto">P</span>
     <span></span><span class="pasillo"></span><span></span><span></span>
   </div>
   @for (fila of filas(); track $index) {
@@ -30,9 +36,3 @@
     </div>
   }
 </div>
-<p class="suave leyenda">
-  <span class="muestra libre"></span> Libre
-  <span class="muestra ocupado"></span> Ocupado
-  <span class="muestra elegido"></span> Elegido
-  <span class="muestra piloto"></span> Piloto
-</p>

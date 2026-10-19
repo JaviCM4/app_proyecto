@@ -1,4 +1,5 @@
 import { Rol } from '../../core/models/auth.model';
+import { rolPrincipal } from '../../shared/constants/roles';
 
 export interface OpcionMenu {
   texto: string;
@@ -6,8 +7,10 @@ export interface OpcionMenu {
   icono: string;
   /** Roles que ven la opción. Vacío = todos los que tienen sesión. */
   roles: Rol[];
-  /** Roles que NO la ven aunque tengan uno de `roles` (p. ej. el cajero no solicita alquileres como cliente). */
+  /** Roles que NO la ven aunque tengan uno de `roles`. */
   excepto?: Rol[];
+  /** Solo si el rol principal de la cuenta está en la lista (igual que data.rolesPrincipales en la ruta). */
+  soloPrincipales?: Rol[];
 }
 
 export interface GrupoMenu {
@@ -18,15 +21,18 @@ export interface GrupoMenu {
 const SISTEMA: Rol[] = ['ADMIN_SISTEMA'];
 const SUCURSAL: Rol[] = ['ADMIN_SUCURSAL'];
 const VENTANILLA: Rol[] = ['CAJERO', 'ADMIN_SUCURSAL'];
+const CLIENTE: Rol[] = ['CLIENTE'];
 
 /**
  * Menú del panel según los roles de la cuenta:
  * - Administrador del sistema: Administración y Reportes.
- * - Administrador de sucursal: Mi sucursal, Operación, Taller, Reportes y Ventanilla.
- * - Cajero: Ventanilla.
+ * - Administrador de sucursal: Mi sucursal, Operación, Taller, Reportes y Servicios.
+ * - Cajero: Servicios.
  * - Piloto: Mis viajes.
- * - Todas las cuentas tienen el rol Cliente: todos ven "Mis compras" (billetera, boletos y alquileres)
- *   y "Mi cuenta".
+ * - "Servicios" junta la tienda: comprar/vender boletos y alquileres. "Mis compras" es el historial.
+ * Todas las cuentas tienen el rol Cliente, así que las opciones de cliente llevan
+ * `soloPrincipales: ['CLIENTE']` para que el personal no las vea (igual que data.rolesPrincipales
+ * en app.routes.ts).
  * Para agregar una pantalla: crea la ruta en app.routes.ts (con los mismos roles en data.roles) y su opción aquí.
  */
 export const MENU: GrupoMenu[] = [
@@ -75,11 +81,15 @@ export const MENU: GrupoMenu[] = [
     opciones: [{ texto: 'Reportes', ruta: '/panel/reportes', icono: 'reporte', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] }],
   },
   {
-    titulo: 'Ventanilla',
+    titulo: 'Servicios',
     opciones: [
-      { texto: 'Vender boletos', ruta: '/panel/mostrador', icono: 'boleto', roles: VENTANILLA },
+      // Cliente: su billetera y sus compras.
+      { texto: 'Billetera digital', ruta: '/panel/cartera', icono: 'cartera', roles: CLIENTE, soloPrincipales: ['CLIENTE'] },
+      { texto: 'Comprar boletos', ruta: '/panel/comprar', icono: 'boleto', roles: CLIENTE, soloPrincipales: ['CLIENTE'] },
       // En el backend, un alquiler que solicita un cajero es siempre de mostrador.
-      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CAJERO'] },
+      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CLIENTE', 'CAJERO'], soloPrincipales: ['CLIENTE', 'CAJERO'] },
+      // Personal de ventanilla.
+      { texto: 'Vender boletos', ruta: '/panel/mostrador', icono: 'boleto', roles: VENTANILLA },
       { texto: 'Ventas', ruta: '/panel/ventas', icono: 'reporte', roles: VENTANILLA },
       { texto: 'Órdenes de alquiler', ruta: '/panel/ordenes', icono: 'tarifa', roles: VENTANILLA },
     ],
@@ -87,11 +97,8 @@ export const MENU: GrupoMenu[] = [
   {
     titulo: 'Mis compras',
     opciones: [
-      { texto: 'Billetera digital', ruta: '/panel/cartera', icono: 'cartera', roles: ['CLIENTE'] },
-      { texto: 'Comprar boletos', ruta: '/panel/comprar', icono: 'boleto', roles: ['CLIENTE'] },
-      { texto: 'Mis compras', ruta: '/panel/mis-compras', icono: 'boleto', roles: ['CLIENTE'] },
-      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CLIENTE'], excepto: ['CAJERO'] },
-      { texto: 'Mis alquileres', ruta: '/panel/mis-alquileres', icono: 'taller', roles: ['CLIENTE'] },
+      { texto: 'Mis boletos', ruta: '/panel/mis-compras', icono: 'boleto', roles: CLIENTE, soloPrincipales: ['CLIENTE'] },
+      { texto: 'Mis alquileres', ruta: '/panel/mis-alquileres', icono: 'taller', roles: CLIENTE, soloPrincipales: ['CLIENTE'] },
     ],
   },
   {
@@ -105,8 +112,12 @@ export const MENU: GrupoMenu[] = [
 
 /** ¿El usuario con estos roles puede ver la opción? */
 export function puedeVer(opcion: OpcionMenu, roles: Rol[]): boolean {
-  if (opcion.excepto?.some((r) => roles.includes(r))) return false;
-  return opcion.roles.length === 0 || opcion.roles.some((r) => roles.includes(r));
+  if (opcion.excepto?.some((rol) => roles.includes(rol))) return false;
+  if (opcion.soloPrincipales) {
+    const principal = rolPrincipal(roles);
+    if (principal === null || !opcion.soloPrincipales.includes(principal)) return false;
+  }
+  return opcion.roles.length === 0 || opcion.roles.some((rol) => roles.includes(rol));
 }
 
 /** Opciones visibles agrupadas (los grupos vacíos no se muestran). */

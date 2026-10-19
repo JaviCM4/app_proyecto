@@ -13,6 +13,9 @@
            [attr.title]="layout.plegado() ? opcion.texto : null" (click)="layout.cerrarMovil()">
           <app-icono [nombre]="opcion.icono" />
           <span class="texto">{{ opcion.texto }}</span>
+          @if (aviso(opcion.ruta); as n) {
+            <span class="aviso" [attr.title]="tituloAviso(opcion.ruta)">{{ n }}</span>
+          }
         </a>
       }
     }

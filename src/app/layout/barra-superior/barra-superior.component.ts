@@ -22,12 +22,15 @@ export class BarraSuperiorComponent {
   readonly layout = inject(LayoutService);
   readonly menuUsuario = signal(false);
 
-  /** Opciones del menú del usuario: las de "Mi cuenta" y "Mis compras" que su rol puede ver. */
+  /**
+   * Opciones del menú de la cuenta: "Mi cuenta" y lo del cliente (billetera, compras y alquileres).
+   * Las acciones de ventanilla se quedan en la barra lateral para no repetirlas aquí.
+   */
   readonly opcionesCuenta = computed(() => {
     const roles = this.auth.usuario()?.roles ?? [];
-    return MENU.filter((g) => g.titulo === 'Mi cuenta' || g.titulo === 'Mis compras')
+    return MENU.filter((g) => g.titulo === 'Mi cuenta' || g.titulo === 'Servicios' || g.titulo === 'Mis compras')
       .flatMap((g) => g.opciones)
-      .filter((o) => puedeVer(o, roles));
+      .filter((o) => puedeVer(o, roles) && (o.soloPrincipales !== undefined || o.roles.length === 0));
   });
 
   /** Cierra el desplegable al hacer clic fuera de él. */

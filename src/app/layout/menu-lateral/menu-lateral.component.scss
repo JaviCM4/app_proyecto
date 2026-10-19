@@ -49,6 +49,7 @@ nav {
 }
 
 .opcion {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -67,6 +68,35 @@ nav {
     font-weight: 600;
     box-shadow: inset 3px 0 0 var(--primario);
   }
+
+  /* Aviso de alquileres por revisar (burbuja tipo mensaje). */
+  .aviso {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #25d366;
+    color: #06281a;
+    font-size: 11px;
+    font-weight: 700;
+    flex: none;
+  }
+}
+
+/* Con el menú plegado el aviso va como punto sobre el icono. */
+.menu.plegado .opcion .aviso {
+  position: absolute;
+  top: 3px;
+  right: 8px;
+  margin: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
 }
 
 .velo { display: none; }

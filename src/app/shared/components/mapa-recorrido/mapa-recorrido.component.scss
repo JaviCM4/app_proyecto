@@ -1,0 +1,72 @@
+.mapa {
+  width: 100%;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.mapa.sin-puntos {
+  display: none;
+}
+
+.leyenda {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.punto {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.punto.origen {
+  background: #16a34a;
+}
+
+.punto.destino {
+  background: #dc2626;
+}
+
+.flecha {
+  color: var(--primario);
+}
+
+.sin-mapa {
+  margin: 0;
+  font-size: 12px;
+  color: var(--texto-tenue);
+}
+
+:host ::ng-deep .pin-recorrido span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+:host ::ng-deep .pin-origen span {
+  background: #16a34a;
+}
+
+:host ::ng-deep .pin-destino span {
+  background: #dc2626;
+}

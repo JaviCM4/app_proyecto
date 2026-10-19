@@ -10,6 +10,11 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, ahoraGt, fechaHoraGt, hoyGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
+import {
+  Coordenadas,
+  SelectorRecorridoComponent,
+} from '../../../shared/components/selector-recorrido/selector-recorrido.component';
 import { ToastService } from '../../../shared/services/toast.service';
 
 /**
@@ -20,7 +25,7 @@ import { ToastService } from '../../../shared/services/toast.service';
 @Component({
   selector: 'app-solicitar-alquiler',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, RouterLink],
+  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, RouterLink, SelectorRecorridoComponent, MapaRecorridoComponent],
   templateUrl: './solicitar-alquiler.component.html',
   styleUrl: './solicitar-alquiler.component.scss',
 })
@@ -38,6 +43,10 @@ export class SolicitarAlquilerComponent implements OnInit {
   readonly sucursales = signal<Sucursal[]>([]);
   readonly enviando = signal(false);
   readonly creado = signal<Alquiler | null>(null);
+
+  /** Puntos marcados en el mapa (null = todavía no se marca). */
+  readonly origenMapa = signal<Coordenadas | null>(null);
+  readonly destinoMapa = signal<Coordenadas | null>(null);
 
   readonly sucursalFija = computed(() => {
     const id = this.auth.usuario()?.sucursalId;
@@ -81,6 +90,37 @@ export class SolicitarAlquilerComponent implements OnInit {
       kmEstimados: null,
       fechaSolicitud: hoyGt(),
     });
+    this.origenMapa.set(null);
+    this.destinoMapa.set(null);
+  }
+
+  alCambiarOrigen(punto: Coordenadas | null): void {
+    this.origenMapa.set(punto);
+  }
+
+  alCambiarDestino(punto: Coordenadas | null): void {
+    this.destinoMapa.set(punto);
+  }
+
+  /** Los km salen siempre de la distancia del recorrido marcado (no se editan a mano). */
+  alCambiarDistancia(km: number | null): void {
+    this.form.controls.kmEstimados.setValue(km);
+  }
+
+  /** El origen toma el nombre del punto marcado (o del lugar elegido en el buscador). */
+  alSugerirOrigen(nombre: string): void {
+    this.form.controls.origen.setValue(nombre);
+  }
+
+  /** El destino toma el nombre del punto marcado (o del lugar elegido en el buscador). */
+  alSugerirDestino(nombre: string): void {
+    this.form.controls.destino.setValue(nombre);
+  }
+
+  /** ¿La solicitud trae puntos del mapa? Sirve para mostrar la ruta en el resumen. */
+  tieneRecorrido(a: Alquiler): boolean {
+    return (a.origenLatitud !== null && a.origenLongitud !== null)
+      || (a.destinoLatitud !== null && a.destinoLongitud !== null);
   }
 
   solicitar(): void {
@@ -104,6 +144,10 @@ export class SolicitarAlquilerComponent implements OnInit {
         clienteCorreo: f.clienteCorreo.trim() || null,
         origen: f.origen.trim(),
         destino: f.destino.trim(),
+        origenLatitud: this.origenMapa()?.latitud ?? null,
+        origenLongitud: this.origenMapa()?.longitud ?? null,
+        destinoLatitud: this.destinoMapa()?.latitud ?? null,
+        destinoLongitud: this.destinoMapa()?.longitud ?? null,
         fechaSalida: salida,
         fechaRetorno: retorno,
         cantidadPasajeros: Number(f.cantidadPasajeros),

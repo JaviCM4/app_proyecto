@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { mensajeError } from '../../../core/utils/errores-http';
+import { limpiarRegreso, recordarRegreso, rutaSegura } from '../../../core/utils/regreso';
 import { BotonGoogleComponent } from '../../../shared/components/boton-google/boton-google.component';
 import { ToastService } from '../../../shared/services/toast.service';
 
@@ -32,6 +33,8 @@ export class LoginComponent {
       return;
     }
     this.enviando.set(true);
+    // Se anota el destino: si hay 2FA el salto a /verificar lo conserva.
+    recordarRegreso(this.volver());
     const { correo, contrasena } = this.form.getRawValue();
     this.auth.login(correo.trim(), contrasena).subscribe({
       next: (r) => {
@@ -41,7 +44,8 @@ export class LoginComponent {
           this.router.navigateByUrl('/verificar');
           return;
         }
-        this.router.navigateByUrl(this.volver() || '/panel');
+        limpiarRegreso();
+        this.router.navigateByUrl(rutaSegura(this.volver()));
       },
       error: (e) => {
         this.enviando.set(false);

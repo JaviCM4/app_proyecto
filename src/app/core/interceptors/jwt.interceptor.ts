@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../services/auth.service';
 
 let refrescando = false;
@@ -25,11 +26,15 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
   const token = auth.token();
   const esAuth = PUBLICAS.some((ruta) => req.url.includes(ruta));
-  const conToken = token && !esAuth ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+  // Nunca se manda el token a servicios externos (mapas, geocodificación, etc.).
+  const esExterna = /^https?:\/\//i.test(req.url) && !req.url.startsWith(environment.apiUrl);
+  const conToken = token && !esAuth && !esExterna
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
 
   return next(conToken).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status !== 401 || esAuth || !token) return throwError(() => error);
+      if (error.status !== 401 || esAuth || esExterna || !token) return throwError(() => error);
       if (refrescando || !auth.tieneRefresco()) {
         auth.limpiar();
         router.navigateByUrl('/login');

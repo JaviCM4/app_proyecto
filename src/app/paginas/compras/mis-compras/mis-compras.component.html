@@ -1,7 +1,7 @@
 <div class="pagina-encabezado">
   <div>
-    <h1>Mis compras</h1>
-    <p>Tus boletos y pagos de alquileres.</p>
+    <h1>Mis boletos</h1>
+    <p>Historial de tus boletos comprados y su estado.</p>
   </div>
   <button type="button" class="btn" (click)="cargar()" [disabled]="cargando()">Recargar</button>
 </div>
@@ -63,50 +63,6 @@
   [total]="boletosPagina().total"
   (cambioPagina)="pagina.set($event)"
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
-
-<h2>Alquileres</h2>
-<div class="tabla-contenedor">
-  <table class="tabla">
-    <thead>
-      <tr>
-        <th>Ruta</th>
-        <th>Monto</th>
-        <th>Estado</th>
-        <th class="acciones">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (a of historial()?.alquileres ?? []; track a.ordenId) {
-        <tr>
-          <td><strong>{{ a.origen }} → {{ a.destino }}</strong></td>
-          <td>Q{{ a.monto }}</td>
-          <td>
-            <span class="insignia" [class.exito]="a.estado === 'PAGADA'">{{ a.estado }}</span>
-          </td>
-          <td class="acciones">
-            @if (a.estado === 'PENDIENTE_PAGO') {
-              <button
-                type="button"
-                class="btn chico primario"
-                [disabled]="pagandoId() === a.ordenId"
-                (click)="pagarAlquiler(a)">
-                {{ pagandoId() === a.ordenId ? 'Pagando…' : 'Pagar con cartera' }}
-              </button>
-            } @else {
-              <span class="secundario">—</span>
-            }
-          </td>
-        </tr>
-      } @empty {
-        <tr>
-          <td colspan="4" class="tabla-vacia">
-            {{ cargando() ? 'Cargando historial…' : 'Aún no tienes alquileres.' }}
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
-</div>
 
 <app-modal [abierto]="ticket() !== null || cargandoTicket()" titulo="Boleto de viaje" (cerrar)="ticket.set(null)">
   @if (cargandoTicket()) {
