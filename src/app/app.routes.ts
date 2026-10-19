@@ -152,7 +152,7 @@ export const routes: Routes = [
         path: 'solicitar-alquiler',
         title: 'Solicitar alquiler',
         canActivate: [rolGuard],
-        data: { roles: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'], rolesPrincipales: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'] },
         loadComponent: () =>
           import('./paginas/alquileres/solicitar-alquiler/solicitar-alquiler.component').then((m) => m.SolicitarAlquilerComponent),
       },

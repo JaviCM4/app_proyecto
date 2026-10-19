@@ -57,7 +57,8 @@ export class MisAlquileresComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   /** En el backend, un alquiler que solicita un cajero es de mostrador: no lo puede pedir como cliente. */
-  readonly puedeSolicitar = !inject(AuthService).tieneRol('CAJERO');
+  /** Cualquier cuenta con rol Cliente (también cajeros y administradores) puede pedir otro alquiler. */
+  readonly puedeSolicitar = inject(AuthService).tieneRol('CLIENTE');
   readonly zona = ZONA_GT;
   /** En PC el detalle se abre amplio, con el mapa grande al lado de los datos. */
   readonly pantallaGrande = pantallaGrande();
