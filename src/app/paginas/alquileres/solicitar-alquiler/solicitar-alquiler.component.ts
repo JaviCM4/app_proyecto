@@ -63,6 +63,7 @@ export class SolicitarAlquilerComponent implements OnInit {
 
   readonly sucursales = signal<Sucursal[]>([]);
   readonly enviando = signal(false);
+  readonly calculandoKm = signal(false);
   readonly creado = signal<Alquiler | null>(null);
   /** En PC el resumen de la solicitud se abre amplio, con el mapa grande al lado. */
   readonly pantallaGrande = pantallaGrande();

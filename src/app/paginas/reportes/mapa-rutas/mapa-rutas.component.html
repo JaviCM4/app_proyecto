@@ -1,5 +1,11 @@
 <div class="tarjeta mapa-tarjeta">
   <div #contenedor class="mapa"></div>
+  @if (datos()) {
+    <p class="leyenda-mapa">
+      <span class="punto origen">O</span> Origen
+      <span class="punto destino">D</span> Destino
+    </p>
+  }
 </div>
 
 @if (datos(); as d) {

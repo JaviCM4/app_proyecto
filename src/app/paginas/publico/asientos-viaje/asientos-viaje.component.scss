@@ -12,6 +12,7 @@
 .compra-grid { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
 .compra-info p { margin: 0 0 10px; }
 .compra-info .total { font-size: 1.1rem; }
+.recorrido-compra { margin-bottom: 16px; }
 
 .error { color: var(--peligro); }
 

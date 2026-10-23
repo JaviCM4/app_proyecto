@@ -11,8 +11,10 @@ import {
   signal,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { Subscription } from 'rxjs';
 import * as L from 'leaflet';
 import { GeocodificacionService, Lugar, seisDecimales } from '../../../core/services/geocodificacion.service';
+import { RuteoService } from '../../../core/services/ruteo.service';
 import { agregarCapaBase } from '../../utils/capa-base-mapa';
 
 /** Centro y límites del mapa: Guatemala. */
@@ -30,9 +32,10 @@ export interface Coordenadas {
 
 /**
  * Mapa para marcar el recorrido de un alquiler: el origen (O, verde) y el destino (D, rojo),
- * unidos por una línea. Se puede marcar con un clic, buscar un lugar por nombre, arrastrar los
- * marcadores o limpiar todo. Al marcar un punto se propone el nombre del lugar más cercano.
- * Emite la distancia en línea recta (km) como ayuda para llenar los km estimados.
+ * unidos por el recorrido real por carretera (o por una línea recta si el servicio de ruteo no
+ * responde). Se puede marcar con un clic, buscar un lugar por nombre, arrastrar los marcadores o
+ * limpiar todo. Al marcar un punto se propone el nombre del lugar más cercano.
+ * Emite la distancia por carretera (km) para llenar los km estimados.
  */
 @Component({
   selector: 'app-selector-recorrido',
@@ -43,6 +46,7 @@ export interface Coordenadas {
 })
 export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   private readonly geo = inject(GeocodificacionService);
+  private readonly ruteo = inject(RuteoService);
 
   readonly origenLatitud = input<number | null>(null);
   readonly origenLongitud = input<number | null>(null);
@@ -52,6 +56,8 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   readonly origenCambio = output<Coordenadas | null>();
   readonly destinoCambio = output<Coordenadas | null>();
   readonly distanciaKm = output<number | null>();
+  /** true mientras se está calculando la ruta por carretera (para bloquear el envío). */
+  readonly calculandoRuta = output<boolean>();
   readonly nombreOrigen = output<string>();
   readonly nombreDestino = output<string>();
 
@@ -60,21 +66,30 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   readonly texto = signal('');
   readonly buscando = signal(false);
   readonly resultados = signal<Lugar[]>([]);
+  /** true cuando los km son los de la carretera; false si son la línea recta de respaldo. */
+  readonly porCarretera = signal(false);
+  readonly calculando = signal(false);
 
   @ViewChild('contenedor', { static: true }) private contenedor!: ElementRef<HTMLDivElement>;
   private mapa?: L.Map;
   private marcadorOrigen?: L.Marker;
   private marcadorDestino?: L.Marker;
   private linea?: L.Polyline;
+  private lineaRuta?: L.Polyline;
   private observador?: ResizeObserver;
+  private peticion?: Subscription;
+  private generacion = 0;
   private origenActual: Par | null = null;
   private destinoActual: Par | null = null;
 
   constructor() {
     // Si la página cambia las coordenadas (por ejemplo, al limpiar el formulario), se redibuja.
+    // Cuando el cambio viene de este mismo mapa (clic o arrastre) ya está dibujado: no se toca,
+    // para no borrar la ruta por carretera que acaba de llegar.
     effect(() => {
       const origen = this.punto(this.origenLatitud(), this.origenLongitud());
       const destino = this.punto(this.destinoLatitud(), this.destinoLongitud());
+      if (this.mismos(origen, this.origenActual) && this.mismos(destino, this.destinoActual)) return;
       this.dibujar(origen, destino, false);
     });
   }
@@ -91,6 +106,7 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
       this.punto(this.destinoLatitud(), this.destinoLongitud()),
       true,
     );
+    this.avisarDistancia();
 
     // El mapa puede vivir dentro de un modal: se reajusta al cambiar de tamaño.
     this.observador = new ResizeObserver(() => this.mapa?.invalidateSize());
@@ -98,6 +114,8 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.generacion++;
+    this.peticion?.unsubscribe();
     this.observador?.disconnect();
     this.mapa?.remove();
   }
@@ -133,9 +151,14 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   }
 
   limpiar(): void {
+    this.generacion++;
+    this.peticion?.unsubscribe();
     this.dibujar(null, null, false);
     this.modo.set('ORIGEN');
     this.distancia.set(null);
+    this.porCarretera.set(false);
+    this.calculando.set(false);
+    this.calculandoRuta.emit(false);
     this.texto.set('');
     this.resultados.set([]);
     this.origenCambio.emit(null);
@@ -157,9 +180,11 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
     const punto: Par = [seisDecimales(original[0]), seisDecimales(original[1])];
     if (tipo === 'ORIGEN') {
       this.origenActual = punto;
+      this.marcadorOrigen = this.colocarMarcador(this.marcadorOrigen, punto, 'ORIGEN');
       this.origenCambio.emit(this.coordenadas(punto));
     } else {
       this.destinoActual = punto;
+      this.marcadorDestino = this.colocarMarcador(this.marcadorDestino, punto, 'DESTINO');
       this.destinoCambio.emit(this.coordenadas(punto));
     }
     this.actualizarLinea();
@@ -213,7 +238,7 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
       iconSize: [26, 26],
       iconAnchor: [13, 13],
     });
-    const marcador = L.marker(punto, { icon: icono, draggable: true }).addTo(this.mapa);
+    const marcador = L.marker(punto, { icon: icono, draggable: true, zIndexOffset: 1000 }).addTo(this.mapa);
     marcador.on('dragend', () => {
       const movido = this.redondear(marcador.getLatLng());
       this.fijar(movido, tipo);
@@ -224,6 +249,7 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
 
   private actualizarLinea(): void {
     if (!this.mapa) return;
+    this.quitarLineaRuta();
     if (this.origenActual && this.destinoActual) {
       const puntos = [this.origenActual, this.destinoActual] as L.LatLngTuple[];
       if (this.linea) {
@@ -237,12 +263,64 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Calcula los km del recorrido. Primero emite la distancia en línea recta para que el formulario
+   * nunca quede vacío y, cuando el ruteo responde, la reemplaza por la distancia real por carretera
+   * y dibuja esa geometría. Si el servicio falla, se queda la línea recta como respaldo.
+   */
   private avisarDistancia(): void {
-    const km = this.origenActual && this.destinoActual
-      ? this.haversine(this.origenActual, this.destinoActual)
-      : null;
-    this.distancia.set(km);
-    this.distanciaKm.emit(km);
+    this.generacion++;
+    const generacion = this.generacion;
+    this.peticion?.unsubscribe();
+    this.quitarLineaRuta();
+    this.porCarretera.set(false);
+
+    const origen = this.origenActual;
+    const destino = this.destinoActual;
+    if (!origen || !destino) {
+      this.distancia.set(null);
+      this.distanciaKm.emit(null);
+      this.calculando.set(false);
+      this.calculandoRuta.emit(false);
+      return;
+    }
+
+    const recta = this.haversine(origen, destino);
+    this.distancia.set(recta);
+    this.distanciaKm.emit(recta);
+    this.calculando.set(true);
+    this.calculandoRuta.emit(true);
+
+    this.peticion = this.ruteo.calcular(this.coordenadas(origen), this.coordenadas(destino)).subscribe((ruta) => {
+      if (generacion !== this.generacion) return;
+      this.calculando.set(false);
+      this.calculandoRuta.emit(false);
+      if (!ruta) return;
+
+      this.distancia.set(Math.round(ruta.kilometros * 10) / 10);
+      // El backend acepta como máximo 2 decimales en los km estimados.
+      this.distanciaKm.emit(ruta.kilometros);
+      this.porCarretera.set(true);
+      this.mostrarLineaRuta(ruta.puntos);
+    });
+  }
+
+  /** Dibuja el recorrido real por carretera y oculta la línea recta de respaldo. */
+  private mostrarLineaRuta(puntos: [number, number][]): void {
+    if (!this.mapa) return;
+    this.quitarLineaRuta();
+    if (this.linea) {
+      this.mapa.removeLayer(this.linea);
+      this.linea = undefined;
+    }
+    this.lineaRuta = L.polyline(puntos, { color: COLOR_RUTA, weight: 5 }).addTo(this.mapa);
+    this.mapa.attributionControl.addAttribution('Ruta: © OSRM · © OpenStreetMap');
+  }
+
+  private quitarLineaRuta(): void {
+    if (!this.lineaRuta) return;
+    this.mapa?.removeLayer(this.lineaRuta);
+    this.lineaRuta = undefined;
   }
 
   private punto(latitud: number | null, longitud: number | null): Par | null {
@@ -250,6 +328,11 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
       return null;
     }
     return [latitud, longitud];
+  }
+
+  private mismos(a: Par | null, b: Par | null): boolean {
+    if (!a || !b) return a === b;
+    return a[0] === b[0] && a[1] === b[1];
   }
 
   private redondear(latlng: L.LatLng): Par {

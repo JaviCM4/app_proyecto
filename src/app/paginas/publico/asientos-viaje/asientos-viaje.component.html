@@ -6,6 +6,18 @@
     <p class="error">{{ error() }}</p>
   } @else {
     @if (mapa(); as m) {
+      @if (recorrido(); as r) {
+        <div class="recorrido-compra">
+          <app-mapa-recorrido
+            [origenLatitud]="r.origen.latitud"
+            [origenLongitud]="r.origen.longitud"
+            [destinoLatitud]="r.destino.latitud"
+            [destinoLongitud]="r.destino.longitud"
+            [origen]="viaje()?.origenNombre ?? 'Origen'"
+            [destino]="viaje()?.destinoNombre ?? 'Destino'"
+            [alto]="190" />
+        </div>
+      }
       <div class="compra-grid">
         <div class="compra-info">
           <p><strong>Salida</strong><br />{{ m.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</p>

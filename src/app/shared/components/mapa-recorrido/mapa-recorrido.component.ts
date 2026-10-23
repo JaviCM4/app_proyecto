@@ -1,5 +1,7 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, input } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, computed, inject, input } from '@angular/core';
+import { Subscription } from 'rxjs';
 import * as L from 'leaflet';
+import { RuteoService } from '../../../core/services/ruteo.service';
 import { agregarCapaBase } from '../../utils/capa-base-mapa';
 
 const CENTRO_GT: L.LatLngTuple = [15.6, -90.25];
@@ -12,8 +14,10 @@ export interface Coordenadas {
 }
 
 /**
- * Mapa de solo lectura con el recorrido de un alquiler: origen (O, verde) y destino (D, rojo)
- * unidos por una línea. Si el cliente no marcó las coordenadas (solicitudes viejas), avisa.
+ * Mapa de solo lectura con el recorrido de un alquiler o de un viaje: origen (O, verde) y
+ * destino (D, rojo). Primero dibuja la línea recta punteada y, cuando el servicio de ruteo
+ * responde, la reemplaza por el recorrido real por carretera. Si el servicio falla, la línea
+ * recta se queda como respaldo. Si no hay coordenadas (solicitudes viejas), avisa.
  */
 @Component({
   selector: 'app-mapa-recorrido',
@@ -22,6 +26,8 @@ export interface Coordenadas {
   styleUrl: './mapa-recorrido.component.scss',
 })
 export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
+  private readonly ruteo = inject(RuteoService);
+
   readonly origenLatitud = input<number | null>(null);
   readonly origenLongitud = input<number | null>(null);
   readonly destinoLatitud = input<number | null>(null);
@@ -37,7 +43,10 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('contenedor', { static: true }) private contenedor!: ElementRef<HTMLDivElement>;
   private mapa?: L.Map;
+  private linea?: L.Polyline;
   private observador?: ResizeObserver;
+  private peticion?: Subscription;
+  private puntosRuta: L.LatLngTuple[] | null = null;
 
   ngAfterViewInit(): void {
     const origen = this.punto(this.origenLatitud(), this.origenLongitud());
@@ -54,7 +63,9 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
     if (origen) this.marcador(origen, 'O', 'pin-origen');
     if (destino) this.marcador(destino, 'D', 'pin-destino');
     if (origen && destino) {
-      L.polyline([origen, destino], { color: COLOR_RUTA, weight: 4, dashArray: '7 6' }).addTo(this.mapa);
+      this.linea = L.polyline([origen, destino], { color: COLOR_RUTA, weight: 4, dashArray: '7 6' })
+        .addTo(this.mapa);
+      this.trazarPorCarretera(origen, destino);
     }
     this.encuadrar(origen, destino);
 
@@ -68,10 +79,26 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
     this.observador.observe(this.contenedor.nativeElement);
   }
 
-  /** Muestra los dos puntos con margen, o el único que haya con zoom de ciudad. */
+  /** Pide la ruta real por carretera y reemplaza la línea recta cuando llega. */
+  private trazarPorCarretera(origen: L.LatLngTuple, destino: L.LatLngTuple): void {
+    this.peticion = this.ruteo
+      .calcular(this.coordenadas(origen), this.coordenadas(destino))
+      .subscribe((ruta) => {
+        if (!ruta || !this.mapa) return;
+        this.puntosRuta = ruta.puntos;
+        if (this.linea) this.mapa.removeLayer(this.linea);
+        this.linea = L.polyline(ruta.puntos, { color: COLOR_RUTA, weight: 5 }).addTo(this.mapa);
+        this.mapa.attributionControl.addAttribution('Ruta: © OSRM · © OpenStreetMap');
+        this.encuadrar(origen, destino);
+      });
+  }
+
+  /** Muestra el recorrido completo con margen, o el único punto que haya con zoom de ciudad. */
   private encuadrar(origen: L.LatLngTuple | null, destino: L.LatLngTuple | null): void {
     if (!this.mapa) return;
-    if (origen && destino) {
+    if (this.puntosRuta?.length) {
+      this.mapa.fitBounds(L.latLngBounds(this.puntosRuta).pad(0.12));
+    } else if (origen && destino) {
       this.mapa.fitBounds(L.latLngBounds(origen, destino).pad(0.35));
     } else if (origen ?? destino) {
       this.mapa.setView((origen ?? destino)!, 12);
@@ -79,6 +106,7 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.peticion?.unsubscribe();
     this.observador?.disconnect();
     this.mapa?.remove();
   }
@@ -90,7 +118,7 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
       iconSize: [26, 26],
       iconAnchor: [13, 13],
     });
-    L.marker(punto, { icon: icono, interactive: false }).addTo(this.mapa!);
+    L.marker(punto, { icon: icono, interactive: false, zIndexOffset: 1000 }).addTo(this.mapa!);
   }
 
   private hayCoordenadas(latitud: number | null, longitud: number | null): boolean {
@@ -102,5 +130,9 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
       return null;
     }
     return [latitud, longitud];
+  }
+
+  private coordenadas([latitud, longitud]: L.LatLngTuple): Coordenadas {
+    return { latitud, longitud };
   }
 }
