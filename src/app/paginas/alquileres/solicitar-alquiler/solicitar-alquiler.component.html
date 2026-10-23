@@ -116,6 +116,7 @@
         (origenCambio)="alCambiarOrigen($event)"
         (destinoCambio)="alCambiarDestino($event)"
         (distanciaKm)="alCambiarDistancia($event)"
+        (calculandoRuta)="calculandoKm.set($event)"
         (nombreOrigen)="alSugerirOrigen($event)"
         (nombreDestino)="alSugerirDestino($event)" />
       <p class="ayuda">
@@ -172,7 +173,7 @@
         <label for="km">Kilómetros estimados</label>
         <input id="km" type="number" class="control solo-lectura" formControlName="kmEstimados" readonly
                placeholder="Se calcula con el mapa" />
-        <span class="ayuda">Se calcula con la distancia en línea recta del recorrido marcado.</span>
+        <span class="ayuda">Se calcula con la distancia del recorrido por carretera; si el servicio no responde, en línea recta.</span>
         @if (form.controls.kmEstimados.touched && form.controls.kmEstimados.invalid) {
           <span class="error">Marca el origen y el destino para calcular los kilómetros.</span>
         }
@@ -180,8 +181,8 @@
     </div>
 
     <div class="acciones-form">
-      <button type="submit" class="btn primario" [disabled]="enviando()">
-        {{ enviando() ? 'Enviando…' : 'Enviar solicitud' }}
+      <button type="submit" class="btn primario" [disabled]="enviando() || calculandoKm()">
+        {{ enviando() ? 'Enviando…' : (calculandoKm() ? 'Calculando ruta…' : 'Enviar solicitud') }}
       </button>
     </div>
   </form>

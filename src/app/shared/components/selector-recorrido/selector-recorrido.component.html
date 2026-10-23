@@ -42,8 +42,11 @@
       Busca un lugar o haz clic en el mapa para marcar el origen y luego el destino.
     } @else if (!destinoLatitud()) {
       Origen marcado. Ahora marca el destino.
+    } @else if (calculando()) {
+      Calculando el recorrido por carretera…
     } @else if (distancia() !== null) {
-      Recorrido marcado: {{ distancia() | number: '1.0-1' }} km en línea recta.
+      Recorrido marcado: {{ distancia() | number: '1.0-1' }} km
+      {{ porCarretera() ? 'por carretera' : 'en línea recta (no se pudo calcular la carretera)' }}.
       Puedes arrastrar los marcadores o buscar un lugar para ajustarlo.
     }
   </p>
