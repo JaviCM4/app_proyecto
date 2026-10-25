@@ -1,4 +1,4 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -9,6 +9,7 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
+import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -20,7 +21,16 @@ type FiltroActiva = 'todas' | 'activas' | 'inactivas';
 @Component({
   selector: 'app-rutas',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, CurrencyPipe, ModalComponent, ConfirmacionComponent, PaginadorComponent],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    CurrencyPipe,
+    DecimalPipe,
+    ModalComponent,
+    ConfirmacionComponent,
+    PaginadorComponent,
+    MapaRecorridoComponent,
+  ],
   templateUrl: './rutas.component.html',
   styleUrl: './rutas.component.scss',
 })
@@ -48,6 +58,8 @@ export class RutasComponent implements OnInit {
   readonly porEliminar = signal<Ruta | null>(null);
   readonly enviando = signal(false);
   readonly eliminando = signal(false);
+  /** Distancia real por carretera del recorrido dibujado (referencia para el campo de km). */
+  readonly distanciaMapa = signal<number | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     sucursalOrigenId: ['', Validators.required],
@@ -114,7 +126,27 @@ export class RutasComponent implements OnInit {
     return this.sucursales().find((s) => s.sucursalId === id)?.nombre ?? '';
   }
 
+  /** Sucursal de origen del formulario (aunque el control esté deshabilitado). */
+  origenSucursal(): Sucursal | null {
+    const id = this.form.getRawValue().sucursalOrigenId;
+    return this.sucursales().find((s) => s.sucursalId === id) ?? null;
+  }
+
+  /** Sucursal de destino del formulario (aunque el control esté deshabilitado). */
+  destinoSucursal(): Sucursal | null {
+    const id = this.form.getRawValue().sucursalDestinoId;
+    return this.sucursales().find((s) => s.sucursalId === id) ?? null;
+  }
+
+  /** Copia los km del recorrido del mapa al campo de distancia (el admin puede ajustarlos). */
+  usarDistanciaMapa(): void {
+    const km = this.distanciaMapa();
+    if (km === null) return;
+    this.form.controls.distanciaKm.setValue(Math.round(km * 100) / 100);
+  }
+
   abrirNueva(): void {
+    this.distanciaMapa.set(null);
     this.form.reset({
       sucursalOrigenId: this.sucursalId(),
       sucursalDestinoId: '',
@@ -128,6 +160,7 @@ export class RutasComponent implements OnInit {
   }
 
   abrirEditar(r: Ruta): void {
+    this.distanciaMapa.set(null);
     this.form.reset({
       sucursalOrigenId: r.sucursalOrigenId,
       sucursalDestinoId: r.sucursalDestinoId,

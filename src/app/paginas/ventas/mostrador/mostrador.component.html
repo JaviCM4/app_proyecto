@@ -66,22 +66,11 @@
       · Salida: {{ venta.viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}
       · Total: {{ venta.montoTotal | currency }}
     </p>
-    <div class="tabla-contenedor">
-      <table class="tabla">
-        <thead>
-          <tr><th>Boleto</th><th>Asiento</th><th class="acciones">Precio</th></tr>
-        </thead>
-        <tbody>
-          @for (b of venta.boletos; track b.boletoId) {
-            <tr>
-              <td class="secundario">{{ b.boletoId }}</td>
-              <td><strong>{{ b.numeroAsiento }}</strong></td>
-              <td class="acciones">{{ b.precio | currency }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <app-ticket-boleto [venta]="venta" />
+    <p class="secundario">
+      Entrega el boleto impreso al pasajero. Para reimprimirlo después, búscalo en
+      <strong>Ventas → Ver / Imprimir</strong>.
+    </p>
     <button type="button" class="btn chico" (click)="nuevaVenta()">Nueva venta</button>
   </div>
 }
@@ -131,6 +120,19 @@
   @if (cargandoMapa()) {
     <p class="secundario">Cargando asientos…</p>
   } @else {
+    @if (recorrido(); as r) {
+      <div class="recorrido-venta">
+        <app-mapa-recorrido
+          [origenLatitud]="r.origen.latitud"
+          [origenLongitud]="r.origen.longitud"
+          [destinoLatitud]="r.destino.latitud"
+          [destinoLongitud]="r.destino.longitud"
+          [origen]="viajeElegido()?.origenNombre ?? 'Origen'"
+          [destino]="viajeElegido()?.destinoNombre ?? 'Destino'"
+          [alto]="190"
+          mensajeVacio="El recorrido de este viaje no tiene coordenadas válidas." />
+      </div>
+    }
     <app-selector-asientos
       [mapa]="mapa()"
       [maximo]="10"
@@ -143,6 +145,7 @@
         <div class="campo">
           <label for="nit">NIT del cliente (opcional)</label>
           <input id="nit" class="control" formControlName="clienteNit" placeholder="CF o NIT" />
+          <small class="ayuda">Si el pasajero tiene cuenta, su NIT vincula el boleto a Mis boletos.</small>
         </div>
         <div class="campo crece">
           <label for="nombre">Nombre del cliente (opcional)</label>

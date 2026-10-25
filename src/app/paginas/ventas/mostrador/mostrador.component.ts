@@ -3,23 +3,33 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { Venta } from '../../../core/models/venta.model';
-import { MapaAsientos, Viaje } from '../../../core/models/viaje.model';
+import { MapaAsientos, Ruta, Viaje } from '../../../core/models/viaje.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
+import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { SelectorAsientosComponent } from '../../../shared/components/selector-asientos/selector-asientos.component';
+import { TicketBoletoComponent } from '../../../shared/components/ticket-boleto/ticket-boleto.component';
 import { ToastService } from '../../../shared/services/toast.service';
-import { Ruta } from '../../../core/models/viaje.model';
 
 /** Venta en mostrador: buscar viaje, elegir asientos y cobrar en efectivo (confirmada al instante). */
 @Component({
   selector: 'app-mostrador',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, CurrencyPipe, DatePipe, ModalComponent, SelectorAsientosComponent],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    CurrencyPipe,
+    DatePipe,
+    ModalComponent,
+    SelectorAsientosComponent,
+    MapaRecorridoComponent,
+    TicketBoletoComponent,
+  ],
   templateUrl: './mostrador.component.html',
   styleUrl: './mostrador.component.scss',
 })
@@ -68,6 +78,8 @@ export class MostradorComponent implements OnInit {
 
   /** Rutas que salen de la sucursal (para el combo de destino). */
   private readonly rutasOrigen = signal<Ruta[]>([]);
+  /** Todas las rutas activas: permiten resolver las coordenadas del viaje elegido para el mapa. */
+  private readonly rutas = signal<Ruta[]>([]);
 
   /** Destinos con salida desde la sucursal (para el combo). */
   readonly destinos = computed(() => {
@@ -84,6 +96,17 @@ export class MostradorComponent implements OnInit {
   );
 
   readonly total = computed(() => this.asientosElegidos().length * (this.mapa()?.precioBoleto ?? 0));
+
+  /** Coordenadas de las sucursales del viaje elegido, para el mapa del recorrido. */
+  readonly recorrido = computed(() => {
+    const viaje = this.viajeElegido();
+    if (!viaje?.rutaId) return null;
+    const ruta = this.rutas().find((r) => r.rutaId === viaje.rutaId);
+    if (!ruta) return null;
+    const origen = this.sucursales().find((s) => s.sucursalId === ruta.sucursalOrigenId);
+    const destino = this.sucursales().find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    return origen && destino ? { origen, destino } : null;
+  });
 
   ngOnInit(): void {
     // Destinos y nombre de origen: todos ven las sucursales (consulta pública).
@@ -104,16 +127,18 @@ export class MostradorComponent implements OnInit {
     this.buscar();
   }
 
-  /** Rutas que salen de la sucursal elegida (para el combo de destino). */
+  /** Rutas que salen de la sucursal elegida (para el combo de destino) y todas para el mapa. */
   private cargarRutas(): void {
     const origen = this.sucursalId();
-    if (!origen) {
-      this.rutasOrigen.set([]);
-      return;
-    }
     this.viajesServicio.rutas(true).subscribe({
-      next: (todas) => this.rutasOrigen.set(todas.filter((r) => r.sucursalOrigenId === origen)),
-      error: () => this.rutasOrigen.set([]),
+      next: (todas) => {
+        this.rutas.set(todas);
+        this.rutasOrigen.set(origen ? todas.filter((r) => r.sucursalOrigenId === origen) : []);
+      },
+      error: () => {
+        this.rutas.set([]);
+        this.rutasOrigen.set([]);
+      },
     });
   }
 

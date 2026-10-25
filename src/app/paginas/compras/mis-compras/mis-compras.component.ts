@@ -1,15 +1,15 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Historial, Venta, VentaHistorial } from '../../../core/models/venta.model';
+import { Boleto, Historial, Venta, VentaHistorial } from '../../../core/models/venta.model';
 import { VentasService } from '../../../core/services/ventas.service';
 import { mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { TicketBoletoComponent } from '../../../shared/components/ticket-boleto/ticket-boleto.component';
 import { CANAL_VENTA, ESTADO_VENTA, textoViaje } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
-import { descargarBoletoPdf } from '../../../shared/utils/boleto-pdf';
 import { paginar } from '../../../shared/utils/paginacion';
 
 /** Clave de un viaje en el historial (el historial no trae el id del viaje). */
@@ -21,7 +21,7 @@ function claveViaje(v: VentaHistorial): string {
 @Component({
   selector: 'app-mis-compras',
   standalone: true,
-  imports: [FormsModule, PaginadorComponent, ModalComponent, DatePipe, CurrencyPipe],
+  imports: [FormsModule, PaginadorComponent, ModalComponent, TicketBoletoComponent, DatePipe, CurrencyPipe],
   templateUrl: './mis-compras.component.html',
   styleUrl: './mis-compras.component.scss',
 })
@@ -36,6 +36,7 @@ export class MisComprasComponent implements OnInit {
   /** Boleto abierto como ticket (detalle completo). */
   readonly ticket = signal<Venta | null>(null);
   readonly cargandoTicket = signal(false);
+  @ViewChild(TicketBoletoComponent) private ticketComp?: TicketBoletoComponent;
 
   readonly estadoVenta = ESTADO_VENTA;
   readonly canalVenta = CANAL_VENTA;
@@ -85,8 +86,31 @@ export class MisComprasComponent implements OnInit {
     });
   }
 
-  /** Abre el boleto como ticket con todos sus datos. */
-  verTicket(ventaId: string): void {    this.ticket.set(null);
+  /**
+   * Abre el boleto como ticket con todos sus datos.
+   *
+   * El historial ya trae lo necesario para mostrarlo, así que se pinta de inmediato. Luego se
+   * intenta completar con el detalle de la venta (bus y precio por boleto). Si el backend no
+   * permite verlo (por ejemplo, una venta de mostrador anterior a que el cliente tuviera cuenta),
+   * se conserva el ticket del historial en lugar de dejar el modal vacío.
+   */
+  verTicket(ventaId: string): void {
+    const resumen = this.boletos().find((v) => v.ventaId === ventaId);
+    if (resumen) {
+      this.ticket.set(this.ventaDesdeHistorial(resumen));
+      this.cargandoTicket.set(false);
+      this.ventas.detalle(ventaId).subscribe({
+        next: (v) => {
+          if (this.ticket()?.ventaId === ventaId) this.ticket.set(v);
+        },
+        error: () => {
+          // El historial no trae la placa del bus; se mantiene el ticket básico.
+        },
+      });
+      return;
+    }
+
+    this.ticket.set(null);
     this.cargandoTicket.set(true);
     this.ventas.detalle(ventaId).subscribe({
       next: (v) => {
@@ -100,24 +124,49 @@ export class MisComprasComponent implements OnInit {
     });
   }
 
+  /** Convierte una fila del historial en una venta mínima para el ticket compartido. */
+  private ventaDesdeHistorial(v: VentaHistorial): Venta {
+    const precio = v.asientos.length ? v.montoTotal / v.asientos.length : v.montoTotal;
+    const boletos: Boleto[] = v.asientos.map((numeroAsiento, indice) => ({
+      boletoId: `${v.ventaId}-${indice}`,
+      numeroAsiento,
+      precio,
+      estado: 'EMITIDO',
+    }));
+    return {
+      ventaId: v.ventaId,
+      viajeId: '',
+      canal: v.canal,
+      clienteNit: this.historial()?.nit ?? null,
+      clienteNombre: this.historial()?.nombre ?? null,
+      sucursalId: '',
+      metodoPago: null,
+      montoTotal: v.montoTotal,
+      fechaPago: v.fechaPago,
+      fechaRegistro: null,
+      estado: v.estado,
+      motivoRechazo: null,
+      motivoCancelacion: null,
+      fechaCancelacion: null,
+      boletos,
+      viaje: {
+        origenNombre: v.origenNombre ?? '',
+        destinoNombre: v.destinoNombre ?? '',
+        fechaSalida: v.fechaSalida ?? '',
+        busPlaca: null,
+        precioBoleto: precio,
+      },
+      version: 0,
+    };
+  }
+
   /** Imprime el ticket (el diálogo permite guardarlo como PDF). */
   imprimir(): void {
-    window.print();
+    this.ticketComp?.imprimir();
   }
 
   /** Descarga el boleto en PDF con la misma imagen del ticket. */
   async descargarPdf(): Promise<void> {
-    const t = this.ticket();
-    if (!t) return;
-    try {
-      await descargarBoletoPdf(t);
-      this.avisos.exito('Boleto descargado en PDF.');
-    } catch {
-      this.avisos.error('No se pudo generar el PDF. Usa Imprimir.');
-    }
-  }
-
-  asientosTicket(t: Venta): string {
-    return t.boletos.map((b) => b.numeroAsiento).join(', ');
+    await this.ticketComp?.descargarPdf();
   }
 }

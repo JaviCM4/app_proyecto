@@ -1,1 +1,10 @@
 /* Estilos propios de la página de rutas (los generales viven en styles.scss). */
+
+.distancia-mapa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}

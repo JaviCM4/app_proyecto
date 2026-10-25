@@ -116,7 +116,7 @@
             <span class="insignia" [class]="'insignia ' + estadoVenta[v.estado].clase">{{ estadoVenta[v.estado].texto }}</span>
           </td>
           <td class="acciones">
-            <button type="button" class="btn chico" (click)="verDetalle(v)">Ver</button>
+            <button type="button" class="btn chico" (click)="verDetalle(v)">Ver / Imprimir</button>
             @if (puedeCancelar && v.estado === 'CONFIRMADA') {
               <button type="button" class="btn chico peligro" (click)="abrirCancelar(v)">Cancelar</button>
             }
@@ -162,7 +162,7 @@
     <div class="tabla-contenedor">
       <table class="tabla">
         <thead>
-          <tr><th>Viaje</th><th>Asientos</th><th>Total</th><th>Estado</th></tr>
+          <tr><th>Viaje</th><th>Asientos</th><th>Total</th><th>Estado</th><th class="acciones">Acciones</th></tr>
         </thead>
         <tbody>
           @for (v of h.ventas; track v.ventaId) {
@@ -174,9 +174,12 @@
               <td>{{ v.asientos.join(', ') || '—' }}</td>
               <td>{{ v.montoTotal | currency }}</td>
               <td><span [class]="'insignia ' + estadoVenta[v.estado].clase">{{ estadoVenta[v.estado].texto }}</span></td>
+              <td class="acciones">
+                <button type="button" class="btn chico" (click)="verDetallePorId(v.ventaId)">Ver / Imprimir</button>
+              </td>
             </tr>
           } @empty {
-            <tr><td colspan="4" class="tabla-vacia">Sin ventas para ese NIT.</td></tr>
+            <tr><td colspan="5" class="tabla-vacia">Sin ventas para ese NIT.</td></tr>
           }
         </tbody>
       </table>
@@ -208,10 +211,10 @@
 }
 
 <app-modal
-  [abierto]="enDetalle() !== null"
+  [abierto]="detalleId() !== null"
   titulo="Detalle de la venta"
   ancho="grande"
-  (cerrar)="enDetalle.set(null)">
+  (cerrar)="cerrarDetalle()">
   @if (cargandoDetalle()) {
     <p class="secundario">Cargando detalle…</p>
   } @else {
@@ -236,6 +239,9 @@
       @if (d.motivoCancelacion) {
         <p class="secundario">Motivo de cancelación: {{ d.motivoCancelacion }} ({{ d.fechaCancelacion | date: 'short' }})</p>
       }
+      <h3>Boleto para imprimir</h3>
+      <app-ticket-boleto [venta]="d" />
+      <h3>Boletos emitidos</h3>
       <div class="tabla-contenedor">
         <table class="tabla">
           <thead>
@@ -260,7 +266,9 @@
       @if (puedeCancelar && e.estado === 'CONFIRMADA') {
         <button type="button" class="btn chico peligro" (click)="abrirCancelar(e)">Cancelar venta</button>
       }
-      <button type="button" class="btn chico" (click)="enDetalle.set(null)">Cerrar</button>
+      <button type="button" class="btn chico" (click)="cerrarDetalle()">Cerrar</button>
+    } @else if (cargandoDetalle()) {
+      <button type="button" class="btn chico" (click)="cerrarDetalle()">Cerrar</button>
     }
   </div>
 </app-modal>

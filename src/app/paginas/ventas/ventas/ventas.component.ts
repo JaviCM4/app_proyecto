@@ -18,6 +18,7 @@ import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { TicketBoletoComponent } from '../../../shared/components/ticket-boleto/ticket-boleto.component';
 import {
   CANAL_VENTA,
   ESTADO_ORDEN_ALQUILER,
@@ -46,6 +47,7 @@ type Pestana = 'ventas' | 'historial';
     ModalComponent,
     ConfirmacionComponent,
     PaginadorComponent,
+    TicketBoletoComponent,
   ],
   templateUrl: './ventas.component.html',
   styleUrl: './ventas.component.scss',
@@ -90,6 +92,8 @@ export class VentasComponent implements OnInit {
   readonly tamano = signal(10);
 
   readonly enDetalle = signal<Venta | null>(null);
+  /** Venta cuyo detalle está abierto (permite abrirlo también desde el historial por NIT). */
+  readonly detalleId = signal<string | null>(null);
   readonly cargandoDetalle = signal(false);
 
   /** Venta en proceso de cancelación (abre el modal con motivo y fecha). */
@@ -230,6 +234,7 @@ export class VentasComponent implements OnInit {
   }
 
   verDetalle(v: Venta): void {
+    this.detalleId.set(v.ventaId);
     this.cargandoDetalle.set(true);
     this.enDetalle.set(v);
     this.servicio.detalle(v.ventaId).subscribe({
@@ -240,8 +245,33 @@ export class VentasComponent implements OnInit {
       error: (e) => {
         this.cargandoDetalle.set(false);
         this.avisos.error(mensajeError(e, 'No se pudo cargar el detalle de la venta.'));
+        if (!this.enDetalle()?.viaje) this.cerrarDetalle();
       },
     });
+  }
+
+  /** Abre el detalle (y el boleto reimprimible) desde el historial por NIT. */
+  verDetallePorId(ventaId: string): void {
+    this.detalleId.set(ventaId);
+    this.cargandoDetalle.set(true);
+    this.enDetalle.set(null);
+    this.servicio.detalle(ventaId).subscribe({
+      next: (detalle) => {
+        this.cargandoDetalle.set(false);
+        this.enDetalle.set(detalle);
+      },
+      error: (e) => {
+        this.cargandoDetalle.set(false);
+        this.avisos.error(mensajeError(e, 'No se pudo cargar el detalle de la venta.'));
+        this.cerrarDetalle();
+      },
+    });
+  }
+
+  cerrarDetalle(): void {
+    this.detalleId.set(null);
+    this.enDetalle.set(null);
+    this.cargandoDetalle.set(false);
   }
 
   abrirCancelar(v: Venta): void {
@@ -270,7 +300,12 @@ export class VentasComponent implements OnInit {
           this.ventas.update((lista) =>
             lista.map((x) => (x.ventaId === actualizada.ventaId ? actualizada : x)),
           );
-          if (this.enDetalle()?.ventaId === actualizada.ventaId) this.enDetalle.set(actualizada);
+          if (this.enDetalle()?.ventaId === actualizada.ventaId) {
+            this.enDetalle.set({
+              ...actualizada,
+              viaje: actualizada.viaje ?? this.enDetalle()?.viaje ?? null,
+            });
+          }
           this.avisos.exito('Venta cancelada.');
           this.cancelando.set(false);
           this.porCancelar.set(null);

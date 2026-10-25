@@ -1,0 +1,37 @@
+<div #ticket class="ticket-imprimible">
+  <div class="ticket-principal">
+    <p class="ticket-fecha-top">
+      SALIDA · {{ venta().viaje?.fechaSalida ? (venta().viaje?.fechaSalida | date: 'MMMM yyyy' : zona) : '—' }}
+    </p>
+    <p class="ticket-ruta">
+      {{ venta().viaje?.origenNombre || '—' }} → {{ venta().viaje?.destinoNombre || '—' }}
+    </p>
+    <p class="ticket-hora">
+      {{ venta().viaje?.fechaSalida ? (venta().viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }}
+      @if (venta().viaje?.busPlaca) {
+        · Bus {{ venta().viaje?.busPlaca }}
+      }
+    </p>
+    <div class="ticket-cajas">
+      <div><span>Asientos</span><strong>{{ asientos() || '—' }}</strong></div>
+      <div><span>Total</span><strong>{{ venta().montoTotal | currency }}</strong></div>
+      <div><span>Pasajero</span><strong>{{ venta().clienteNombre || pasajero() || '—' }}</strong></div>
+      <div><span>Estado</span><strong>{{ estadoVenta[venta().estado].texto }}</strong></div>
+    </div>
+    <p class="ticket-nota">
+      NIT {{ venta().clienteNit || 'CF' }} · Presenta este código al abordar. Llega 30 minutos antes.
+    </p>
+  </div>
+  <div class="ticket-talon">
+    <div class="codigo-barras"></div>
+    <p class="ticket-codigo">{{ venta().ventaId }}</p>
+    <p class="ticket-codigo-titulo">CÓDIGO</p>
+  </div>
+</div>
+
+@if (mostrarAcciones()) {
+  <div class="ticket-acciones">
+    <button type="button" class="btn primario chico" (click)="descargarPdf()">Descargar PDF</button>
+    <button type="button" class="btn chico" (click)="imprimir()">Imprimir</button>
+  </div>
+}
