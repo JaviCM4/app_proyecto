@@ -17,6 +17,8 @@ export interface Venta {
   canal: CanalVenta;
   clienteNit: string | null;
   clienteNombre: string | null;
+  /** Correo del cliente: si existe, Notification envía el comprobante de la compra. */
+  clienteCorreo: string | null;
   sucursalId: string;
   metodoPago: MetodoPago | null;
   montoTotal: number;

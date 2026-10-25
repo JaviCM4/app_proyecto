@@ -67,9 +67,16 @@
       · Total: {{ venta.montoTotal | currency }}
     </p>
     <app-ticket-boleto [venta]="venta" />
+    @if (venta.clienteCorreo; as correo) {
+      <p class="secundario">
+        El comprobante se envía a <strong>{{ correo }}</strong>. Puede tardar unos minutos; si no
+        llega, revisa que el correo esté bien escrito o entrega el boleto impreso.
+      </p>
+    } @else {
+      <p class="secundario">No se envió por correo: entrega el boleto impreso al pasajero.</p>
+    }
     <p class="secundario">
-      Entrega el boleto impreso al pasajero. Para reimprimirlo después, búscalo en
-      <strong>Ventas → Ver / Imprimir</strong>.
+      Para reimprimirlo después, búscalo en <strong>Ventas → Ver / Imprimir</strong>.
     </p>
     <button type="button" class="btn chico" (click)="nuevaVenta()">Nueva venta</button>
   </div>
@@ -156,6 +163,10 @@
         <div class="campo crece">
           <label for="correo">Correo del cliente (opcional)</label>
           <input id="correo" type="email" class="control" formControlName="clienteCorreo" placeholder="correo@ejemplo.com" />
+          <small class="ayuda">
+            Opcional: si lo escribes, el comprobante se envía a ese correo. Si lo dejas vacío, se usa
+            el correo de la cuenta del cliente (si tiene) o solo se imprime.
+          </small>
           @if (formVenta.controls.clienteCorreo.touched && formVenta.controls.clienteCorreo.errors?.['email']) {
             <small class="secundario">Escribe un correo válido.</small>
           }

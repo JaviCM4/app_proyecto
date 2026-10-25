@@ -200,6 +200,7 @@ export class MostradorComponent implements OnInit {
       return;
     }
     const f = this.formVenta.getRawValue();
+    const correo = (f.clienteCorreo ?? '').trim();
     this.vendiendo.set(true);
     this.ventasServicio
       .venderEnMostrador({
@@ -207,7 +208,7 @@ export class MostradorComponent implements OnInit {
         asientos: this.asientosElegidos(),
         clienteNit: f.clienteNit || null,
         clienteNombre: f.clienteNombre || null,
-        clienteCorreo: f.clienteCorreo || null,
+        clienteCorreo: correo || null,
         fechaPago: f.fechaPago ?? hoyGt(),
       })
       .subscribe({

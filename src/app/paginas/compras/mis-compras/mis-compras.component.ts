@@ -139,6 +139,7 @@ export class MisComprasComponent implements OnInit {
       canal: v.canal,
       clienteNit: this.historial()?.nit ?? null,
       clienteNombre: this.historial()?.nombre ?? null,
+      clienteCorreo: null,
       sucursalId: '',
       metodoPago: null,
       montoTotal: v.montoTotal,
