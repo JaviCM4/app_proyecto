@@ -94,15 +94,17 @@ export const REPORTES: Reporte[] = [
   },
   {
     codigo: 'rutas', nombre: 'Rutas más demandadas', ambito: 'sistema',
-    descripcion: 'Rutas ordenadas por boletos vendidos.',
-    ruta: () => '/rutas-demandadas', filtros: ['fechas', 'limite'],
+    descripcion: 'Rutas ordenadas por boletos netos. Sin filtro se incluyen todas las sucursales; puedes elegir una para comparar su reporte.',
+    ruta: () => '/rutas-demandadas', filtros: ['fechas', 'sucursal', 'limite'],
     columnas: [
       { clave: 'origen', etiqueta: 'Origen', formato: 'texto' },
       { clave: 'destino', etiqueta: 'Destino', formato: 'texto' },
-      { clave: 'boletos', etiqueta: 'Boletos', formato: 'numero' },
+      { clave: 'boletosVendidos', etiqueta: 'Vendidos', formato: 'numero' },
+      { clave: 'boletosCancelados', etiqueta: 'Cancelados', formato: 'numero' },
+      { clave: 'boletos', etiqueta: 'Netos', formato: 'numero' },
       { clave: 'ingresos', etiqueta: 'Ingresos', formato: 'dinero' },
     ],
-    totaliza: ['boletos', 'ingresos'],
+    totaliza: ['boletosVendidos', 'boletosCancelados', 'boletos', 'ingresos'],
     aplanar: (j) => lista(j),
   },
   {
