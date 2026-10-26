@@ -149,16 +149,46 @@
     </p>
     <form [formGroup]="formVenta" (ngSubmit)="vender()">
       <div class="filtros">
-        <div class="campo">
+        <div class="campo crece">
           <label for="nit">NIT del cliente (opcional)</label>
-          <input id="nit" class="control" formControlName="clienteNit" placeholder="CF o NIT" />
-          <small class="ayuda">Si el pasajero tiene cuenta, su NIT vincula el boleto a Mis boletos.</small>
+          <div class="fila-nit">
+            <input id="nit" class="control" formControlName="clienteNit" placeholder="CF o NIT"
+                   autocomplete="off" (keydown.enter)="$event.preventDefault(); buscarCliente()" />
+            <button type="button" class="btn chico" (click)="buscarCliente()" [disabled]="buscandoCliente()">
+              {{ buscandoCliente() ? 'Buscando…' : 'Buscar' }}
+            </button>
+          </div>
+          @if (clienteLigado(); as c) {
+            <p class="cliente-ligado">
+              Cuenta del sistema: <strong>{{ c.nombre }}</strong> · {{ c.nit }}
+              <button type="button" class="enlace" (click)="quitarCliente()">Quitar</button>
+            </p>
+            <small class="ayuda">El boleto le aparecerá en Mis boletos aunque pague en efectivo.</small>
+          } @else if (nitSinCuenta()) {
+            <p class="cliente-sin-cuenta">
+              Ese NIT no existe en el sistema. La venta queda a nombre de quien escribas, sin cuenta ligada.
+            </p>
+          } @else {
+            <small class="ayuda">Escribe el NIT y pulsa Buscar (o Enter) para traer los datos de su cuenta.</small>
+          }
         </div>
         <div class="campo crece">
           <label for="nombre">Nombre del cliente (opcional)</label>
           <input id="nombre" class="control" formControlName="clienteNombre" placeholder="Nombre y apellido" />
         </div>
       </div>
+      @if (sugerencias().length) {
+        <ul class="sugerencias-cliente">
+          @for (c of sugerencias(); track c.usuarioId) {
+            <li>
+              <button type="button" (click)="usarCliente(c)">
+                <strong>{{ c.nombre }}</strong>
+                <span class="secundario">NIT {{ c.nit }} · {{ c.correo }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
       <div class="filtros">
         <div class="campo crece">
           <label for="correo">Correo del cliente (opcional)</label>

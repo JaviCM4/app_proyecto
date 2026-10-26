@@ -188,8 +188,58 @@
   </div>
 </app-modal>
 
-<app-modal [abierto]="detalleVisible()" titulo="Detalle del viaje" ancho="mediano" (cerrar)="cerrarDetalle()"
+<app-modal [abierto]="detalleVisible()" titulo="Detalle del viaje" ancho="grande" (cerrar)="cerrarDetalle()"
            [subtitulo]="enDetalle() ? enDetalle()!.origenNombre + ' → ' + enDetalle()!.destinoNombre : ''">
+  <div class="pestanas" role="tablist">
+    <button type="button" role="tab" [class.activa]="pestanaViaje() === 'datos'"
+            [attr.aria-selected]="pestanaViaje() === 'datos'" (click)="pestanaViaje.set('datos')">
+      Detalles del viaje
+    </button>
+    <button type="button" role="tab" [class.activa]="pestanaViaje() === 'asientos'"
+            [attr.aria-selected]="pestanaViaje() === 'asientos'" (click)="pestanaViaje.set('asientos')">
+      Mapa de asientos
+    </button>
+    <button type="button" role="tab" [class.activa]="pestanaViaje() === 'mapa'"
+            [attr.aria-selected]="pestanaViaje() === 'mapa'" (click)="pestanaViaje.set('mapa')">
+      Ubicaciones
+    </button>
+  </div>
+
+  @if (pestanaViaje() === 'asientos') {
+    @if (cargandoAsientos()) {
+      <p class="secundario">Cargando el mapa de asientos…</p>
+    } @else {
+      @if (mapaAsientos(); as m) {
+        <p class="secundario">
+          {{ m.capacidad - m.disponibles }} de {{ m.capacidad }} asientos vendidos · {{ m.disponibles }} libres.
+        </p>
+        <app-selector-asientos [mapa]="m" [bloqueado]="true" [resumen]="false" />
+      } @else {
+        <p class="secundario">{{ sinAsientos() }}</p>
+      }
+    }
+  } @else if (pestanaViaje() === 'mapa') {
+    @if (recorrido(); as r) {
+      <p class="secundario">
+        <strong>{{ r.origen.nombre }}</strong> ({{ r.origen.municipio }}, {{ r.origen.departamento }})
+        → <strong>{{ r.destino.nombre }}</strong> ({{ r.destino.municipio }}, {{ r.destino.departamento }})
+        · {{ r.ruta.distanciaKm }} km de ruta
+      </p>
+      <app-mapa-recorrido
+        [origenLatitud]="r.origen.latitud"
+        [origenLongitud]="r.origen.longitud"
+        [destinoLatitud]="r.destino.latitud"
+        [destinoLongitud]="r.destino.longitud"
+        [origen]="r.origen.nombre"
+        [destino]="r.destino.nombre"
+        [alto]="340"
+        mensajeVacio="Las sucursales de esta ruta no tienen coordenadas registradas." />
+    } @else {
+      <p class="secundario">
+        Este viaje no tiene una ruta con sucursales registradas (los viajes privados van por alquiler).
+      </p>
+    }
+  } @else {
   @if (enDetalle(); as d) {
     <div class="detalle-viaje">
       <figure class="bus-mini">
@@ -235,6 +285,7 @@
     }
   } @else {
     <p class="secundario">Cargando detalle…</p>
+  }
   }
   <div pie>
     <button type="button" class="btn" (click)="cerrarDetalle()">Cerrar</button>

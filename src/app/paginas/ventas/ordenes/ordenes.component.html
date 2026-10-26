@@ -96,7 +96,7 @@
       <p class="secundario">
         {{ d.origen }} → {{ d.destino }} · Precio cotizado: {{ d.monto | currency }}
         @if (d.metodoPago) {
-          · {{ d.metodoPago }}
+          · Pagada con {{ metodoPago[d.metodoPago] }}
         }
         @if (d.fechaPago) {
           · Pagada: {{ d.fechaPago | date: 'short' }}
@@ -106,7 +106,7 @@
         Estado: <span [class]="'insignia ' + estadoOrden[d.estado].clase">{{ estadoTexto(d.estado) }}</span>
       </p>
       @if (d.motivoRechazo) {
-        <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>
+        <p class="secundario">Motivo del rechazo: {{ motivo(d.motivoRechazo) }}</p>
       }
     </div>
     }

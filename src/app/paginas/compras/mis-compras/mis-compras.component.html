@@ -75,19 +75,44 @@
   (cambioPagina)="pagina.set($event)"
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
 
-<app-modal [abierto]="ticket() !== null || cargandoTicket()" titulo="Boleto de viaje" (cerrar)="ticket.set(null)">
+<app-modal [abierto]="ticket() !== null || cargandoTicket()" titulo="Boleto de viaje" ancho="grande"
+           (cerrar)="cerrarTicket()">
+  <div class="pestanas" role="tablist">
+    <button type="button" role="tab" [class.activa]="pestanaBoleto() === 'boleto'"
+            [attr.aria-selected]="pestanaBoleto() === 'boleto'" (click)="pestanaBoleto.set('boleto')">
+      Boleto
+    </button>
+    <button type="button" role="tab" [class.activa]="pestanaBoleto() === 'asientos'"
+            [attr.aria-selected]="pestanaBoleto() === 'asientos'" (click)="pestanaBoleto.set('asientos')">
+      Tu asiento en el bus
+    </button>
+  </div>
+
   @if (cargandoTicket()) {
     <p class="secundario">Cargando boleto…</p>
+  } @else if (pestanaBoleto() === 'asientos') {
+    <p class="secundario">
+      Tus asientos: <strong>{{ misAsientos().join(', ') || '—' }}</strong>. El frente del bus es el del piloto.
+    </p>
+    @if (cargandoAsientos()) {
+      <p class="secundario">Cargando el mapa del bus…</p>
+    } @else {
+      @if (mapaAsientos(); as m) {
+        <app-selector-asientos [mapa]="m" [bloqueado]="true" [resumen]="false" [propios]="misAsientos()" />
+      } @else {
+        <p class="secundario">{{ sinAsientos() || 'El mapa del bus no está disponible.' }}</p>
+      }
+    }
   } @else {
     @if (ticket(); as t) {
       <app-ticket-boleto [venta]="t" [pasajero]="historial()?.nombre ?? null" [mostrarAcciones]="false" />
     }
   }
   <div pie>
-    @if (ticket()) {
+    @if (ticket() && pestanaBoleto() === 'boleto') {
       <button type="button" class="btn primario chico" (click)="descargarPdf()">Descargar PDF</button>
       <button type="button" class="btn chico" (click)="imprimir()">Imprimir</button>
     }
-    <button type="button" class="btn chico" (click)="ticket.set(null)">Cerrar</button>
+    <button type="button" class="btn chico" (click)="cerrarTicket()">Cerrar</button>
   </div>
 </app-modal>

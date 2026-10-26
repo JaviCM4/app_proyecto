@@ -26,6 +26,7 @@ import {
   ESTADO_VIAJE,
   METODO_PAGO,
   ordenarVentas,
+  textoMotivo,
   textoViaje,
 } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -73,6 +74,8 @@ export class VentasComponent implements OnInit {
   readonly metodoPago = METODO_PAGO;
   readonly estadoOrden = ESTADO_ORDEN_ALQUILER;
   readonly estadoViaje = ESTADO_VIAJE;
+  /** Los motivos de rechazo del backend son códigos: aquí se muestran en palabras. */
+  readonly motivo = textoMotivo;
 
   readonly pestana = signal<Pestana>('ventas');
   readonly zona = ZONA_GT;
@@ -228,7 +231,7 @@ export class VentasComponent implements OnInit {
     const cancelada = v.estado === 'CANCELADA' || v.estado === 'REEMBOLSADA' || v.estado === 'RECHAZADA';
     return {
       etiqueta: cancelada ? 'Viaje eliminado' : 'Sin información del viaje',
-      detalle: v.motivoCancelacion || v.motivoRechazo || '',
+      detalle: textoMotivo(v.motivoCancelacion) || textoMotivo(v.motivoRechazo),
     };
   }
 

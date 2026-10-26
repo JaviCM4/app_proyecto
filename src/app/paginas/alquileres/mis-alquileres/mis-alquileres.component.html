@@ -79,7 +79,7 @@
                 </button>
                 @if (orden.estado === 'RECHAZADA') {
                   <span class="aviso-error">
-                    {{ orden.motivoRechazo || 'El pago anterior fue rechazado.' }} Puedes intentarlo de nuevo.
+                    {{ motivo(orden.motivoRechazo, 'El pago anterior fue rechazado.') }} Puedes intentarlo de nuevo.
                   </span>
                 }
               } @else if (orden.estado === 'PAGADA') {
@@ -134,7 +134,7 @@
         @if (ordenDe(a); as orden) {
           @if (orden.estado === 'RECHAZADA') {
             <p class="aviso-error">
-              Pago rechazado: {{ orden.motivoRechazo || 'saldo insuficiente' }}.
+              Pago rechazado: {{ motivo(orden.motivoRechazo, 'no se pudo cobrar la billetera digital.') }}
               Puedes reintentarlo con el botón de abajo.
             </p>
           }

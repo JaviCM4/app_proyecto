@@ -21,8 +21,13 @@ export class SelectorAsientosComponent {
   readonly maximo = input(60);
   /** Muestra el encabezado con ruta y totales (apágalo si la página ya los muestra). */
   readonly resumen = input(true);
-  /** Solo ver (invitados): no deja elegir ningún asiento. */
+  /** Solo ver (invitados, o el pasajero mirando su boleto): no deja elegir ningún asiento. */
   readonly bloqueado = input(false);
+  /**
+   * Asientos del propio pasajero: se pintan en verde para que encuentre el suyo de un vistazo.
+   * Se usa en "Mis boletos", donde el mapa es solo para ubicarse dentro del bus.
+   */
+  readonly propios = input<number[]>([]);
   readonly seleccion = output<number[]>();
 
   private readonly elegidos = signal<number[]>([]);
@@ -46,6 +51,11 @@ export class SelectorAsientosComponent {
     }
     return filas;
   });
+
+  /** ¿Es uno de los asientos del pasajero? Gana sobre "ocupado": ocupado por él mismo. */
+  propio(numero: number): boolean {
+    return this.propios().includes(numero);
+  }
 
   ocupado(numero: number): boolean {
     return this.mapa()?.asientos.find((a) => a.numero === numero)?.estado !== 'DISPONIBLE';

@@ -19,6 +19,7 @@ import {
   codigoBoleto,
   codigoLegible,
   ordenarVentas,
+  textoMotivo,
 } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { normalizar, paginar } from '../../../shared/utils/paginacion';
@@ -63,6 +64,8 @@ export class ReembolsosComponent implements OnInit {
   readonly canalVenta = CANAL_VENTA;
   readonly metodoPago = METODO_PAGO;
   readonly zona = ZONA_GT;
+  /** Los motivos que son código de la saga se muestran en palabras; el resto, tal cual. */
+  readonly motivo = textoMotivo;
 
   private readonly buscador = viewChild<ElementRef<HTMLInputElement>>('buscador');
 
@@ -130,7 +133,7 @@ export class ReembolsosComponent implements OnInit {
    */
   viajeDe(v: Venta): string {
     if (v.viaje) return `${v.viaje.origenNombre} → ${v.viaje.destinoNombre}`;
-    return v.motivoCancelacion || 'Viaje eliminado';
+    return textoMotivo(v.motivoCancelacion, 'Viaje eliminado');
   }
 
   /** El efectivo lo devuelve la sucursal; lo de la cartera vuelve solo y aquí solo se reintenta. */

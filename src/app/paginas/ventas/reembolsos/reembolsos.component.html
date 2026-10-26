@@ -151,7 +151,7 @@
         · Estado: <span [class]="'insignia ' + estadoVenta[d.estado].clase">{{ estadoVenta[d.estado].texto }}</span>
       </p>
       @if (d.motivoCancelacion) {
-        <p class="secundario">Motivo de la cancelación: {{ d.motivoCancelacion }}</p>
+        <p class="secundario">Motivo de la cancelación: {{ motivo(d.motivoCancelacion) }}</p>
       }
       @if (d.fechaReembolso) {
         <p class="secundario">Dinero devuelto el {{ d.fechaReembolso | date: 'dd/MM/yyyy' : 'UTC' }}.</p>

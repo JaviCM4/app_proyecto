@@ -9,6 +9,7 @@
   background-image: repeating-linear-gradient(45deg, transparent 0 5px, var(--asiento-ocupado-raya) 5px 6px);
 }
 .muestra.elegido { background: var(--asiento-elegido); border-color: var(--asiento-elegido-borde); }
+.muestra.propio { background: var(--exito); border-color: var(--exito); }
 .muestra.piloto { background: var(--azul, #1B3A6B); border-color: var(--azul, #1B3A6B); }
 
 .bus { max-width: 22rem; margin: 0 auto; border: 2px solid var(--azul, #1B3A6B); border-radius: 1.5rem 1.5rem 1rem 1rem; padding: 0.75rem; background: var(--superficie); }
@@ -30,3 +31,12 @@
   background-image: repeating-linear-gradient(45deg, transparent 0 5px, var(--asiento-ocupado-raya) 5px 6px);
 }
 .asiento.elegido { background: var(--asiento-elegido); border-color: var(--asiento-elegido-borde); color: var(--asiento-elegido-texto); }
+
+/* El asiento del propio pasajero: verde y sin rayas, aunque esté ocupado (lo ocupa él). */
+.asiento.propio, .asiento.propio:disabled {
+  background: var(--exito);
+  background-image: none;
+  border-color: var(--exito);
+  color: #fff;
+  cursor: default;
+}

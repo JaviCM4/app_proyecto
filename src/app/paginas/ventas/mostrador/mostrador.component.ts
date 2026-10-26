@@ -1,10 +1,13 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
-import { Venta } from '../../../core/models/venta.model';
+import { ClienteCuenta, Venta } from '../../../core/models/venta.model';
 import { MapaAsientos, Ruta, Viaje } from '../../../core/models/viaje.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { ClientesService } from '../../../core/services/clientes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { ViajesService } from '../../../core/services/viajes.service';
@@ -37,6 +40,7 @@ export class MostradorComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly viajesServicio = inject(ViajesService);
   private readonly ventasServicio = inject(VentasService);
+  private readonly clientesServicio = inject(ClientesService);
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
@@ -62,6 +66,22 @@ export class MostradorComponent implements OnInit {
 
   /** Última venta confirmada en esta sesión de mostrador. */
   readonly ventaConfirmada = signal<Venta | null>(null);
+
+  // ----- Cliente del sistema (se busca por NIT) -----
+
+  /** Clientes que coinciden con lo que lleva escrito el cajero (máximo los que manda el backend). */
+  readonly clientes = signal<ClienteCuenta[]>([]);
+  /** Cliente del sistema cuyo NIT coincide con el escrito: la venta queda ligada a su cuenta. */
+  readonly clienteLigado = signal<ClienteCuenta | null>(null);
+  readonly buscandoCliente = signal(false);
+  /** Se buscó un NIT completo y no es de nadie: la venta va a nombre de quien escriba el cajero. */
+  readonly nitSinCuenta = signal(false);
+
+  /** Sugerencias a mostrar: se ocultan en cuanto el NIT escrito ya es el de un cliente ligado. */
+  readonly sugerencias = computed(() => {
+    const ligado = this.clienteLigado();
+    return ligado ? [] : this.clientes();
+  });
 
   readonly formVenta = this.fb.group({
     clienteNit: [''],
@@ -107,6 +127,13 @@ export class MostradorComponent implements OnInit {
     const destino = this.sucursales().find((s) => s.sucursalId === ruta.sucursalDestinoId);
     return origen && destino ? { origen, destino } : null;
   });
+
+  constructor() {
+    // El NIT es la llave del cliente: mientras se escribe se van buscando las coincidencias.
+    this.formVenta.controls.clienteNit.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe((nit) => this.cargarClientes(nit ?? ''));
+  }
 
   ngOnInit(): void {
     // Destinos y nombre de origen: todos ven las sucursales (consulta pública).
@@ -163,11 +190,102 @@ export class MostradorComponent implements OnInit {
       });
   }
 
+  // ----- Cliente del sistema -----
+
+  /**
+   * Busca los clientes que coinciden con el texto y, si alguno tiene exactamente ese NIT, lo deja
+   * ligado: así el cajero ve a quién le está vendiendo antes de cobrar.
+   */
+  private cargarClientes(texto: string): void {
+    const escrito = texto.trim();
+    this.nitSinCuenta.set(false);
+    this.buscandoCliente.set(true);
+    this.clientesServicio.buscar(escrito || null).subscribe({
+      next: (lista) => {
+        this.buscandoCliente.set(false);
+        this.clientes.set(lista);
+        const exacto = escrito ? lista.find((c) => c.nit.toUpperCase() === escrito.toUpperCase()) : undefined;
+        if (exacto) {
+          this.ligar(exacto);
+        } else {
+          this.clienteLigado.set(null);
+        }
+      },
+      error: () => {
+        // Sin buscador la venta sigue funcionando: el cajero escribe los datos a mano.
+        this.buscandoCliente.set(false);
+        this.clientes.set([]);
+        this.clienteLigado.set(null);
+      },
+    });
+  }
+
+  /** Enter o botón Buscar: avisa claramente si ese NIT no es de ninguna cuenta. */
+  buscarCliente(): void {
+    const escrito = (this.formVenta.controls.clienteNit.value ?? '').trim();
+    if (!escrito) {
+      this.avisos.info('Escribe el NIT del cliente para buscarlo.');
+      return;
+    }
+    this.buscandoCliente.set(true);
+    this.clientesServicio.buscar(escrito).subscribe({
+      next: (lista) => {
+        this.buscandoCliente.set(false);
+        this.clientes.set(lista);
+        const exacto = lista.find((c) => c.nit.toUpperCase() === escrito.toUpperCase());
+        if (exacto) {
+          this.ligar(exacto);
+          this.nitSinCuenta.set(false);
+          this.avisos.exito(`Cliente encontrado: ${exacto.nombre}.`);
+          return;
+        }
+        this.clienteLigado.set(null);
+        this.nitSinCuenta.set(true);
+        this.avisos.info(
+          lista.length
+            ? 'Ese NIT no existe en el sistema; abajo están los clientes parecidos.'
+            : 'Ese NIT no existe en el sistema. La venta se registrará con los datos que escribas.',
+        );
+      },
+      error: (e) => {
+        this.buscandoCliente.set(false);
+        this.avisos.error(mensajeError(e, 'No se pudo buscar el cliente.'));
+      },
+    });
+  }
+
+  /** Elegir un cliente de la lista: llena el NIT, el nombre y el correo con los de su cuenta. */
+  usarCliente(c: ClienteCuenta): void {
+    this.formVenta.patchValue({ clienteNit: c.nit, clienteNombre: c.nombre, clienteCorreo: c.correo });
+    this.ligar(c);
+    this.nitSinCuenta.set(false);
+  }
+
+  /** Deja de usar la cuenta: el cajero escribe los datos a mano (y el NIT queda en blanco). */
+  quitarCliente(): void {
+    this.formVenta.patchValue({ clienteNit: '', clienteNombre: '', clienteCorreo: '' });
+    this.clienteLigado.set(null);
+    this.nitSinCuenta.set(false);
+  }
+
+  private ligar(c: ClienteCuenta): void {
+    this.clienteLigado.set(c);
+    // Solo se completa lo que esté vacío: el cajero puede vender a otra persona con el mismo NIT.
+    const actual = this.formVenta.getRawValue();
+    this.formVenta.patchValue({
+      clienteNombre: actual.clienteNombre?.trim() ? actual.clienteNombre : c.nombre,
+      clienteCorreo: actual.clienteCorreo?.trim() ? actual.clienteCorreo : c.correo,
+    });
+  }
+
   elegir(v: Viaje): void {
     this.viajeElegido.set(v);
     this.mapa.set(null);
     this.asientosElegidos.set([]);
     this.formVenta.reset({ clienteNit: '', clienteNombre: '', clienteCorreo: '', fechaPago: hoyGt() });
+    this.clienteLigado.set(null);
+    this.nitSinCuenta.set(false);
+    this.cargarClientes('');          // los primeros clientes, para elegir sin teclear el NIT
     this.cargandoMapa.set(true);
     this.viajesServicio.asientos(v.viajeId).subscribe({
       next: (mapa) => {

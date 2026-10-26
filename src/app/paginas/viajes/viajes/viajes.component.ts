@@ -4,7 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { Bus } from '../../../core/models/bus.model';
 import { Chofer } from '../../../core/models/chofer.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
-import { EstadoViaje, Ruta, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
+import { EstadoViaje, MapaAsientos, Ruta, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { BusesService } from '../../../core/services/buses.service';
 import { ChoferesService } from '../../../core/services/choferes.service';
@@ -12,18 +12,32 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, fechaHoraGt } from '../../../core/utils/fechas';
+import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { SelectorAsientosComponent } from '../../../shared/components/selector-asientos/selector-asientos.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
 
 type FiltroEstado = 'TODAS' | EstadoViaje;
 
+/** Pestañas del detalle de un viaje. */
+type PestanaViaje = 'datos' | 'asientos' | 'mapa';
+
 /** Viajes regulares: programar, ver detalle, editar, eliminar y registrar salida/llegada. */
 @Component({
   selector: 'app-viajes',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    DatePipe,
+    CurrencyPipe,
+    ModalComponent,
+    PaginadorComponent,
+    SelectorAsientosComponent,
+    MapaRecorridoComponent,
+  ],
   templateUrl: './viajes.component.html',
   styleUrl: './viajes.component.scss',
 })
@@ -61,6 +75,12 @@ export class ViajesComponent implements OnInit {
   readonly cargandoDetalle = signal(false);
   /** Foto del bus del viaje abierto en el detalle (null mientras carga o si no tiene). */
   readonly fotoBus = signal<string | null>(null);
+  /** Pestaña abierta del detalle: datos del viaje, mapa de asientos o mapa del recorrido. */
+  readonly pestanaViaje = signal<PestanaViaje>('datos');
+  /** Asientos vendidos del viaje abierto (solo para ver: aquí no se vende). */
+  readonly mapaAsientos = signal<MapaAsientos | null>(null);
+  readonly cargandoAsientos = signal(false);
+  readonly sinAsientos = signal('');
   readonly porEliminar = signal<Viaje | null>(null);
   readonly enSalida = signal<Viaje | null>(null);
   readonly enLlegada = signal<Viaje | null>(null);
@@ -107,6 +127,20 @@ export class ViajesComponent implements OnInit {
   });
 
   readonly paginaActual = computed(() => paginar(this.filtrados(), this.pagina(), this.tamano()));
+
+  /**
+   * Sucursales de origen y destino del viaje abierto, para dibujar el recorrido. Salen de la ruta:
+   * el viaje solo guarda los nombres, y el mapa necesita las coordenadas de cada sucursal.
+   */
+  readonly recorrido = computed(() => {
+    const viaje = this.enDetalle();
+    if (!viaje?.rutaId) return null;
+    const ruta = this.rutas().find((r) => r.rutaId === viaje.rutaId);
+    if (!ruta) return null;
+    const origen = this.sucursales().find((s) => s.sucursalId === ruta.sucursalOrigenId);
+    const destino = this.sucursales().find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    return origen && destino ? { origen, destino, ruta } : null;
+  });
 
   ngOnInit(): void {
     this.sucursalesServicio.listar().subscribe({
@@ -175,6 +209,8 @@ export class ViajesComponent implements OnInit {
     this.cargandoDetalle.set(true);
     this.enDetalle.set(null);
     this.detalleVisible.set(true);
+    this.pestanaViaje.set('datos');
+    this.cargarAsientos(v.viajeId);
     this.servicio.detalleViaje(v.viajeId).subscribe({
       next: (detalle) => {
         this.cargandoDetalle.set(false);
@@ -368,6 +404,28 @@ export class ViajesComponent implements OnInit {
     this.detalleVisible.set(false);
     this.enDetalle.set(null);
     this.fotoBus.set(null);
+    this.mapaAsientos.set(null);
+    this.sinAsientos.set('');
+  }
+
+  /**
+   * Mapa de asientos del viaje (consulta pública de Sales). Un viaje ya completado o sin copia en
+   * Sales no lo tiene: la pestaña lo dice en lugar de quedarse vacía.
+   */
+  private cargarAsientos(viajeId: string): void {
+    this.mapaAsientos.set(null);
+    this.sinAsientos.set('');
+    this.cargandoAsientos.set(true);
+    this.servicio.asientos(viajeId).subscribe({
+      next: (mapa) => {
+        this.cargandoAsientos.set(false);
+        this.mapaAsientos.set(mapa);
+      },
+      error: () => {
+        this.cargandoAsientos.set(false);
+        this.sinAsientos.set('Este viaje ya no tiene mapa de asientos (solo los viajes a la venta lo tienen).');
+      },
+    });
   }
 
   /** La foto del bus está en Fleet; si no se puede cargar el detalle se muestra sin ella. */

@@ -78,6 +78,14 @@ export interface CancelarVenta {
   version: number;
 }
 
+/** Cliente con cuenta en el sistema, como lo devuelve el buscador de la ventanilla. */
+export interface ClienteCuenta {
+  usuarioId: string;
+  nit: string;
+  nombre: string;
+  correo: string;
+}
+
 export interface FiltroVentas {
   viajeId?: string | null;
   sucursalId?: string | null;

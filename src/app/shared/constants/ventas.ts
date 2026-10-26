@@ -36,6 +36,32 @@ export const ESTADO_VIAJE: Record<EstadoViaje, { texto: string; clase: string; o
 };
 
 /**
+ * Motivos que el backend guarda como código (motivo_rechazo de una venta o de una orden). Son parte
+ * de la saga de pago, no texto para el usuario: aquí se traducen a algo que se pueda leer.
+ */
+const MOTIVOS: Record<string, string> = {
+  SALDO_INSUFICIENTE: 'La billetera digital no tenía saldo suficiente.',
+  USUARIO_INACTIVO: 'La cuenta del cliente está inactiva.',
+  CARTERA_INEXISTENTE: 'El cliente todavía no tiene billetera digital.',
+  TIEMPO_AGOTADO: 'Se agotó el tiempo para pagar y los asientos se liberaron.',
+  VIAJE_ELIMINADO: 'El viaje fue eliminado.',
+  VIAJE_NO_DISPONIBLE: 'El viaje ya no estaba disponible cuando se cobró.',
+  DEBITO_TARDIO: 'El cobro llegó cuando la compra ya no podía completarse; el dinero se devolvió.',
+  VENTA_CANCELADA: 'La venta fue cancelada.',
+  RECHAZADO: 'El pago fue rechazado.',
+};
+
+/**
+ * Motivo en palabras. Los motivos escritos por una persona (la cancelación de un administrador, o el
+ * motivo de un viaje eliminado) no están en la tabla y se devuelven tal cual.
+ */
+export function textoMotivo(motivo: string | null | undefined, porDefecto = ''): string {
+  const limpio = (motivo ?? '').trim();
+  if (!limpio) return porDefecto;
+  return MOTIVOS[limpio.toUpperCase()] ?? limpio;
+}
+
+/**
  * Código del boleto impreso: los primeros 12 caracteres del id de la venta, en mayúsculas. Es lo que
  * lleva el código de barras del talón y lo que se busca en Reembolsos. Se calcula también en el
  * frontend para que el boleto se pueda imprimir aunque la respuesta no traiga el campo.

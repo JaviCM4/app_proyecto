@@ -244,10 +244,10 @@
         <p><span class="insignia">{{ viajeSinDatos(d).etiqueta }}</span></p>
       }
       @if (d.motivoRechazo) {
-        <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>
+        <p class="secundario">Motivo del rechazo: {{ motivo(d.motivoRechazo) }}</p>
       }
       @if (d.motivoCancelacion) {
-        <p class="secundario">Motivo de cancelación: {{ d.motivoCancelacion }} ({{ d.fechaCancelacion | date: 'short' }})</p>
+        <p class="secundario">Motivo de la cancelación: {{ motivo(d.motivoCancelacion) }} ({{ d.fechaCancelacion | date: 'dd/MM/yyyy' : 'UTC' }})</p>
       }
       <h3>Boleto para imprimir</h3>
       <app-ticket-boleto [venta]="d" />

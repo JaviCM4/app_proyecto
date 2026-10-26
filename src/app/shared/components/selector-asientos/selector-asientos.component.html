@@ -11,6 +11,9 @@
   <span class="item"><span class="muestra libre"></span> Libre</span>
   <span class="item"><span class="muestra ocupado"></span> Ocupado</span>
   <span class="item"><span class="muestra elegido"></span> Elegido</span>
+  @if (propios().length) {
+    <span class="item"><span class="muestra propio"></span> Tu asiento</span>
+  }
   <span class="item"><span class="muestra piloto"></span> Piloto</span>
 </p>
 <div class="bus">
@@ -25,8 +28,10 @@
         @if (celda.tipo === 'pasillo') {
           <span class="pasillo"></span>
         } @else if (celda.tipo === 'asiento') {
-          <button type="button" class="asiento" [class.ocupado]="ocupado(celda.numero)" [class.elegido]="elegido(celda.numero)"
-            [disabled]="bloqueado() || ocupado(celda.numero)" (click)="alternar(celda.numero)" [title]="'Asiento ' + celda.numero">
+          <button type="button" class="asiento" [class.ocupado]="ocupado(celda.numero) && !propio(celda.numero)"
+            [class.elegido]="elegido(celda.numero)" [class.propio]="propio(celda.numero)"
+            [disabled]="bloqueado() || ocupado(celda.numero)" (click)="alternar(celda.numero)"
+            [title]="propio(celda.numero) ? 'Tu asiento ' + celda.numero : 'Asiento ' + celda.numero">
             {{ celda.numero }}
           </button>
         } @else {

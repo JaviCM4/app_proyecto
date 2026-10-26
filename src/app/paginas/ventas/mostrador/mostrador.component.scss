@@ -3,3 +3,74 @@
 .recorrido-venta {
   margin-bottom: 12px;
 }
+
+/* El NIT y su botón de búsqueda van en la misma línea: es el primer paso de la venta. */
+.fila-nit {
+  display: flex;
+  gap: 8px;
+
+  .control { flex: 1 1 auto; min-width: 0; }
+  .btn { flex: 0 0 auto; height: 36px; }
+}
+
+.cliente-ligado {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border-radius: var(--radio-sm);
+  background: var(--exito-suave);
+  color: var(--texto);
+  font-size: 13px;
+}
+
+.cliente-sin-cuenta {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border-radius: var(--radio-sm);
+  background: var(--aviso-suave);
+  color: var(--texto);
+  font-size: 13px;
+}
+
+/* Botón de texto para soltar la cuenta ligada sin sacar un modal. */
+.enlace {
+  margin-left: 8px;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primario);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Coincidencias del buscador: lista corta con scroll para no empujar el formulario. */
+.sugerencias-cliente {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  max-height: 170px;
+  overflow-y: auto;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--superficie);
+
+  li + li { border-top: 1px solid var(--borde); }
+
+  button {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: var(--texto);
+    cursor: pointer;
+
+    &:hover { background: var(--primario-suave); }
+  }
+
+  .secundario { font-size: 12px; }
+}

@@ -12,6 +12,7 @@ import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { textoMotivo } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { pantallaGrande } from '../../../shared/utils/pantalla';
 import { paginar } from '../../../shared/utils/paginacion';
@@ -60,6 +61,8 @@ export class MisAlquileresComponent implements OnInit {
   /** Cualquier cuenta con rol Cliente (también cajeros y administradores) puede pedir otro alquiler. */
   readonly puedeSolicitar = inject(AuthService).tieneRol('CLIENTE');
   readonly zona = ZONA_GT;
+  /** El motivo del rechazo viene como código del backend: aquí se muestra en palabras. */
+  readonly motivo = textoMotivo;
   /** En PC el detalle se abre amplio, con el mapa grande al lado de los datos. */
   readonly pantallaGrande = pantallaGrande();
 

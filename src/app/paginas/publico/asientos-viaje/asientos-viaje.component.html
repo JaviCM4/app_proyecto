@@ -38,7 +38,10 @@
             </p>
           }
           @if (ventaFinal() && ventaFinal()!.estado !== 'PENDIENTE_PAGO' && ventaFinal()!.estado !== 'CONFIRMADA') {
-            <p class="aviso-error">Compra {{ ventaFinal()!.estado }}: {{ ventaFinal()!.motivoRechazo || 'sin motivo indicado.' }}</p>
+            <p class="aviso-error">
+              Compra {{ estadoVenta[ventaFinal()!.estado].texto | lowercase }}:
+              {{ motivo(ventaFinal()!.motivoRechazo, 'no se pudo completar el pago.') }}
+            </p>
           }
           @if (fallo()) {
             <p class="aviso-error">{{ fallo() }}</p>

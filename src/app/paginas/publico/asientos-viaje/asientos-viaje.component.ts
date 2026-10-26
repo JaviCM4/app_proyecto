@@ -1,4 +1,4 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, LowerCasePipe } from '@angular/common';
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -14,6 +14,7 @@ import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { Coordenadas, MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { SelectorAsientosComponent } from '../../../shared/components/selector-asientos/selector-asientos.component';
+import { ESTADO_VENTA, textoMotivo } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 
 /**
@@ -24,7 +25,7 @@ import { ToastService } from '../../../shared/services/toast.service';
 @Component({
   selector: 'app-asientos-viaje',
   standalone: true,
-  imports: [ModalComponent, SelectorAsientosComponent, MapaRecorridoComponent, DatePipe, CurrencyPipe],
+  imports: [ModalComponent, SelectorAsientosComponent, MapaRecorridoComponent, DatePipe, CurrencyPipe, LowerCasePipe],
   templateUrl: './asientos-viaje.component.html',
   styleUrl: './asientos-viaje.component.scss',
 })
@@ -37,6 +38,9 @@ export class AsientosViajeComponent {
   private readonly sucursalesServicio = inject(SucursalesService);
 
   readonly zona = ZONA_GT;
+  readonly estadoVenta = ESTADO_VENTA;
+  /** Los motivos del backend son códigos de la saga de pago: aquí se muestran en palabras. */
+  readonly motivo = textoMotivo;
   readonly viaje = input<Viaje | null>(null);
   readonly cerrar = output<void>();
 
