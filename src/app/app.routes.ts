@@ -43,10 +43,11 @@ export const routes: Routes = [
     children: [
       { path: '', title: 'Inicio', loadComponent: () => import('./paginas/panel/inicio/panel-inicio.component').then((m) => m.PanelInicioComponent) },
       {
+        // El cajero y el piloto también ven su sucursal: los datos, el equipo y sus accesos.
         path: 'mi-sucursal',
         title: 'Mi sucursal',
         canActivate: [rolGuard],
-        data: { roles: ['ADMIN_SUCURSAL'] },
+        data: { roles: ['ADMIN_SUCURSAL', 'CAJERO', 'CHOFER'] },
         loadComponent: () => import('./paginas/sucursales/mi-sucursal/mi-sucursal.component').then((m) => m.MiSucursalComponent),
       },
       {

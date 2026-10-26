@@ -223,16 +223,12 @@ export class VentasComponent implements OnInit {
   }
 
   /**
-   * Qué poner en la columna Viaje cuando el viaje ya no está: al eliminarlo se borró su fila de la
-   * copia local, y lo único que queda del viaje es lo que se guardó en el motivo de cancelación
-   * (origen, destino, salida y placa). Antes aquí salía un guion y no se sabía de qué viaje era.
+   * Qué poner en la columna Viaje cuando el viaje ya no está. En la lista solo va la etiqueta: el
+   * motivo (que lleva origen, destino, salida y placa) se lee en el detalle, al dar en Ver.
    */
-  viajeSinDatos(v: Venta): { etiqueta: string; detalle: string } {
+  viajeSinDatos(v: Venta): string {
     const cancelada = v.estado === 'CANCELADA' || v.estado === 'REEMBOLSADA' || v.estado === 'RECHAZADA';
-    return {
-      etiqueta: cancelada ? 'Viaje eliminado' : 'Sin información del viaje',
-      detalle: textoMotivo(v.motivoCancelacion) || textoMotivo(v.motivoRechazo),
-    };
+    return cancelada ? 'Viaje eliminado' : 'Sin información del viaje';
   }
 
   private cargarViajes(): void {

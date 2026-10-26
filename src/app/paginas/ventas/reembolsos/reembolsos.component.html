@@ -186,7 +186,7 @@
           }
         </dl>
 
-        @if (d.motivoCancelacion) {
+        @if (d.motivoCancelacion && d.viaje) {
           <p class="detalle-motivo aviso">
             <strong>Motivo de cancelación:</strong> {{ motivo(d.motivoCancelacion) }}
           </p>

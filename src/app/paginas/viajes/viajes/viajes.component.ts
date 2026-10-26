@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Bus } from '../../../core/models/bus.model';
 import { Chofer } from '../../../core/models/chofer.model';
@@ -9,9 +9,11 @@ import { AuthService } from '../../../core/services/auth.service';
 import { BusesService } from '../../../core/services/buses.service';
 import { ChoferesService } from '../../../core/services/choferes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { UsuariosService } from '../../../core/services/usuarios.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, fechaHoraGt } from '../../../core/utils/fechas';
+import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
@@ -37,6 +39,7 @@ type PestanaViaje = 'datos' | 'asientos' | 'mapa';
     PaginadorComponent,
     SelectorAsientosComponent,
     MapaRecorridoComponent,
+    FotoTarjetaComponent,
   ],
   templateUrl: './viajes.component.html',
   styleUrl: './viajes.component.scss',
@@ -47,6 +50,7 @@ export class ViajesComponent implements OnInit {
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly busesServicio = inject(BusesService);
   private readonly choferesServicio = inject(ChoferesService);
+  private readonly usuariosServicio = inject(UsuariosService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
@@ -75,6 +79,12 @@ export class ViajesComponent implements OnInit {
   readonly cargandoDetalle = signal(false);
   /** Foto del bus del viaje abierto en el detalle (null mientras carga o si no tiene). */
   readonly fotoBus = signal<string | null>(null);
+  /** Foto del piloto del viaje abierto (vive en su perfil de Identity). */
+  readonly fotoChofer = signal<string | null>(null);
+  /** Bus y piloto elegidos en los formularios de programar y editar, para ver su foto antes de guardar. */
+  readonly busElegido = signal<Bus | null>(null);
+  readonly choferElegido = signal<Chofer | null>(null);
+  readonly fotoChoferElegido = signal<string | null>(null);
   /** Pestaña abierta del detalle: datos del viaje, mapa de asientos o mapa del recorrido. */
   readonly pestanaViaje = signal<PestanaViaje>('datos');
   /** Asientos vendidos del viaje abierto (solo para ver: aquí no se vende). */
@@ -147,8 +157,33 @@ export class ViajesComponent implements OnInit {
       next: (lista) => this.sucursales.set(lista),
       error: (e) => this.avisos.error(mensajeError(e, 'No se pudieron cargar las sucursales.')),
     });
+    // Vista previa: al elegir bus o piloto se ve su foto antes de guardar (igual que al asignar un alquiler).
+    for (const form of [this.formViaje, this.formEditar]) {
+      form.controls.busId.valueChanges.subscribe((id) => this.elegirBus(id));
+      form.controls.choferId.valueChanges.subscribe((id) => this.elegirChofer(id));
+    }
     this.cargarListas();
     this.cargarViajes();
+  }
+
+  private elegirBus(busId: string): void {
+    this.busElegido.set(this.buses().find((b) => b.busId === busId) ?? null);
+  }
+
+  private elegirChofer(choferId: string): void {
+    const chofer = this.choferes().find((c) => c.choferId === choferId) ?? null;
+    this.choferElegido.set(chofer);
+    this.cargarFotoChofer(chofer?.usuarioId ?? null, this.fotoChoferElegido);
+  }
+
+  /** La foto del piloto vive en su perfil de Identity; si el rol no puede verla, se queda sin foto. */
+  private cargarFotoChofer(usuarioId: string | null, destino: WritableSignal<string | null>): void {
+    destino.set(null);
+    if (!usuarioId) return;
+    this.usuariosServicio.detalle(usuarioId).subscribe({
+      next: (usuario) => destino.set(usuario.fotoUrl || null),
+      error: () => destino.set(null),
+    });
   }
 
   cambiarSucursal(id: string): void {
@@ -216,6 +251,7 @@ export class ViajesComponent implements OnInit {
         this.cargandoDetalle.set(false);
         this.enDetalle.set(detalle);
         this.cargarFotoBus(detalle.busId);
+        this.cargarFotoChoferDelViaje(detalle.choferId);
       },
       error: (e) => {
         this.cargandoDetalle.set(false);
@@ -351,7 +387,8 @@ export class ViajesComponent implements OnInit {
           this.avisos.exito('Salida registrada. El viaje está en ruta.');
           this.detalleVisible.set(true);
           this.enDetalle.set(detalle);
-        this.cargarFotoBus(detalle.busId);
+          this.cargarFotoBus(detalle.busId);
+          this.cargarFotoChoferDelViaje(detalle.choferId);
           this.cargarViajes();
         },
         error: (e) => {
@@ -389,7 +426,8 @@ export class ViajesComponent implements OnInit {
           this.avisos.exito('Llegada registrada. El viaje quedó completado.');
           this.detalleVisible.set(true);
           this.enDetalle.set(detalle);
-        this.cargarFotoBus(detalle.busId);
+          this.cargarFotoBus(detalle.busId);
+          this.cargarFotoChoferDelViaje(detalle.choferId);
           this.cargarViajes();
         },
         error: (e) => {
@@ -404,6 +442,7 @@ export class ViajesComponent implements OnInit {
     this.detalleVisible.set(false);
     this.enDetalle.set(null);
     this.fotoBus.set(null);
+    this.fotoChofer.set(null);
     this.mapaAsientos.set(null);
     this.sinAsientos.set('');
   }
@@ -434,6 +473,15 @@ export class ViajesComponent implements OnInit {
     this.busesServicio.detalle(busId).subscribe({
       next: (bus) => this.fotoBus.set(bus.fotoUrl || null),
       error: () => this.fotoBus.set(null),
+    });
+  }
+
+  /** Foto del piloto del viaje abierto: se busca por el chofer, que es quien lleva el usuario. */
+  private cargarFotoChoferDelViaje(choferId: string): void {
+    this.fotoChofer.set(null);
+    this.choferesServicio.detalle(choferId).subscribe({
+      next: (chofer) => this.cargarFotoChofer(chofer.usuarioId ?? null, this.fotoChofer),
+      error: () => this.fotoChofer.set(null),
     });
   }
 

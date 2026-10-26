@@ -29,8 +29,9 @@ interface Acceso {
 }
 
 /**
- * Página del administrador de sucursal: los datos de la sucursal que tiene a cargo, su equipo y un resumen
- * de la flota (buses por estado y pilotos), con accesos a la operación.
+ * La sucursal donde trabaja la cuenta. El administrador ve además el equipo y el resumen de la flota;
+ * el cajero y el piloto solo los datos de la sucursal y los accesos de su puesto, porque las listas
+ * de personal, buses y pilotos son del administrador.
  */
 @Component({
   selector: 'app-mi-sucursal',
@@ -57,7 +58,12 @@ export class MiSucursalComponent implements OnInit {
   readonly choferes = signal<Chofer[]>([]);
   readonly cargando = signal(true);
 
-  readonly accesos: Acceso[] = [
+  /** Solo el administrador de sucursal ve el equipo y la flota. */
+  readonly esAdmin = this.auth.tieneRol('ADMIN_SUCURSAL');
+  readonly esCajero = this.auth.tieneRol('CAJERO');
+  readonly esPiloto = this.auth.tieneRol('CHOFER');
+
+  private static readonly ACCESOS_ADMIN: Acceso[] = [
     { texto: 'Buses', ruta: '/panel/buses', icono: 'bus' },
     { texto: 'Choferes', ruta: '/panel/choferes', icono: 'perfil' },
     { texto: 'Personal', ruta: '/panel/personal', icono: 'usuarios' },
@@ -65,6 +71,24 @@ export class MiSucursalComponent implements OnInit {
     { texto: 'Vender boletos', ruta: '/panel/mostrador', icono: 'boleto' },
     { texto: 'Reportes', ruta: '/panel/reportes', icono: 'reporte' },
   ];
+
+  private static readonly ACCESOS_CAJERO: Acceso[] = [
+    { texto: 'Vender boletos', ruta: '/panel/mostrador', icono: 'boleto' },
+    { texto: 'Ventas', ruta: '/panel/ventas', icono: 'reporte' },
+    { texto: 'Reembolsos', ruta: '/panel/reembolsos', icono: 'cartera' },
+    { texto: 'Órdenes de alquiler', ruta: '/panel/ordenes', icono: 'tarifa' },
+  ];
+
+  private static readonly ACCESOS_PILOTO: Acceso[] = [
+    { texto: 'Mis viajes', ruta: '/panel/mis-viajes', icono: 'ruta' },
+  ];
+
+  /** Accesos del puesto. Una cuenta con varios roles los ve todos, sin repetir. */
+  readonly accesos: Acceso[] = [
+    ...(this.esAdmin ? MiSucursalComponent.ACCESOS_ADMIN : []),
+    ...(this.esCajero ? MiSucursalComponent.ACCESOS_CAJERO : []),
+    ...(this.esPiloto ? MiSucursalComponent.ACCESOS_PILOTO : []),
+  ].filter((a, i, todos) => todos.findIndex((o) => o.ruta === a.ruta) === i);
 
   readonly equipo = computed(() =>
     [...this.personal()].sort((a, b) => (a.rol === b.rol ? a.nombreCompleto.localeCompare(b.nombreCompleto) : a.rol === 'ADMIN_SUCURSAL' ? -1 : 1)),
@@ -106,6 +130,11 @@ export class MiSucursalComponent implements OnInit {
         this.avisos.error(mensajeError(e, 'No se pudo cargar tu sucursal.'));
       },
     });
+    // El equipo y la flota son del administrador: al cajero y al piloto ni se les piden.
+    if (!this.esAdmin) {
+      this.cargando.set(false);
+      return;
+    }
     // Cada lista por separado: si una falla, el resto de la página se muestra igual.
     forkJoin({
       personal: this.personalServicio.listar(id, undefined, true).pipe(catchError(() => of([] as PersonalSucursal[]))),

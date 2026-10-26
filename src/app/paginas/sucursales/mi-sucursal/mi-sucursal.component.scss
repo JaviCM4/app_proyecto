@@ -33,6 +33,9 @@
 .columnas {
   display: grid;
   grid-template-columns: 3fr 2fr;
+
+  /* Sin la tarjeta de equipo (cajero y piloto), los datos de la sucursal ocupan todo el ancho. */
+  &.sola { grid-template-columns: 1fr; }
   gap: 16px;
   align-items: start;
 

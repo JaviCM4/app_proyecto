@@ -143,6 +143,16 @@
       <input id="v-llegada" type="datetime-local" class="control" formControlName="llegada" />
     </div>
   </form>
+  <div class="fotos-par">
+    <app-foto-tarjeta
+      [url]="busElegido()?.fotoUrl ?? null"
+      [titulo]="busElegido() ? busElegido()!.placa + ' · ' + busElegido()!.marca + ' ' + busElegido()!.modelo : 'Bus'"
+      vacio="Elige un bus para ver su foto" />
+    <app-foto-tarjeta
+      [url]="fotoChoferElegido()"
+      [titulo]="choferElegido()?.nombreCompleto ?? 'Piloto'"
+      vacio="Elige un piloto para ver su foto" />
+  </div>
   <div pie>
     <button type="button" class="btn" (click)="programando.set(false)">Cancelar</button>
     <button type="submit" form="form-viaje" class="btn primario" [disabled]="enviando()">
@@ -180,6 +190,16 @@
       <input id="e-llegada" type="datetime-local" class="control" formControlName="llegada" />
     </div>
   </form>
+  <div class="fotos-par">
+    <app-foto-tarjeta
+      [url]="busElegido()?.fotoUrl ?? null"
+      [titulo]="busElegido() ? busElegido()!.placa + ' · ' + busElegido()!.marca + ' ' + busElegido()!.modelo : 'Bus'"
+      vacio="Elige un bus para ver su foto" />
+    <app-foto-tarjeta
+      [url]="fotoChoferElegido()"
+      [titulo]="choferElegido()?.nombreCompleto ?? 'Piloto'"
+      vacio="Elige un piloto para ver su foto" />
+  </div>
   <div pie>
     <button type="button" class="btn" (click)="editando.set(null)">Cancelar</button>
     <button type="submit" form="form-editar" class="btn primario" [disabled]="enviando()">
@@ -242,16 +262,22 @@
   } @else {
   @if (enDetalle(); as d) {
     <div class="detalle-viaje">
-      <figure class="bus-mini">
-        @if (fotoBus(); as foto) {
-          <a [href]="foto" target="_blank" rel="noopener" title="Ver la foto completa">
-            <img [src]="foto" [alt]="'Bus ' + (d.busPlaca ?? '')" loading="lazy" />
-          </a>
-        } @else {
-          <div class="sin-foto">Sin foto</div>
-        }
-        <figcaption>Bus <strong>{{ d.busPlaca ?? '—' }}</strong> · {{ d.capacidad }} asientos</figcaption>
-      </figure>
+      <div class="fotos-par fotos-detalle">
+        <app-foto-tarjeta
+          [url]="fotoBus()"
+          [titulo]="'Bus ' + (d.busPlaca ?? '—') + ' · ' + d.capacidad + ' asientos'"
+          [descripcion]="'Bus ' + (d.busPlaca ?? '')"
+          vacio="Sin foto del bus"
+          [ampliable]="true"
+          [alto]="150" />
+        <app-foto-tarjeta
+          [url]="fotoChofer()"
+          [titulo]="'Piloto: ' + (d.choferNombre ?? '—')"
+          [descripcion]="'Piloto ' + (d.choferNombre ?? '')"
+          vacio="Sin foto del piloto"
+          [ampliable]="true"
+          [alto]="150" />
+      </div>
       <dl class="datos-lista">
         <div>
           <dt>Estado</dt>

@@ -25,6 +25,7 @@
       </div>
     }
 
+    @if (esAdmin) {
     <div class="indicadores">
       <div class="tarjeta indicador">
         <span>Buses en servicio</span>
@@ -50,8 +51,9 @@
         <small>{{ administradores() }} {{ administradores() === 1 ? 'administrador' : 'administradores' }} · {{ cajeros() }} {{ cajeros() === 1 ? 'cajero' : 'cajeros' }}</small>
       </div>
     </div>
+    }
 
-    <div class="columnas">
+    <div class="columnas" [class.sola]="!esAdmin">
       <section class="tarjeta">
         <h2>Datos de la sucursal</h2>
         <dl class="datos-lista">
@@ -65,6 +67,7 @@
         <p class="nota-suave">Para cambiar estos datos, comunícate con el administrador del sistema.</p>
       </section>
 
+      @if (esAdmin) {
       <section class="tarjeta">
         <div class="fila entre">
           <h2>Equipo</h2>
@@ -84,8 +87,10 @@
           }
         </ul>
       </section>
+      }
     </div>
 
+    @if (accesos.length) {
     <h2 class="titulo-accesos">Accesos rápidos</h2>
     <div class="accesos">
       @for (a of accesos; track a.ruta) {
@@ -95,6 +100,7 @@
         </a>
       }
     </div>
+    }
   } @else {
     <p class="suave">{{ cargando() ? 'Cargando tu sucursal…' : 'No se pudo cargar tu sucursal.' }}</p>
   }
