@@ -18,6 +18,7 @@ import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { TicketBoletoComponent } from '../../../shared/components/ticket-boleto/ticket-boleto.component';
 import {
   CANAL_VENTA,
   ESTADO_ORDEN_ALQUILER,
@@ -34,6 +35,9 @@ type FiltroEstado = 'TODAS' | EstadoVenta;
 type FiltroCanal = 'TODOS' | CanalVenta;
 type Pestana = 'ventas' | 'historial';
 
+/** Marca las opciones del filtro de viaje que son un estado completo y no un viaje concreto. */
+const PREFIJO_ESTADO = 'ESTADO:';
+
 /** Ventas (filtros por estado, canal, fechas, viaje y cliente; detalle y cancelación) e historial por NIT, en pestañas. */
 @Component({
   selector: 'app-ventas',
@@ -46,6 +50,7 @@ type Pestana = 'ventas' | 'historial';
     ModalComponent,
     ConfirmacionComponent,
     PaginadorComponent,
+    TicketBoletoComponent,
   ],
   templateUrl: './ventas.component.html',
   styleUrl: './ventas.component.scss',
@@ -74,7 +79,12 @@ export class VentasComponent implements OnInit {
 
   /** Viajes de la sucursal: dan la ruta y la salida de cada venta y alimentan el filtro por viaje. */
   private readonly viajes = signal<Map<string, Viaje>>(new Map());
-  readonly viajeId = signal('');
+  /**
+   * Filtro de viaje: vacío son todos, `ESTADO:` + estado son todos los de ese estado (incluido
+   * ESTADO:OTRO, los viajes que ya se eliminaron) y cualquier otro valor es el id de un viaje.
+   * Arranca en los programados, que son los que se están vendiendo.
+   */
+  readonly viajeId = signal<string>(`${PREFIJO_ESTADO}PROGRAMADO`);
 
   private readonly ventas = signal<Venta[]>([]);
   readonly sucursales = signal<Sucursal[]>([]);
@@ -90,6 +100,8 @@ export class VentasComponent implements OnInit {
   readonly tamano = signal(10);
 
   readonly enDetalle = signal<Venta | null>(null);
+  /** Venta cuyo detalle está abierto (permite abrirlo también desde el historial por NIT). */
+  readonly detalleId = signal<string | null>(null);
   readonly cargandoDetalle = signal(false);
 
   /** Venta en proceso de cancelación (abre el modal con motivo y fecha). */
@@ -140,14 +152,32 @@ export class VentasComponent implements OnInit {
 
   readonly filtradas = computed(() => {
     const buscado = normalizar(this.texto());
-    const viaje = this.viajeId();
+    const filtro = this.viajeId();
+    // Sin los viajes cargados no se puede filtrar por estado: se muestran todas las ventas.
+    const porEstado = filtro.startsWith(PREFIJO_ESTADO) && this.viajes().size > 0
+      ? filtro.slice(PREFIJO_ESTADO.length)
+      : null;
+    const porViaje = filtro && !filtro.startsWith(PREFIJO_ESTADO) ? filtro : null;
     return this.ventas().filter(
       (v) =>
-        (!viaje || v.viajeId === viaje) &&
+        (!porViaje || v.viajeId === porViaje) &&
+        (!porEstado || (this.viajes().get(v.viajeId)?.estado ?? 'OTRO') === porEstado) &&
         (!buscado ||
           normalizar(`${v.clienteNit ?? ''} ${v.clienteNombre ?? ''}`).includes(buscado)),
     );
   });
+
+  /**
+   * Opciones fijas del filtro de viaje: todos los de un estado, o los que ya no existen. Son fijas
+   * (no salen de las ventas cargadas) para que la opción elegida siempre aparezca en la lista,
+   * aunque con los filtros actuales no caiga ninguna venta.
+   */
+  readonly filtrosEstadoViaje = [
+    { valor: `${PREFIJO_ESTADO}PROGRAMADO`, texto: 'Todos los viajes programados' },
+    { valor: `${PREFIJO_ESTADO}EN_RUTA`, texto: 'Todos los viajes en ruta' },
+    { valor: `${PREFIJO_ESTADO}COMPLETADO`, texto: 'Todos los viajes completados' },
+    { valor: `${PREFIJO_ESTADO}OTRO`, texto: 'Sin información del viaje (eliminados)' },
+  ];
 
   readonly paginaActual = computed(() => paginar(this.filtradas(), this.pagina(), this.tamano()));
 
@@ -164,7 +194,7 @@ export class VentasComponent implements OnInit {
 
   cambiarSucursal(id: string): void {
     this.sucursalId.set(id);
-    this.viajeId.set('');
+    this.viajeId.set(`${PREFIJO_ESTADO}PROGRAMADO`);
     this.cambiarFiltro();
     this.cargarViajes();
   }
@@ -187,6 +217,19 @@ export class VentasComponent implements OnInit {
   estadoViajeDe(v: Venta): { texto: string; clase: string } | null {
     const estado = this.viajes().get(v.viajeId)?.estado;
     return estado ? ESTADO_VIAJE[estado] : null;
+  }
+
+  /**
+   * Qué poner en la columna Viaje cuando el viaje ya no está: al eliminarlo se borró su fila de la
+   * copia local, y lo único que queda del viaje es lo que se guardó en el motivo de cancelación
+   * (origen, destino, salida y placa). Antes aquí salía un guion y no se sabía de qué viaje era.
+   */
+  viajeSinDatos(v: Venta): { etiqueta: string; detalle: string } {
+    const cancelada = v.estado === 'CANCELADA' || v.estado === 'REEMBOLSADA' || v.estado === 'RECHAZADA';
+    return {
+      etiqueta: cancelada ? 'Viaje eliminado' : 'Sin información del viaje',
+      detalle: v.motivoCancelacion || v.motivoRechazo || '',
+    };
   }
 
   private cargarViajes(): void {
@@ -230,6 +273,7 @@ export class VentasComponent implements OnInit {
   }
 
   verDetalle(v: Venta): void {
+    this.detalleId.set(v.ventaId);
     this.cargandoDetalle.set(true);
     this.enDetalle.set(v);
     this.servicio.detalle(v.ventaId).subscribe({
@@ -240,8 +284,33 @@ export class VentasComponent implements OnInit {
       error: (e) => {
         this.cargandoDetalle.set(false);
         this.avisos.error(mensajeError(e, 'No se pudo cargar el detalle de la venta.'));
+        if (!this.enDetalle()?.viaje) this.cerrarDetalle();
       },
     });
+  }
+
+  /** Abre el detalle (y el boleto reimprimible) desde el historial por NIT. */
+  verDetallePorId(ventaId: string): void {
+    this.detalleId.set(ventaId);
+    this.cargandoDetalle.set(true);
+    this.enDetalle.set(null);
+    this.servicio.detalle(ventaId).subscribe({
+      next: (detalle) => {
+        this.cargandoDetalle.set(false);
+        this.enDetalle.set(detalle);
+      },
+      error: (e) => {
+        this.cargandoDetalle.set(false);
+        this.avisos.error(mensajeError(e, 'No se pudo cargar el detalle de la venta.'));
+        this.cerrarDetalle();
+      },
+    });
+  }
+
+  cerrarDetalle(): void {
+    this.detalleId.set(null);
+    this.enDetalle.set(null);
+    this.cargandoDetalle.set(false);
   }
 
   abrirCancelar(v: Venta): void {
@@ -270,7 +339,12 @@ export class VentasComponent implements OnInit {
           this.ventas.update((lista) =>
             lista.map((x) => (x.ventaId === actualizada.ventaId ? actualizada : x)),
           );
-          if (this.enDetalle()?.ventaId === actualizada.ventaId) this.enDetalle.set(actualizada);
+          if (this.enDetalle()?.ventaId === actualizada.ventaId) {
+            this.enDetalle.set({
+              ...actualizada,
+              viaje: actualizada.viaje ?? this.enDetalle()?.viaje ?? null,
+            });
+          }
           this.avisos.exito('Venta cancelada.');
           this.cancelando.set(false);
           this.porCancelar.set(null);

@@ -1,0 +1,17 @@
+:host {
+  display: inline-block;
+  line-height: 0;
+}
+
+svg {
+  display: block;
+}
+
+/* Blanco y negro fijos: un código de barras no puede seguir el tema ni el fondo del boleto. */
+.fondo {
+  fill: #fff;
+}
+
+.barra {
+  fill: #000;
+}

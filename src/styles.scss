@@ -5,3 +5,24 @@
 @use 'styles/formularios';
 @use 'styles/tablas';
 @use 'styles/utilidades';
+
+/* Al imprimir un boleto, oculta el resto de la página y deja solo el ticket. */
+@media print {
+  body.imprimiendo-ticket * {
+    visibility: hidden;
+  }
+
+  body.imprimiendo-ticket .ticket-imprimible,
+  body.imprimiendo-ticket .ticket-imprimible * {
+    visibility: visible;
+  }
+
+  body.imprimiendo-ticket .ticket-imprimible {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+}

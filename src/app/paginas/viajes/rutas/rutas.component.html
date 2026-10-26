@@ -81,7 +81,7 @@
 <app-modal [abierto]="enFormulario() !== undefined"
            [titulo]="enFormulario() ? 'Editar ruta' : 'Nueva ruta'"
            subtitulo="El origen es la sucursal que opera la ruta."
-           ancho="chico" (cerrar)="enFormulario.set(undefined)">
+           ancho="mediano" (cerrar)="enFormulario.set(undefined)">
   <form id="form-ruta" [formGroup]="form" (ngSubmit)="guardar()" class="formulario">
     <div class="campo">
       <label for="origen">Origen</label>
@@ -115,6 +115,27 @@
       }
       @if (errorServidor('sucursalDestinoId')) {
         <span class="error">{{ errorServidor('sucursalDestinoId') }}</span>
+      }
+    </div>
+    <div class="campo recorrido-ruta">
+      <label>Recorrido</label>
+      <app-mapa-recorrido
+        [origenLatitud]="origenSucursal()?.latitud ?? null"
+        [origenLongitud]="origenSucursal()?.longitud ?? null"
+        [destinoLatitud]="destinoSucursal()?.latitud ?? null"
+        [destinoLongitud]="destinoSucursal()?.longitud ?? null"
+        [origen]="origenSucursal()?.nombre ?? 'Origen'"
+        [destino]="destinoSucursal()?.nombre ?? 'Destino'"
+        [alto]="170"
+        [mostrarVacio]="true"
+        mensajeVacio="Elige el origen y el destino para ver el recorrido."
+        mensajeIncompleto="Elige el destino para ver el recorrido."
+        (distanciaKm)="distanciaMapa.set($event)" />
+      @if (distanciaMapa(); as km) {
+        <div class="distancia-mapa">
+          <small class="ayuda">Recorrido por carretera: {{ km | number: '1.0-1' }} km (referencia).</small>
+          <button type="button" class="btn chico" (click)="usarDistanciaMapa()">Usar esta distancia</button>
+        </div>
       }
     </div>
     <div class="campo">

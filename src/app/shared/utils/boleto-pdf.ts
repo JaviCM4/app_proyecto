@@ -6,10 +6,10 @@ import type { Venta } from '../../core/models/venta.model';
  * Descarga el boleto en PDF capturando el ticket tal como se ve en pantalla
  * (misma imagen, fondo oscuro incluido). Si la captura falla, se usa Imprimir.
  */
-export async function descargarBoletoPdf(v: Venta): Promise<void> {
-  const elemento = document.querySelector('.ticket-imprimible') as HTMLElement | null;
-  if (!elemento) throw new Error('sin-ticket');
-  const lienzo = await html2canvas(elemento, { backgroundColor: '#0f172a', scale: 2 });
+export async function descargarBoletoPdf(v: Venta, elemento?: HTMLElement | null): Promise<void> {
+  const ticket = elemento ?? (document.querySelector('.ticket-imprimible') as HTMLElement | null);
+  if (!ticket) throw new Error('sin-ticket');
+  const lienzo = await html2canvas(ticket, { backgroundColor: '#0f172a', scale: 2 });
   const imagen = lienzo.toDataURL('image/png');
   const pdf = new jsPDF({ unit: 'mm', format: 'a5', orientation: 'landscape' });
   const paginaAncho = pdf.internal.pageSize.getWidth();
