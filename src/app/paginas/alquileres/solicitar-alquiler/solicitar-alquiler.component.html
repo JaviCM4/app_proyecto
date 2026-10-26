@@ -41,7 +41,10 @@
           y lo puede pagar con su billetera; si no, solo se cobra en efectivo en la ventanilla.
         </p>
         <div class="campo">
-          <label for="nit">NIT del cliente (opcional)</label>
+          <div class="fila-etiqueta">
+            <label for="nit">NIT del cliente (opcional)</label>
+            <button type="button" class="enlace" (click)="abrirSelector()">Seleccionar cliente</button>
+          </div>
           <div class="fila-nit">
             <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF o NIT"
                    autocomplete="off" (keydown.enter)="$event.preventDefault(); buscarCliente()" />
@@ -91,18 +94,6 @@
         }
       </div>
 
-      @if (sugerencias().length) {
-        <ul class="sugerencias-cliente completo-fila">
-          @for (c of sugerencias(); track c.usuarioId) {
-            <li>
-              <button type="button" (click)="usarCliente(c)">
-                <strong>{{ c.nombre }}</strong>
-                <span class="secundario">NIT {{ c.nit }} · {{ c.correo }}</span>
-              </button>
-            </li>
-          }
-        </ul>
-      }
     </div>
 
     <div class="mapa-solicitud">
@@ -234,5 +225,36 @@
     } @else {
       <a class="btn primario" routerLink="/panel/ordenes" (click)="creado.set(null)">Órdenes de alquiler</a>
     }
+  </div>
+</app-modal>
+
+<app-modal
+  [abierto]="selectorAbierto()"
+  titulo="Seleccionar cliente"
+  subtitulo="Clientes con cuenta en el sistema. Si el cliente no tiene cuenta, cierra y deja el NIT vacío (CF) o escríbelo a mano."
+  (cerrar)="cerrarSelector()">
+  <div class="campo">
+    <label for="buscar-cliente">Buscar por NIT, nombre o correo</label>
+    <input id="buscar-cliente" class="control" autocomplete="off" placeholder="Escribe para filtrar"
+           [formControl]="buscador" (keydown.enter)="$event.preventDefault()" />
+  </div>
+
+  <ul class="lista-clientes">
+    @for (c of clientes(); track c.usuarioId) {
+      <li>
+        <button type="button" (click)="usarCliente(c)">
+          <strong>{{ c.nombre }}</strong>
+          <span class="secundario">NIT {{ c.nit }} · {{ c.correo }}</span>
+        </button>
+      </li>
+    } @empty {
+      <li class="vacia">
+        {{ buscandoCliente() ? 'Buscando…' : 'Ningún cliente con cuenta coincide con lo que escribiste.' }}
+      </li>
+    }
+  </ul>
+
+  <div pie>
+    <button type="button" class="btn" (click)="cerrarSelector()">Cerrar</button>
   </div>
 </app-modal>

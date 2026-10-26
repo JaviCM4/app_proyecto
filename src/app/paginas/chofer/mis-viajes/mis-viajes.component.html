@@ -146,6 +146,35 @@
     <p class="secundario">Cargando detalle…</p>
   } @else {
     @if (enDetalle(); as d) {
+      <div class="pestanas" role="tablist">
+        <button type="button" role="tab" [class.activa]="pestanaDetalle() === 'viaje'"
+                [attr.aria-selected]="pestanaDetalle() === 'viaje'" (click)="pestanaDetalle.set('viaje')">
+          El viaje
+        </button>
+        <button type="button" role="tab" [class.activa]="pestanaDetalle() === 'bus'"
+                [attr.aria-selected]="pestanaDetalle() === 'bus'" (click)="pestanaDetalle.set('bus')">
+          El bus
+        </button>
+      </div>
+
+      @if (pestanaDetalle() === 'bus') {
+        <!-- La foto entera: el piloto reconoce cuál es su unidad en el predio. -->
+        <div class="bus-ficha">
+          <app-foto-tarjeta
+            [url]="d.busFotoUrl ?? null"
+            [titulo]="'Bus ' + (d.busPlaca ?? '')"
+            [descripcion]="'Bus ' + (d.busPlaca ?? '')"
+            vacio="Este bus todavía no tiene foto cargada"
+            ajuste="contain"
+            [ampliable]="true"
+            [alto]="300" />
+          <div class="datos-lista">
+            <div><dt>Placa</dt><dd>{{ d.busPlaca ?? '—' }}</dd></div>
+            <div><dt>Capacidad</dt><dd>{{ d.capacidad }} pasajeros</dd></div>
+            <div><dt>Piloto</dt><dd>{{ d.choferNombre ?? '—' }}</dd></div>
+          </div>
+        </div>
+      } @else {
       <div class="detalle-viaje-grid">
         <div class="detalle-info">
           <div class="detalle-cabecera">
@@ -233,6 +262,7 @@
           }
         </div>
       </div>
+      }
     } @else {
       <p class="secundario">Cargando detalle…</p>
     }

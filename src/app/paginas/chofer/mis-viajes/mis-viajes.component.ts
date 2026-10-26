@@ -8,6 +8,7 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, ahoraGt, fechaHoraGt } from '../../../core/utils/fechas';
+import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { Coordenadas, MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
@@ -23,7 +24,8 @@ type FiltroEstado = 'TODAS' | EstadoViaje;
 @Component({
   selector: 'app-mis-viajes-chofer',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, MapaRecorridoComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent,
+    MapaRecorridoComponent, FotoTarjetaComponent],
   templateUrl: './mis-viajes.component.html',
   styleUrl: './mis-viajes.component.scss',
 })
@@ -51,6 +53,9 @@ export class MisViajesChoferComponent implements OnInit {
   readonly detalleVisible = signal(false);
   readonly cargandoDetalle = signal(false);
   readonly enDetalle = signal<ViajeDetalle | null>(null);
+
+  /** Pestaña del detalle: el viaje (datos, bitácora y mapa) o el bus con su foto. */
+  readonly pestanaDetalle = signal<'viaje' | 'bus'>('viaje');
 
   /** Origen y destino del recorrido para el mapa del detalle (salen de la ruta y sus sucursales). */
   readonly origenRecorrido = signal<Coordenadas | null>(null);
@@ -118,6 +123,7 @@ export class MisViajesChoferComponent implements OnInit {
     this.cargandoDetalle.set(true);
     this.enDetalle.set(null);
     this.limpiarRecorrido();
+    this.pestanaDetalle.set('viaje');
     this.detalleVisible.set(true);
     this.servicio.detalleViaje(v.viajeId).subscribe({
       next: (detalle) => {

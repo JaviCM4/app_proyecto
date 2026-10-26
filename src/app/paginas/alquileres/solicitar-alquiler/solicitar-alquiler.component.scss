@@ -128,11 +128,23 @@
   cursor: pointer;
 }
 
-.sugerencias-cliente {
+/* Etiqueta del NIT con el enlace "Seleccionar cliente" a la derecha. */
+.fila-etiqueta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+
+  label { margin: 0; }
+  .enlace { margin-left: 0; }
+}
+
+/* Lista del modal de selección de cliente. */
+.lista-clientes {
   list-style: none;
-  margin: 0;
+  margin: 12px 0 0;
   padding: 0;
-  max-height: 170px;
+  max-height: 320px;
   overflow-y: auto;
   border: 1px solid var(--borde);
   border-radius: var(--radio-sm);
@@ -157,4 +169,11 @@
   }
 
   .secundario { font-size: 12px; }
+
+  .vacia {
+    padding: 14px 10px;
+    text-align: center;
+    color: var(--texto-tenue);
+    font-size: 13px;
+  }
 }

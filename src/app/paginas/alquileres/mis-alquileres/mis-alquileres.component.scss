@@ -140,3 +140,16 @@
     white-space: nowrap;
   }
 }
+
+/* Pestaña del bus asignado: la foto entera y, al lado, los datos de la unidad. */
+.bus-ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+@media (max-width: 900px) {
+  .bus-ficha { grid-template-columns: 1fr; }
+}

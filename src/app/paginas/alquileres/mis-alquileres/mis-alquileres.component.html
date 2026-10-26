@@ -65,7 +65,7 @@
         }
 
         <div class="alquiler-acciones">
-          <button type="button" class="btn chico" (click)="enDetalle.set(a)">Ver</button>
+          <button type="button" class="btn chico" (click)="verDetalle(a)">Ver</button>
           @if (a.estado === 'SOLICITADO') {
             <span class="secundario">Esperando cotización de la sucursal</span>
             <button type="button" class="btn chico peligro" (click)="abrirCancelar(a)">Cancelar</button>
@@ -111,6 +111,41 @@
       <div class="detalle-ruta">{{ a.origen }} <span class="flecha">→</span> {{ a.destino }}</div>
       <span [class]="'insignia ' + clase(a.estado)">{{ texto(a.estado) }}</span>
     </div>
+
+    @if (a.viaje) {
+      <div class="pestanas" role="tablist">
+        <button type="button" role="tab" [class.activa]="pestana() === 'alquiler'"
+                [attr.aria-selected]="pestana() === 'alquiler'" (click)="pestana.set('alquiler')">
+          El alquiler
+        </button>
+        <button type="button" role="tab" [class.activa]="pestana() === 'bus'"
+                [attr.aria-selected]="pestana() === 'bus'" (click)="pestana.set('bus')">
+          El bus asignado
+        </button>
+      </div>
+    }
+
+    @if (a.viaje && pestana() === 'bus') {
+      @if (a.viaje; as v) {
+        <!-- La foto entera, para reconocer el bus el día del viaje. -->
+        <div class="bus-ficha">
+          <app-foto-tarjeta
+            [url]="v.busFotoUrl ?? null"
+            [titulo]="'Bus ' + (v.busPlaca ?? '')"
+            [descripcion]="'Bus ' + (v.busPlaca ?? '')"
+            vacio="El bus asignado todavía no tiene foto cargada"
+            ajuste="contain"
+            [ampliable]="true"
+            [alto]="300" />
+          <div class="datos-lista">
+            <div><dt>Placa</dt><dd>{{ v.busPlaca ?? 'Por confirmar' }}</dd></div>
+            <div><dt>Capacidad</dt><dd>{{ v.capacidad }} asientos</dd></div>
+            <div><dt>Piloto</dt><dd>{{ v.choferNombre ?? 'Por confirmar' }}</dd></div>
+            <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+          </div>
+        </div>
+      }
+    } @else {
     <div class="detalle-con-mapa" [class.con-mapa]="tieneRecorrido(a)">
       <div class="detalle-info">
         <div class="datos-lista">
@@ -166,6 +201,7 @@
         </div>
       }
     </div>
+    }
   }
   <div pie>
     <button type="button" class="btn" (click)="enDetalle.set(null)">Cerrar</button>

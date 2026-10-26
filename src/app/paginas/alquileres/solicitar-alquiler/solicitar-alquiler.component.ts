@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -62,7 +62,12 @@ export class SolicitarAlquilerComponent implements OnInit {
   /** Se buscó un NIT completo y no es de nadie: el alquiler queda sin cuenta (solo efectivo). */
   readonly nitSinCuenta = signal(false);
 
-  readonly sugerencias = computed(() => (this.clienteLigado() ? [] : this.clientes()));
+  /**
+   * La lista de clientes ya no vive dentro del formulario: se abre con "Seleccionar cliente" en un
+   * modal aparte, con su propio buscador por NIT, nombre o correo.
+   */
+  readonly selectorAbierto = signal(false);
+  readonly buscador = this.fb.nonNullable.control('');
 
   readonly sucursales = signal<Sucursal[]>([]);
   readonly enviando = signal(false);
@@ -90,11 +95,11 @@ export class SolicitarAlquilerComponent implements OnInit {
   });
 
   constructor() {
-    // El NIT es la llave del cliente: mientras se escribe se van buscando las coincidencias.
+    // Buscador del modal: filtra la lista mientras se escribe (NIT, nombre o correo).
     if (this.esVentanilla) {
-      this.form.controls.clienteNit.valueChanges
+      this.buscador.valueChanges
         .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
-        .subscribe((nit) => this.cargarClientes(nit ?? ''));
+        .subscribe((texto) => this.cargarClientes(texto ?? ''));
     }
   }
 
@@ -127,12 +132,12 @@ export class SolicitarAlquilerComponent implements OnInit {
     const datos = [this.form.controls.clienteNit, this.form.controls.clienteNombre,
       this.form.controls.clienteCorreo];
     if (this.esVentanilla) {
-      // La ventanilla escribe los datos (o los trae del buscador por NIT).
+      // La ventanilla escribe los datos (o los trae del selector de clientes).
       datos.forEach((c) => {
         c.enable();
         c.markAsUntouched();
       });
-      this.cargarClientes('');          // los primeros clientes, para elegir sin teclear el NIT
+      this.clientes.set([]);            // la lista se carga al abrir el selector
     } else {
       // El cliente pide para sí: sus datos salen del perfil y no se editan aquí.
       const u = this.auth.usuario();
@@ -144,28 +149,31 @@ export class SolicitarAlquilerComponent implements OnInit {
 
   // ----- Buscador de clientes (igual que al vender boletos en ventanilla) -----
 
+  /** Llena la lista del modal. Sin texto trae los primeros clientes, para elegir sin teclear nada. */
   private cargarClientes(texto: string): void {
-    const escrito = texto.trim();
-    this.nitSinCuenta.set(false);
     this.buscandoCliente.set(true);
-    this.clientesServicio.buscar(escrito || null).subscribe({
+    this.clientesServicio.buscar(texto.trim() || null).subscribe({
       next: (lista) => {
         this.buscandoCliente.set(false);
         this.clientes.set(lista);
-        const exacto = escrito ? lista.find((c) => c.nit.toUpperCase() === escrito.toUpperCase()) : undefined;
-        if (exacto) {
-          this.ligar(exacto);
-        } else {
-          this.clienteLigado.set(null);
-        }
       },
       error: () => {
         // Sin buscador la solicitud sigue funcionando: se escriben los datos a mano.
         this.buscandoCliente.set(false);
         this.clientes.set([]);
-        this.clienteLigado.set(null);
       },
     });
+  }
+
+  /** Abre el selector con los primeros clientes cargados. */
+  abrirSelector(): void {
+    this.buscador.setValue('', { emitEvent: false });
+    this.selectorAbierto.set(true);
+    this.cargarClientes('');
+  }
+
+  cerrarSelector(): void {
+    this.selectorAbierto.set(false);
   }
 
   /** Enter o botón Buscar: dice claramente si ese NIT no es de ninguna cuenta. */
@@ -207,6 +215,7 @@ export class SolicitarAlquilerComponent implements OnInit {
     this.form.patchValue({ clienteNit: c.nit, clienteNombre: c.nombre, clienteCorreo: c.correo });
     this.ligar(c);
     this.nitSinCuenta.set(false);
+    this.cerrarSelector();
   }
 
   /** Suelta la cuenta: el alquiler queda a nombre de quien se escriba, sin ligar. */

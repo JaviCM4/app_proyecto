@@ -9,6 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
+import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
@@ -47,7 +48,8 @@ const TEXTO_VIAJE: Record<EstadoViaje, string> = {
 @Component({
   selector: 'app-mis-alquileres',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, RouterLink, MapaRecorridoComponent],
+  imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, RouterLink,
+    MapaRecorridoComponent, FotoTarjetaComponent],
   templateUrl: './mis-alquileres.component.html',
   styleUrl: './mis-alquileres.component.scss',
 })
@@ -75,6 +77,13 @@ export class MisAlquileresComponent implements OnInit {
   readonly tamano = signal(9);
 
   readonly enDetalle = signal<Alquiler | null>(null);
+  /** Pestaña del detalle: el alquiler o el bus asignado (la segunda solo si ya hay viaje). */
+  readonly pestana = signal<'alquiler' | 'bus'>('alquiler');
+
+  verDetalle(a: Alquiler): void {
+    this.pestana.set('alquiler');
+    this.enDetalle.set(a);
+  }
   readonly porCancelar = signal<Alquiler | null>(null);
   readonly enviando = signal(false);
   readonly pagandoId = signal<string | null>(null);
