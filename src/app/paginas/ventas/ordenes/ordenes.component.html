@@ -34,6 +34,7 @@
         <th>Cliente</th>
         <th>Ruta</th>
         <th>Precio cotizado</th>
+        <th>Forma de pago</th>
         <th>Estado</th>
         <th class="acciones">Acciones</th>
       </tr>
@@ -45,11 +46,18 @@
             <strong>{{ o.clienteNombre || '—' }}</strong>
             <div class="secundario">{{ o.clienteNit || 'Sin NIT' }}</div>
           </td>
-          <td>
-            {{ o.origen }} → {{ o.destino }}
-            <div class="secundario">{{ o.fechaPago | date: 'short' }}</div>
-          </td>
+          <td>{{ o.origen }} → {{ o.destino }}</td>
           <td>{{ o.monto | currency }}</td>
+          <td class="sin-salto">
+            @if (o.metodoPago) {
+              {{ metodoPago[o.metodoPago] }}
+              @if (o.fechaPago) {
+                <div class="secundario">{{ o.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</div>
+              }
+            } @else {
+              <span class="secundario">Sin elegir</span>
+            }
+          </td>
           <td>
             <span [class]="'insignia ' + estadoOrden[o.estado].clase">{{ estadoTexto(o.estado) }}</span>
           </td>
@@ -64,7 +72,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="5" class="tabla-vacia">
+          <td colspan="6" class="tabla-vacia">
             {{ cargando() ? 'Cargando órdenes…' : 'No hay órdenes que coincidan con los filtros.' }}
           </td>
         </tr>
@@ -107,11 +115,20 @@
       }
       <p class="secundario">
         {{ d.origen }} → {{ d.destino }} · Precio cotizado: {{ d.monto | currency }}
+      </p>
+      <p>
+        <strong>Forma de pago:</strong>
         @if (d.metodoPago) {
-          · Pagada con {{ metodoPago[d.metodoPago] }}
-        }
-        @if (d.fechaPago) {
-          · Pagada: {{ d.fechaPago | date: 'short' }}
+          {{ metodoPago[d.metodoPago] }}
+          @if (d.estado === 'PAGADA' && d.fechaPago) {
+            <span class="secundario"> · pagada el {{ d.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</span>
+          } @else if (d.estado === 'PENDIENTE_PAGO') {
+            <span class="secundario">
+              · {{ d.metodoPago === 'CARTERA' ? 'cobrando a la billetera del cliente' : 'pendiente de recibir el efectivo' }}
+            </span>
+          }
+        } @else {
+          <span class="secundario">todavía sin elegir</span>
         }
       </p>
       <p>
