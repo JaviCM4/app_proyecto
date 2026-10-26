@@ -13,6 +13,7 @@ import { VentasService } from '../../../core/services/ventas.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
+import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { Coordenadas, MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { SelectorAsientosComponent } from '../../../shared/components/selector-asientos/selector-asientos.component';
@@ -27,7 +28,15 @@ import { ToastService } from '../../../shared/services/toast.service';
 @Component({
   selector: 'app-asientos-viaje',
   standalone: true,
-  imports: [ModalComponent, SelectorAsientosComponent, MapaRecorridoComponent, DatePipe, CurrencyPipe, LowerCasePipe],
+  imports: [
+    ModalComponent,
+    SelectorAsientosComponent,
+    MapaRecorridoComponent,
+    FotoTarjetaComponent,
+    DatePipe,
+    CurrencyPipe,
+    LowerCasePipe,
+  ],
   templateUrl: './asientos-viaje.component.html',
   styleUrl: './asientos-viaje.component.scss',
 })

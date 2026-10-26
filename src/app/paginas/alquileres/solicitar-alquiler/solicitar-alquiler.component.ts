@@ -1,11 +1,15 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
+import { ClienteCuenta } from '../../../core/models/venta.model';
 import { Alquiler } from '../../../core/models/viaje.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ClientesService } from '../../../core/services/clientes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
@@ -19,16 +23,14 @@ import {
 import { ToastService } from '../../../shared/services/toast.service';
 import { pantallaGrande } from '../../../shared/utils/pantalla';
 
-/** Para quién es el alquiler: la persona con sesión (sus datos del perfil) u otra (datos a mano). */
-export type ParaQuien = 'propia' | 'otra';
-
 /**
  * Solicitud de alquiler de un bus (T16).
  * - CLIENTE: siempre a su nombre; NIT, nombre y correo salen de su perfil y no se editan aquí.
- * - CAJERO y ADMINISTRADOR DE SUCURSAL: eligen si es propia (necesita el rol Cliente; se toman sus datos)
- *   o de otra persona (nombre obligatorio, NIT y correo opcionales).
- * El backend no cambia: con rol Cajero el alquiler es PRESENCIAL en su sucursal; si no, EN_LINEA a la cuenta
- * que lo pide (así lo registra el administrador de sucursal, que no es cajero).
+ * - VENTANILLA (cajero y administrador de sucursal): pide a nombre de quien llega al mostrador, que
+ *   puede ser cualquiera, incluso el propio empleado. El NIT es la llave, igual que al vender boletos:
+ *   si es de una cuenta del sistema, el alquiler queda ligado a ella y le aparece al cliente en
+ *   "Mis alquileres" para pagarlo con su billetera; si no, queda sin cuenta y solo se cobra en efectivo.
+ *   La sucursal es libre: el alquiler lo atiende la que sale en el viaje, no donde trabaja quien lo pide.
  */
 @Component({
   selector: 'app-solicitar-alquiler',
@@ -41,25 +43,26 @@ export class SolicitarAlquilerComponent implements OnInit {
   private readonly alquileres = inject(AlquileresService);
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly usuarios = inject(UsuariosService);
+  private readonly clientesServicio = inject(ClientesService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
   readonly auth = inject(AuthService);
 
   readonly zona = ZONA_GT;
-  /** Cajero o administrador de sucursal: registra el alquiler de un cliente que llega a la ventanilla. */
+  /** Cajero o administrador de sucursal: registra el alquiler de quien llega a la ventanilla. */
   readonly esVentanilla = this.auth.tieneRol('CAJERO', 'ADMIN_SUCURSAL');
-  readonly esCajero = this.auth.tieneRol('CAJERO');
-  /** Solo con el rol Cliente se puede pedir un alquiler propio. */
-  readonly tieneCliente = this.auth.tieneRol('CLIENTE');
-  readonly paraQuien = signal<ParaQuien>(this.esVentanilla ? 'otra' : 'propia');
-  /** Datos del cliente tomados del perfil (solo lectura) o escritos a mano. */
-  readonly esPropia = computed(() => this.paraQuien() === 'propia');
-  /**
-   * Sucursal fija: la del cajero siempre (el backend lo exige) y la del administrador de sucursal cuando
-   * atiende a otra persona. El cliente, o el administrador pidiendo para sí, elige la sucursal.
-   */
-  readonly sucursalBloqueada = computed(() => this.esCajero || (this.esVentanilla && !this.esPropia()));
   readonly hoy = hoyGt();
+
+  // ----- Cliente del sistema (la ventanilla lo busca por NIT) -----
+
+  readonly clientes = signal<ClienteCuenta[]>([]);
+  /** Cliente cuya cuenta coincide con el NIT escrito: el alquiler queda ligado a ella. */
+  readonly clienteLigado = signal<ClienteCuenta | null>(null);
+  readonly buscandoCliente = signal(false);
+  /** Se buscó un NIT completo y no es de nadie: el alquiler queda sin cuenta (solo efectivo). */
+  readonly nitSinCuenta = signal(false);
+
+  readonly sugerencias = computed(() => (this.clienteLigado() ? [] : this.clientes()));
 
   readonly sucursales = signal<Sucursal[]>([]);
   readonly enviando = signal(false);
@@ -71,11 +74,6 @@ export class SolicitarAlquilerComponent implements OnInit {
   /** Puntos marcados en el mapa (null = todavía no se marca). */
   readonly origenMapa = signal<Coordenadas | null>(null);
   readonly destinoMapa = signal<Coordenadas | null>(null);
-
-  readonly sucursalFija = computed(() => {
-    const id = this.auth.usuario()?.sucursalId;
-    return this.sucursales().find((s) => s.sucursalId === id) ?? null;
-  });
 
   readonly form = this.fb.nonNullable.group({
     sucursalId: ['', Validators.required],
@@ -91,6 +89,15 @@ export class SolicitarAlquilerComponent implements OnInit {
     fechaSolicitud: [hoyGt(), Validators.required],
   });
 
+  constructor() {
+    // El NIT es la llave del cliente: mientras se escribe se van buscando las coincidencias.
+    if (this.esVentanilla) {
+      this.form.controls.clienteNit.valueChanges
+        .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+        .subscribe((nit) => this.cargarClientes(nit ?? ''));
+    }
+  }
+
   ngOnInit(): void {
     this.sucursalesServicio.listar(true).subscribe({
       next: (lista) => this.sucursales.set(lista),
@@ -101,7 +108,7 @@ export class SolicitarAlquilerComponent implements OnInit {
 
   private reiniciar(): void {
     this.form.reset({
-      sucursalId: '',
+      sucursalId: this.esVentanilla ? (this.auth.usuario()?.sucursalId ?? '') : '',
       clienteNit: '',
       clienteNombre: '',
       clienteCorreo: '',
@@ -115,38 +122,115 @@ export class SolicitarAlquilerComponent implements OnInit {
     });
     this.origenMapa.set(null);
     this.destinoMapa.set(null);
-    this.elegirParaQuien(this.paraQuien());
-  }
-
-  /**
-   * Propia: datos del perfil, bloqueados (getRawValue() igual los envía). Otra persona: campos vacíos
-   * y editables. También fija o libera la sucursal.
-   */
-  elegirParaQuien(valor: ParaQuien): void {
-    if (valor === 'propia' && !this.tieneCliente) return;
-    this.paraQuien.set(valor);
-    const datos = [this.form.controls.clienteNit, this.form.controls.clienteNombre, this.form.controls.clienteCorreo];
-    if (valor === 'propia') {
-      const u = this.auth.usuario();
-      this.form.patchValue({ clienteNit: '', clienteNombre: u?.nombre ?? '', clienteCorreo: u?.correo ?? '' });
-      datos.forEach((c) => c.disable());
-      this.llenarConPerfil();
-    } else {
-      this.form.patchValue({ clienteNit: '', clienteNombre: '', clienteCorreo: '' });
+    this.clienteLigado.set(null);
+    this.nitSinCuenta.set(false);
+    const datos = [this.form.controls.clienteNit, this.form.controls.clienteNombre,
+      this.form.controls.clienteCorreo];
+    if (this.esVentanilla) {
+      // La ventanilla escribe los datos (o los trae del buscador por NIT).
       datos.forEach((c) => {
         c.enable();
         c.markAsUntouched();
       });
+      this.cargarClientes('');          // los primeros clientes, para elegir sin teclear el NIT
+    } else {
+      // El cliente pide para sí: sus datos salen del perfil y no se editan aquí.
+      const u = this.auth.usuario();
+      this.form.patchValue({ clienteNombre: u?.nombre ?? '', clienteCorreo: u?.correo ?? '' });
+      datos.forEach((c) => c.disable());
+      this.llenarConPerfil();
     }
-    const suya = this.auth.usuario()?.sucursalId ?? '';
-    this.form.controls.sucursalId.setValue(this.sucursalBloqueada() ? suya : (this.esVentanilla ? suya : ''));
+  }
+
+  // ----- Buscador de clientes (igual que al vender boletos en ventanilla) -----
+
+  private cargarClientes(texto: string): void {
+    const escrito = texto.trim();
+    this.nitSinCuenta.set(false);
+    this.buscandoCliente.set(true);
+    this.clientesServicio.buscar(escrito || null).subscribe({
+      next: (lista) => {
+        this.buscandoCliente.set(false);
+        this.clientes.set(lista);
+        const exacto = escrito ? lista.find((c) => c.nit.toUpperCase() === escrito.toUpperCase()) : undefined;
+        if (exacto) {
+          this.ligar(exacto);
+        } else {
+          this.clienteLigado.set(null);
+        }
+      },
+      error: () => {
+        // Sin buscador la solicitud sigue funcionando: se escriben los datos a mano.
+        this.buscandoCliente.set(false);
+        this.clientes.set([]);
+        this.clienteLigado.set(null);
+      },
+    });
+  }
+
+  /** Enter o botón Buscar: dice claramente si ese NIT no es de ninguna cuenta. */
+  buscarCliente(): void {
+    const escrito = (this.form.controls.clienteNit.value ?? '').trim();
+    if (!escrito) {
+      this.avisos.info('Escribe el NIT del cliente para buscarlo.');
+      return;
+    }
+    this.buscandoCliente.set(true);
+    this.clientesServicio.buscar(escrito).subscribe({
+      next: (lista) => {
+        this.buscandoCliente.set(false);
+        this.clientes.set(lista);
+        const exacto = lista.find((c) => c.nit.toUpperCase() === escrito.toUpperCase());
+        if (exacto) {
+          this.ligar(exacto);
+          this.nitSinCuenta.set(false);
+          this.avisos.exito(`Cliente encontrado: ${exacto.nombre}.`);
+          return;
+        }
+        this.clienteLigado.set(null);
+        this.nitSinCuenta.set(true);
+        this.avisos.info(
+          lista.length
+            ? 'Ese NIT no existe en el sistema; abajo están los clientes parecidos.'
+            : 'Ese NIT no existe en el sistema. El alquiler quedará sin cuenta y se cobra en efectivo.',
+        );
+      },
+      error: (e) => {
+        this.buscandoCliente.set(false);
+        this.avisos.error(mensajeError(e, 'No se pudo buscar el cliente.'));
+      },
+    });
+  }
+
+  /** Elegir un cliente de la lista: llena el NIT, el nombre y el correo con los de su cuenta. */
+  usarCliente(c: ClienteCuenta): void {
+    this.form.patchValue({ clienteNit: c.nit, clienteNombre: c.nombre, clienteCorreo: c.correo });
+    this.ligar(c);
+    this.nitSinCuenta.set(false);
+  }
+
+  /** Suelta la cuenta: el alquiler queda a nombre de quien se escriba, sin ligar. */
+  quitarCliente(): void {
+    this.form.patchValue({ clienteNit: '', clienteNombre: '', clienteCorreo: '' });
+    this.clienteLigado.set(null);
+    this.nitSinCuenta.set(false);
+  }
+
+  private ligar(c: ClienteCuenta): void {
+    this.clienteLigado.set(c);
+    // Solo se completa lo que esté vacío: puede viajar otra persona con el mismo NIT de factura.
+    const actual = this.form.getRawValue();
+    this.form.patchValue({
+      clienteNombre: actual.clienteNombre?.trim() ? actual.clienteNombre : c.nombre,
+      clienteCorreo: actual.clienteCorreo?.trim() ? actual.clienteCorreo : c.correo,
+    });
   }
 
   /** NIT, nombre y correo del perfil del cliente (campos de solo lectura: se cambian en Mi perfil). */
   private llenarConPerfil(): void {
     this.usuarios.perfil().subscribe({
       next: (p) => {
-        if (!this.esPropia()) return; // cambió a "otra persona" mientras llegaba el perfil
+        if (this.esVentanilla) return;
         const nombre = `${p.nombres ?? ''} ${p.apellidos ?? ''}`.trim();
         this.form.patchValue({
           clienteNit: p.nit ?? '',

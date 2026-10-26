@@ -9,6 +9,7 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { mensajeError } from '../../../core/utils/errores-http';
 import { hoyGt } from '../../../core/utils/fechas';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
+import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ESTADO_ORDEN_ALQUILER, METODO_PAGO, textoMotivo } from '../../../shared/constants/ventas';
@@ -29,6 +30,7 @@ type FiltroEstado = 'TODAS' | EstadoOrdenAlquiler;
     ModalComponent,
     ConfirmacionComponent,
     PaginadorComponent,
+    MapaRecorridoComponent,
   ],
   templateUrl: './ordenes.component.html',
   styleUrl: './ordenes.component.scss',
@@ -36,6 +38,15 @@ type FiltroEstado = 'TODAS' | EstadoOrdenAlquiler;
 export class OrdenesComponent implements OnInit {
   readonly estadoOrden = ESTADO_ORDEN_ALQUILER;
   readonly metodoPago = METODO_PAGO;
+
+  /**
+   * ¿La orden trae el recorrido marcado en el mapa? Las solicitudes viejas no lo tienen y en su
+   * lugar el origen y el destino son texto (a veces las coordenadas en crudo).
+   */
+  tieneRecorrido(o: OrdenAlquiler): boolean {
+    return o.origenLatitud != null && o.origenLongitud != null
+      && o.destinoLatitud != null && o.destinoLongitud != null;
+  }
   /** El motivo del backend es un código (SALDO_INSUFICIENTE...): aquí se muestra en palabras. */
   readonly motivo = textoMotivo;
   private readonly auth = inject(AuthService);

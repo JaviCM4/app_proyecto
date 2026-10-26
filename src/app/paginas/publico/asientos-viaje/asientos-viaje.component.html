@@ -8,6 +8,14 @@
     @if (mapa(); as m) {
       <div class="compra-layout">
         <div class="compra-bus">
+          @if (viaje()?.busFotoUrl) {
+            <!-- Solo la foto del bus: así el pasajero reconoce el color y lo ubica en la terminal. -->
+            <app-foto-tarjeta
+              [url]="viaje()?.busFotoUrl ?? null"
+              [titulo]="'Bus ' + (m.busPlaca ?? '')"
+              [descripcion]="'Bus ' + (m.busPlaca ?? '')"
+              [alto]="140" />
+          }
           <app-selector-asientos [mapa]="m" [resumen]="false" [bloqueado]="invitado()" [maximo]="60"
                                  (seleccion)="alElegir($event)" />
         </div>

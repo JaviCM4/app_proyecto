@@ -21,6 +21,12 @@
   min-width: 0;
 }
 
+/* La foto del bus va encima del mapa de asientos, separada de él. */
+.compra-bus app-foto-tarjeta {
+  display: block;
+  margin-bottom: 12px;
+}
+
 /* Resumen del viaje debajo del bus y del mapa. */
 .compra-resumen {
   display: grid;

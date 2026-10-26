@@ -24,6 +24,8 @@ export interface Viaje {
   destinoNombre: string;
   busId: string;
   busPlaca: string | null;
+  /** Foto del bus (copia que Trips guarda de Fleet): el pasajero lo reconoce en la terminal. */
+  busFotoUrl?: string | null;
   choferId: string;
   choferNombre: string | null;
   capacidad: number;

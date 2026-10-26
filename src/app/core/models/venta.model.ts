@@ -136,6 +136,11 @@ export interface OrdenAlquiler {
   clienteCorreo: string | null;
   origen: string;
   destino: string;
+  /** Puntos que el cliente marcó en el mapa al pedir el alquiler; null si no los marcó. */
+  origenLatitud?: number | null;
+  origenLongitud?: number | null;
+  destinoLatitud?: number | null;
+  destinoLongitud?: number | null;
   monto: number;
   metodoPago: MetodoPago | null;
   fechaPago: string | null;

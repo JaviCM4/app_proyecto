@@ -13,57 +13,19 @@
     <div class="formulario-grilla">
       <div class="formulario-seccion">Datos de la solicitud</div>
 
-      @if (esVentanilla) {
-        <div class="campo completo-fila">
-          <span class="etiqueta-grupo">¿Para quién es el alquiler?</span>
-          <div class="para-quien" role="radiogroup" aria-label="Para quién es el alquiler">
-            <label class="opcion" [class.activa]="esPropia()" [class.deshabilitada]="!tieneCliente">
-              <input type="radio" name="paraQuien" [checked]="esPropia()" [disabled]="!tieneCliente"
-                     (change)="elegirParaQuien('propia')" />
-              <span>
-                <strong>Para mí</strong>
-                <small>{{ tieneCliente ? 'Con los datos de mi perfil.' : 'Tu cuenta no tiene el rol Cliente.' }}</small>
-              </span>
-            </label>
-            <label class="opcion" [class.activa]="!esPropia()">
-              <input type="radio" name="paraQuien" [checked]="!esPropia()" (change)="elegirParaQuien('otra')" />
-              <span>
-                <strong>Para otra persona</strong>
-                <small>Escribes sus datos a mano.</small>
-              </span>
-            </label>
-          </div>
-          @if (esCajero && esPropia()) {
-            <span class="ayuda">Se registra en ventanilla a tu nombre y lo pagas en efectivo en <strong>Órdenes de alquiler</strong>.</span>
+      <div class="campo">
+        <label for="sucursal">Sucursal que atenderá el alquiler</label>
+        <select id="sucursal" class="control" formControlName="sucursalId">
+          <option value="">Elige la sucursal…</option>
+          @for (s of sucursales(); track s.sucursalId) {
+            <option [value]="s.sucursalId">{{ s.nombre }} · {{ s.municipio }}</option>
           }
-          @if (!esCajero && !esPropia()) {
-            <span class="ayuda">
-              Se registra en tu sucursal y queda en tus <strong>Mis alquileres</strong> con los datos de esa persona.
-            </span>
-          }
-        </div>
-      }
-
-      @if (sucursalBloqueada()) {
-        <div class="campo">
-          <label>Sucursal</label>
-          <input class="control" [value]="sucursalFija()?.nombre ?? 'Tu sucursal'" disabled />
-          <span class="ayuda">Los alquileres de ventanilla se registran en tu propia sucursal.</span>
-        </div>
-      } @else {
-        <div class="campo">
-          <label for="sucursal">Sucursal que te atenderá</label>
-          <select id="sucursal" class="control" formControlName="sucursalId">
-            <option value="">Elige la sucursal…</option>
-            @for (s of sucursales(); track s.sucursalId) {
-              <option [value]="s.sucursalId">{{ s.nombre }} · {{ s.municipio }}</option>
-            }
-          </select>
-          @if (form.controls.sucursalId.touched && form.controls.sucursalId.invalid) {
-            <span class="error">Elige una sucursal.</span>
-          }
-        </div>
-      }
+        </select>
+        @if (form.controls.sucursalId.touched && form.controls.sucursalId.invalid) {
+          <span class="error">Elige una sucursal.</span>
+        }
+        <span class="ayuda">De aquí sale el bus; puede ser cualquier sucursal.</span>
+      </div>
 
       <div class="campo">
         <label for="fechaSolicitud">Fecha de la solicitud</label>
@@ -73,23 +35,47 @@
 
       <div class="formulario-seccion">Datos del cliente</div>
 
-      @if (esPropia()) {
+      @if (esVentanilla) {
+        <p class="ayuda completo-fila">
+          Busca al cliente por su NIT. Si tiene cuenta, el alquiler le aparece en <strong>Mis alquileres</strong>
+          y lo puede pagar con su billetera; si no, solo se cobra en efectivo en la ventanilla.
+        </p>
+        <div class="campo">
+          <label for="nit">NIT del cliente (opcional)</label>
+          <div class="fila-nit">
+            <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF o NIT"
+                   autocomplete="off" (keydown.enter)="$event.preventDefault(); buscarCliente()" />
+            <button type="button" class="btn chico" (click)="buscarCliente()" [disabled]="buscandoCliente()">
+              {{ buscandoCliente() ? 'Buscando…' : 'Buscar' }}
+            </button>
+          </div>
+          @if (clienteLigado(); as c) {
+            <p class="cliente-ligado">
+              Cuenta del sistema: <strong>{{ c.nombre }}</strong> · {{ c.nit }}
+              <button type="button" class="enlace" (click)="quitarCliente()">Quitar</button>
+            </p>
+          } @else if (nitSinCuenta()) {
+            <p class="cliente-sin-cuenta">
+              Ese NIT no existe en el sistema. El alquiler queda sin cuenta y se cobra en efectivo.
+            </p>
+          } @else {
+            <span class="ayuda">Déjalo vacío para consumidor final (CF).</span>
+          }
+        </div>
+      } @else {
         <p class="ayuda completo-fila">
           La solicitud va a tu nombre con los datos de tu perfil. Para cambiarlos ve a
           <a routerLink="/panel/perfil">Mi perfil</a>.
         </p>
+        <div class="campo">
+          <label for="nit">NIT</label>
+          <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF" />
+          <span class="ayuda">Sale de tu perfil; sin NIT se registra como CF.</span>
+        </div>
       }
 
       <div class="campo">
-        <label for="nit">{{ esPropia() ? 'NIT' : 'NIT del cliente (opcional)' }}</label>
-        <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF" />
-        <span class="ayuda">
-          {{ esPropia() ? 'Sale de tu perfil; sin NIT se registra como CF.' : 'Déjalo vacío para consumidor final (CF).' }}
-        </span>
-      </div>
-
-      <div class="campo">
-        <label for="nombre">{{ esPropia() ? 'Nombre' : 'Nombre del cliente' }}</label>
+        <label for="nombre">{{ esVentanilla ? 'Nombre del cliente' : 'Nombre' }}</label>
         <input id="nombre" class="control" formControlName="clienteNombre" maxlength="150" placeholder="Nombre completo" />
         @if (form.controls.clienteNombre.touched && form.controls.clienteNombre.invalid) {
           <span class="error">Escribe el nombre del cliente.</span>
@@ -97,13 +83,26 @@
       </div>
 
       <div class="campo">
-        <label for="correo">{{ esPropia() ? 'Correo' : 'Correo (opcional)' }}</label>
+        <label for="correo">{{ esVentanilla ? 'Correo (opcional)' : 'Correo' }}</label>
         <input id="correo" type="email" class="control" formControlName="clienteCorreo" maxlength="150"
                placeholder="Para avisarle de la cotización" />
         @if (form.controls.clienteCorreo.touched && form.controls.clienteCorreo.invalid) {
           <span class="error">Escribe un correo válido.</span>
         }
       </div>
+
+      @if (sugerencias().length) {
+        <ul class="sugerencias-cliente completo-fila">
+          @for (c of sugerencias(); track c.usuarioId) {
+            <li>
+              <button type="button" (click)="usarCliente(c)">
+                <strong>{{ c.nombre }}</strong>
+                <span class="secundario">NIT {{ c.nit }} · {{ c.correo }}</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
     </div>
 
     <div class="mapa-solicitud">

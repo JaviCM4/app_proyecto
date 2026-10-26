@@ -93,6 +93,18 @@
         <strong>{{ d.clienteNombre || 'Sin nombre' }}</strong>
         <span class="secundario"> · NIT: {{ d.clienteNit || '—' }} · {{ d.clienteCorreo || 'Sin correo' }}</span>
       </p>
+      @if (tieneRecorrido(d)) {
+        <app-mapa-recorrido
+          [origenLatitud]="d.origenLatitud ?? null"
+          [origenLongitud]="d.origenLongitud ?? null"
+          [destinoLatitud]="d.destinoLatitud ?? null"
+          [destinoLongitud]="d.destinoLongitud ?? null"
+          [origen]="d.origen"
+          [destino]="d.destino"
+          [alto]="220" />
+      } @else {
+        <p class="secundario">Esta solicitud no trae el recorrido marcado en el mapa.</p>
+      }
       <p class="secundario">
         {{ d.origen }} → {{ d.destino }} · Precio cotizado: {{ d.monto | currency }}
         @if (d.metodoPago) {
