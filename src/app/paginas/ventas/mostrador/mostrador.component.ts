@@ -83,6 +83,9 @@ export class MostradorComponent implements OnInit {
     return ligado ? [] : this.clientes();
   });
 
+  /** El correo se oculta por defecto para dejar limpia la pantalla del cajero. */
+  readonly mostrarCorreo = signal(false);
+
   readonly formVenta = this.fb.group({
     clienteNit: [''],
     clienteNombre: [''],
@@ -282,6 +285,7 @@ export class MostradorComponent implements OnInit {
     this.viajeElegido.set(v);
     this.mapa.set(null);
     this.asientosElegidos.set([]);
+    this.mostrarCorreo.set(false);
     this.formVenta.reset({ clienteNit: '', clienteNombre: '', clienteCorreo: '', fechaPago: hoyGt() });
     this.clienteLigado.set(null);
     this.nitSinCuenta.set(false);
@@ -349,5 +353,11 @@ export class MostradorComponent implements OnInit {
 
   nuevaVenta(): void {
     this.ventaConfirmada.set(null);
+    this.mostrarCorreo.set(false);
+  }
+
+  /** Muestra u oculta el campo de correo (solo se envía el comprobante si hay correo). */
+  alternarCorreo(): void {
+    this.mostrarCorreo.update((visible) => !visible);
   }
 }

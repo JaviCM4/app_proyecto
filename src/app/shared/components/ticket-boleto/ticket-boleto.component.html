@@ -32,7 +32,9 @@
 
 @if (mostrarAcciones()) {
   <div class="ticket-acciones">
-    <button type="button" class="btn primario chico" (click)="descargarPdf()">Descargar PDF</button>
+    @if (mostrarDescargar()) {
+      <button type="button" class="btn primario chico" (click)="descargarPdf()">Descargar PDF</button>
+    }
     <button type="button" class="btn chico" (click)="imprimir()">Imprimir</button>
   </div>
 }

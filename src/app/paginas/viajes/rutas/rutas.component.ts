@@ -138,10 +138,17 @@ export class RutasComponent implements OnInit {
     return this.sucursales().find((s) => s.sucursalId === id) ?? null;
   }
 
-  /** Copia los km del recorrido del mapa al campo de distancia (el admin puede ajustarlos). */
-  usarDistanciaMapa(): void {
-    const km = this.distanciaMapa();
-    if (km === null) return;
+  /**
+   * La distancia siempre sale del mapa: cada vez que el recorrido cambia se copia al campo,
+   * que es de solo lectura. Si el ruteo falla (null) al editar se conserva la distancia
+   * guardada; en una ruta nueva el campo queda vacío y no deja guardar.
+   */
+  alCambiarDistancia(km: number | null): void {
+    this.distanciaMapa.set(km);
+    if (km === null) {
+      if (!this.enFormulario()) this.form.controls.distanciaKm.setValue(null);
+      return;
+    }
     this.form.controls.distanciaKm.setValue(Math.round(km * 100) / 100);
   }
 

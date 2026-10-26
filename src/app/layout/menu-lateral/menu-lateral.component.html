@@ -4,6 +4,23 @@
     <span class="texto">{{ appNombre }}</span>
   </div>
 
+  @if (variosRoles()) {
+    <div class="roles">
+      <div class="roles-selector" role="group" aria-label="Cambiar el menú según el rol">
+        @for (rol of roles(); track rol) {
+          <button type="button" class="rol" [class.activa]="rol === rolActivo()"
+                  [attr.aria-pressed]="rol === rolActivo()"
+                  [attr.title]="'Menú de ' + nombreRol(rol)"
+                  [attr.aria-label]="'Menú de ' + nombreRol(rol)"
+                  (click)="elegirRol(rol)">
+            <app-icono [nombre]="iconoRol[rol]" [tamano]="16" />
+          </button>
+        }
+      </div>
+      <p class="roles-activo texto">Menú de {{ nombreRol(rolActivo()) }}</p>
+    </div>
+  }
+
   <nav>
     @for (grupo of grupos(); track grupo.titulo) {
       <p class="grupo texto">{{ grupo.titulo }}</p>

@@ -146,59 +146,84 @@
     <p class="secundario">Cargando detalle…</p>
   } @else {
     @if (enDetalle(); as d) {
-      <div class="detalle-cabecera">
-        <div class="detalle-ruta">
-          <span>{{ d.origenNombre }}</span>
-          <span class="flecha">→</span>
-          <span>{{ d.destinoNombre }}</span>
-        </div>
-        <span class="insignia"
-          [class.aviso]="d.estado === 'PROGRAMADO'"
-          [class.primario]="d.estado === 'EN_RUTA'"
-          [class.exito]="d.estado === 'COMPLETADO'">
-          {{ d.estado === 'PROGRAMADO' ? 'Por salir' : d.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }}
-        </span>
-      </div>
-
-      <div class="datos-lista">
-        <div><dt>Bus</dt><dd>{{ d.busPlaca ?? '—' }}</dd></div>
-        <div><dt>Tipo de viaje</dt><dd>{{ d.tipo === 'PRIVADO' ? 'Alquiler privado' : 'Regular' }}</dd></div>
-        <div><dt>Salida programada</dt><dd>{{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
-        <div><dt>Llegada estimada</dt><dd>{{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
-        <div><dt>Chofer</dt><dd>{{ d.choferNombre ?? '—' }}</dd></div>
-        <div><dt>Capacidad</dt><dd>{{ d.capacidad }} pasajeros</dd></div>
-      </div>
-
-      <h3 class="detalle-titulo">Bitácora del viaje</h3>
-      <div class="bitacora">
-        <div class="hito" [class.pendiente]="!d.salida">
-          <span class="punto"></span>
-          <div class="hito-cuerpo">
-            <strong>Salida</strong>
-            @if (d.salida) {
-              <span class="hito-fecha">{{ d.salida.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
-              <span class="secundario">Kilometraje inicial: {{ d.salida.kmInicial }} km</span>
-            } @else {
-              <span class="secundario">Aún no registrada.</span>
-            }
+      <div class="detalle-viaje-grid">
+        <div class="detalle-info">
+          <div class="detalle-cabecera">
+            <div class="detalle-ruta">
+              <span>{{ d.origenNombre }}</span>
+              <span class="flecha">→</span>
+              <span>{{ d.destinoNombre }}</span>
+            </div>
+            <span class="insignia"
+              [class.aviso]="d.estado === 'PROGRAMADO'"
+              [class.primario]="d.estado === 'EN_RUTA'"
+              [class.exito]="d.estado === 'COMPLETADO'">
+              {{ d.estado === 'PROGRAMADO' ? 'Por salir' : d.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }}
+            </span>
           </div>
-        </div>
 
-        <div class="hito" [class.pendiente]="!d.llegada">
-          <span class="punto"></span>
-          <div class="hito-cuerpo">
-            <strong>Llegada</strong>
-            @if (d.llegada) {
-              <span class="hito-fecha">{{ d.llegada.fechaHoraLlegada | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
-              <div class="hito-totales">
-                <span><b>{{ d.llegada.kmRecorridos }}</b> km recorridos</span>
-                <span><b>{{ d.llegada.costoCombustible | currency: 'GTQ' : 'symbol-narrow' }}</b> de combustible</span>
+          <div class="datos-lista">
+            <div><dt>Bus</dt><dd>{{ d.busPlaca ?? '—' }}</dd></div>
+            <div><dt>Tipo de viaje</dt><dd>{{ d.tipo === 'PRIVADO' ? 'Alquiler privado' : 'Regular' }}</dd></div>
+            <div><dt>Salida programada</dt><dd>{{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+            <div><dt>Llegada estimada</dt><dd>{{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+            <div><dt>Chofer</dt><dd>{{ d.choferNombre ?? '—' }}</dd></div>
+            <div><dt>Capacidad</dt><dd>{{ d.capacidad }} pasajeros</dd></div>
+          </div>
+
+          <h3 class="detalle-titulo">Bitácora del viaje</h3>
+          <div class="bitacora">
+            <div class="hito" [class.pendiente]="!d.salida">
+              <span class="punto"></span>
+              <div class="hito-cuerpo">
+                <strong>Salida</strong>
+                @if (d.salida) {
+                  <span class="hito-fecha">{{ d.salida.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
+                  <span class="secundario">Kilometraje inicial: {{ d.salida.kmInicial }} km</span>
+                } @else {
+                  <span class="secundario">Aún no registrada.</span>
+                }
               </div>
-              <span class="secundario">Kilometraje final: {{ d.llegada.kmFinal }} km</span>
-            } @else {
-              <span class="secundario">Aún no registrada.</span>
-            }
+            </div>
+
+            <div class="hito" [class.pendiente]="!d.llegada">
+              <span class="punto"></span>
+              <div class="hito-cuerpo">
+                <strong>Llegada</strong>
+                @if (d.llegada) {
+                  <span class="hito-fecha">{{ d.llegada.fechaHoraLlegada | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
+                  <div class="hito-totales">
+                    <span><b>{{ d.llegada.kmRecorridos }}</b> km recorridos</span>
+                    <span><b>{{ d.llegada.costoCombustible | currency: 'GTQ' : 'symbol-narrow' }}</b> de combustible</span>
+                  </div>
+                  <span class="secundario">Kilometraje final: {{ d.llegada.kmFinal }} km</span>
+                } @else {
+                  <span class="secundario">Aún no registrada.</span>
+                }
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div class="detalle-mapa">
+          <h3 class="detalle-titulo">Recorrido</h3>
+          @if (recorrido(); as r) {
+            <app-mapa-recorrido
+              [origenLatitud]="r.origen.latitud"
+              [origenLongitud]="r.origen.longitud"
+              [destinoLatitud]="r.destino.latitud"
+              [destinoLongitud]="r.destino.longitud"
+              [origen]="d.origenNombre"
+              [destino]="d.destinoNombre"
+              [alto]="380" />
+            <p class="secundario detalle-mapa-nota">Origen y destino de la ruta asignada al viaje.</p>
+          } @else if (cargandoRecorrido()) {
+            <p class="secundario">Cargando recorrido…</p>
+          } @else if (d.tipo === 'PRIVADO') {
+            <p class="secundario">Este viaje es un alquiler privado; el recorrido está marcado en la solicitud del alquiler.</p>
+          } @else {
+            <p class="secundario">No se pudo cargar el recorrido de la ruta.</p>
+          }
         </div>
       </div>
     } @else {

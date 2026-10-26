@@ -35,3 +35,79 @@ code {
   background: var(--info-suave);
   color: var(--texto);
 }
+
+.detalle-reembolso {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.detalle-ticket h3,
+.detalle-info h3:first-of-type {
+  margin-top: 0;
+}
+
+.detalle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.detalle-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .insignia { flex: none; }
+}
+
+.detalle-ruta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--superficie-alterna);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--primario);
+  border-radius: var(--radio-sm);
+
+  .ruta {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .secundario { font-size: 12px; }
+}
+
+.detalle-datos {
+  margin: 0;
+}
+
+.detalle-motivo {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radio-sm);
+  font-size: 13px;
+
+  &.aviso { background: var(--aviso-suave); color: var(--aviso); }
+}
+
+.titulo-boletos {
+  margin: 4px 0 0;
+}
+
+@media (max-width: 900px) {
+  .detalle-reembolso {
+    grid-template-columns: 1fr;
+  }
+}

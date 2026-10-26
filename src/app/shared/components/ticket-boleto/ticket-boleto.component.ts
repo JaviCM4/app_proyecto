@@ -34,6 +34,8 @@ export class TicketBoletoComponent {
   readonly pasajero = input<string | null>(null);
   /** Muestra los botones de descargar/imprimir dentro del componente. */
   readonly mostrarAcciones = input(true);
+  /** Muestra el botón de descargar PDF (el cajero no lo necesita: solo imprime). */
+  readonly mostrarDescargar = input(true);
 
   readonly zona = ZONA_GT;
   readonly estadoVenta = ESTADO_VENTA;

@@ -124,76 +124,109 @@
   ancho="grande"
   (cerrar)="cerrarDetalle()">
   @if (enDetalle(); as d) {
-    <div class="datos-lista">
-      <p>
-        <strong>{{ d.clienteNombre || 'Consumidor final' }}</strong>
-        <span class="secundario"> · NIT: {{ d.clienteNit || 'CF' }}</span>
-        @if (d.clienteCorreo) {
-          <span class="secundario"> · {{ d.clienteCorreo }}</span>
-        }
-      </p>
-      <p>
-        Código del boleto: <code>{{ codigo(d) }}</code>
-        <span class="secundario"> · {{ canalVenta[d.canal] }} · {{ d.metodoPago ? metodoPago[d.metodoPago] : '—' }}</span>
-      </p>
-      <p>
-        <strong>{{ viajeDe(d) }}</strong>
-        @if (d.viaje?.fechaSalida) {
-          <span class="secundario"> · Salida {{ d.viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
-        }
-        @if (d.viaje?.busPlaca) {
-          <span class="secundario"> · Bus {{ d.viaje?.busPlaca }}</span>
-        }
-      </p>
-      <p class="secundario">
-        Total a devolver: <strong>{{ d.montoTotal | currency }}</strong>
-        · Pagada el {{ d.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}
-        · Estado: <span [class]="'insignia ' + estadoVenta[d.estado].clase">{{ estadoVenta[d.estado].texto }}</span>
-      </p>
-      @if (d.motivoCancelacion) {
-        <p class="secundario">Motivo de la cancelación: {{ motivo(d.motivoCancelacion) }}</p>
-      }
-      @if (d.fechaReembolso) {
-        <p class="secundario">Dinero devuelto el {{ d.fechaReembolso | date: 'dd/MM/yyyy' : 'UTC' }}.</p>
-      }
-      @if (d.estado === 'CONFIRMADA' || d.estado === 'PENDIENTE_PAGO') {
-        <p class="aviso-cartera">
-          Esta compra sigue vigente: todavía no hay nada que devolver. Para anularla, cancélala primero
-          desde Ventas y después aparecerá aquí.
-        </p>
-      }
-      @if (!enEfectivo(d) && sePuedeReembolsar(d)) {
-        <p class="aviso-cartera">
-          Esta compra se pagó con la billetera digital: el dinero vuelve a la billetera del cliente, no se
-          entrega en efectivo. Si no se ha acreditado, aquí se le puede volver a pedir a la billetera.
-        </p>
-      }
-      @if (cargandoDetalle()) {
-        <p class="secundario">Cargando los datos del viaje…</p>
-      }
-
-      <h3>Boletos de la compra ({{ d.boletos.length }})</h3>
-      <div class="tabla-contenedor">
-        <table class="tabla">
-          <thead>
-            <tr><th>Asiento</th><th>Estado</th><th class="acciones">Precio</th></tr>
-          </thead>
-          <tbody>
-            @for (b of d.boletos; track b.boletoId) {
-              <tr>
-                <td><strong>{{ b.numeroAsiento }}</strong></td>
-                <td class="secundario">{{ b.estado === 'CANCELADO' ? 'Cancelado' : 'Activo' }}</td>
-                <td class="acciones">{{ b.precio | currency }}</td>
-              </tr>
-            } @empty {
-              <tr><td colspan="3" class="tabla-vacia">La compra no llegó a emitir boletos.</td></tr>
-            }
-          </tbody>
-        </table>
+    <div class="detalle-reembolso">
+      <div class="detalle-ticket">
+        <h3>Boleto presentado</h3>
+        <app-ticket-boleto [venta]="d" [mostrarAcciones]="false" />
       </div>
+      <div class="detalle-info">
+        <div class="detalle-encabezado">
+          <h3>{{ d.clienteNombre || 'Consumidor final' }}</h3>
+          <span [class]="'insignia ' + estadoVenta[d.estado].clase">{{ estadoVenta[d.estado].texto }}</span>
+        </div>
 
-      <h3>Boleto presentado</h3>
-      <app-ticket-boleto [venta]="d" [mostrarAcciones]="false" />
+        <div class="detalle-ruta">
+          <span class="ruta">{{ viajeDe(d) }}</span>
+          @if (d.viaje?.fechaSalida) {
+            <span class="secundario">Salida {{ d.viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
+          }
+          @if (d.viaje?.busPlaca) {
+            <span class="secundario">Bus {{ d.viaje?.busPlaca }}</span>
+          }
+        </div>
+
+        <dl class="datos-lista detalle-datos">
+          <div>
+            <dt>NIT</dt>
+            <dd>{{ d.clienteNit || 'CF' }}</dd>
+          </div>
+          @if (d.clienteCorreo) {
+            <div>
+              <dt>Correo</dt>
+              <dd>{{ d.clienteCorreo }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Código</dt>
+            <dd><code>{{ codigo(d) }}</code></dd>
+          </div>
+          <div>
+            <dt>Total a devolver</dt>
+            <dd>{{ d.montoTotal | currency }}</dd>
+          </div>
+          <div>
+            <dt>Fecha de pago</dt>
+            <dd>{{ d.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</dd>
+          </div>
+          <div>
+            <dt>Canal y pago</dt>
+            <dd>{{ canalVenta[d.canal] }} · {{ d.metodoPago ? metodoPago[d.metodoPago] : '—' }}</dd>
+          </div>
+          @if (d.fechaCancelacion) {
+            <div>
+              <dt>Fecha de cancelación</dt>
+              <dd>{{ d.fechaCancelacion | date: 'dd/MM/yyyy' : 'UTC' }}</dd>
+            </div>
+          }
+          @if (d.fechaReembolso) {
+            <div>
+              <dt>Fecha de devolución</dt>
+              <dd>{{ d.fechaReembolso | date: 'dd/MM/yyyy' : 'UTC' }}</dd>
+            </div>
+          }
+        </dl>
+
+        @if (d.motivoCancelacion) {
+          <p class="detalle-motivo aviso">
+            <strong>Motivo de cancelación:</strong> {{ motivo(d.motivoCancelacion) }}
+          </p>
+        }
+        @if (d.estado === 'CONFIRMADA' || d.estado === 'PENDIENTE_PAGO') {
+          <p class="aviso-cartera">
+            Esta compra sigue vigente: todavía no hay nada que devolver. Para anularla, cancélala primero
+            desde Ventas y después aparecerá aquí.
+          </p>
+        }
+        @if (!enEfectivo(d) && sePuedeReembolsar(d)) {
+          <p class="aviso-cartera">
+            Esta compra se pagó con la billetera digital: el dinero vuelve a la billetera del cliente, no se
+            entrega en efectivo. Si no se ha acreditado, aquí se le puede volver a pedir a la billetera.
+          </p>
+        }
+        @if (cargandoDetalle()) {
+          <p class="secundario">Cargando los datos del viaje…</p>
+        }
+
+        <h3 class="titulo-boletos">Boletos de la compra ({{ d.boletos.length }})</h3>
+        <div class="tabla-contenedor">
+          <table class="tabla">
+            <thead>
+              <tr><th>Asiento</th><th>Estado</th><th class="acciones">Precio</th></tr>
+            </thead>
+            <tbody>
+              @for (b of d.boletos; track b.boletoId) {
+                <tr>
+                  <td><strong>{{ b.numeroAsiento }}</strong></td>
+                  <td class="secundario">{{ b.estado === 'CANCELADO' ? 'Cancelado' : 'Activo' }}</td>
+                  <td class="acciones">{{ b.precio | currency }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="tabla-vacia">La compra no llegó a emitir boletos.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   }
   <div pie>

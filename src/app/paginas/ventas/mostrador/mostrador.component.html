@@ -59,14 +59,13 @@
 </div>
 
 @if (ventaConfirmada(); as venta) {
-  <div class="datos-lista">
-    <h2>Venta confirmada <span class="insignia exito">Confirmada</span></h2>
-    <p class="secundario">
-      {{ venta.viaje?.origenNombre }} → {{ venta.viaje?.destinoNombre }}
-      · Salida: {{ venta.viaje?.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}
-      · Total: {{ venta.montoTotal | currency }}
-    </p>
-    <app-ticket-boleto [venta]="venta" />
+  <app-modal
+    [abierto]="true"
+    titulo="Venta confirmada"
+    subtitulo="Entrega el boleto impreso al pasajero."
+    ancho="grande"
+    (cerrar)="nuevaVenta()">
+    <app-ticket-boleto #ticket [venta]="venta" [mostrarAcciones]="false" />
     @if (venta.clienteCorreo; as correo) {
       <p class="secundario">
         El comprobante se envía a <strong>{{ correo }}</strong>. Puede tardar unos minutos; si no
@@ -78,8 +77,11 @@
     <p class="secundario">
       Para reimprimirlo después, búscalo en <strong>Ventas → Ver / Imprimir</strong>.
     </p>
-    <button type="button" class="btn chico" (click)="nuevaVenta()">Nueva venta</button>
-  </div>
+    <div pie>
+      <button type="button" class="btn" (click)="nuevaVenta()">Nueva venta</button>
+      <button type="button" class="btn primario" (click)="ticket.imprimir()">Imprimir</button>
+    </div>
+  </app-modal>
 }
 
 <div class="tabla-contenedor">
@@ -127,29 +129,35 @@
   @if (cargandoMapa()) {
     <p class="secundario">Cargando asientos…</p>
   } @else {
-    @if (recorrido(); as r) {
-      <div class="recorrido-venta">
-        <app-mapa-recorrido
-          [origenLatitud]="r.origen.latitud"
-          [origenLongitud]="r.origen.longitud"
-          [destinoLatitud]="r.destino.latitud"
-          [destinoLongitud]="r.destino.longitud"
-          [origen]="viajeElegido()?.origenNombre ?? 'Origen'"
-          [destino]="viajeElegido()?.destinoNombre ?? 'Destino'"
-          [alto]="190"
-          mensajeVacio="El recorrido de este viaje no tiene coordenadas válidas." />
+    <div class="venta-layout">
+      <div class="venta-bus">
+        <app-selector-asientos
+          [mapa]="mapa()"
+          [maximo]="10"
+          (seleccion)="asientosElegidos.set($event)" />
       </div>
-    }
-    <app-selector-asientos
-      [mapa]="mapa()"
-      [maximo]="10"
-      (seleccion)="asientosElegidos.set($event)" />
-    <p class="secundario">
+      <div class="venta-mapa">
+        @if (recorrido(); as r) {
+          <app-mapa-recorrido
+            [origenLatitud]="r.origen.latitud"
+            [origenLongitud]="r.origen.longitud"
+            [destinoLatitud]="r.destino.latitud"
+            [destinoLongitud]="r.destino.longitud"
+            [origen]="viajeElegido()?.origenNombre ?? 'Origen'"
+            [destino]="viajeElegido()?.destinoNombre ?? 'Destino'"
+            [alto]="320"
+            mensajeVacio="El recorrido de este viaje no tiene coordenadas válidas." />
+        } @else {
+          <p class="secundario">El recorrido de este viaje no está disponible.</p>
+        }
+      </div>
+    </div>
+    <p class="secundario total-venta">
       Asientos: {{ asientosElegidos().join(', ') || '—' }} · Total: {{ total() | currency }}
     </p>
     <form [formGroup]="formVenta" (ngSubmit)="vender()">
-      <div class="filtros">
-        <div class="campo crece">
+      <div class="datos-cliente">
+        <div class="campo nit-cliente">
           <label for="nit">NIT del cliente (opcional)</label>
           <div class="fila-nit">
             <input id="nit" class="control" formControlName="clienteNit" placeholder="CF o NIT"
@@ -172,11 +180,6 @@
             <small class="ayuda">Escribe el NIT y pulsa Buscar (o Enter) para traer los datos de su cuenta.</small>
           }
         </div>
-        <div class="campo crece">
-          <label for="nombre">Nombre del cliente (opcional)</label>
-          <input id="nombre" class="control" formControlName="clienteNombre" placeholder="Nombre y apellido" />
-        </div>
-      </div>
       @if (sugerencias().length) {
         <ul class="sugerencias-cliente">
           @for (c of sugerencias(); track c.usuarioId) {
@@ -189,21 +192,37 @@
           }
         </ul>
       }
-      <div class="filtros">
-        <div class="campo crece">
-          <label for="correo">Correo del cliente (opcional)</label>
-          <input id="correo" type="email" class="control" formControlName="clienteCorreo" placeholder="correo@ejemplo.com" />
-          <small class="ayuda">
-            Opcional: si lo escribes, el comprobante se envía a ese correo. Si lo dejas vacío, se usa
-            el correo de la cuenta del cliente (si tiene) o solo se imprime.
-          </small>
-          @if (formVenta.controls.clienteCorreo.touched && formVenta.controls.clienteCorreo.errors?.['email']) {
-            <small class="secundario">Escribe un correo válido.</small>
-          }
+        <div class="nombre-fecha">
+          <div class="campo">
+            <label for="nombre">Nombre del cliente (opcional)</label>
+            <input id="nombre" class="control" formControlName="clienteNombre" placeholder="Nombre y apellido" />
+          </div>
+          <div class="campo">
+            <label for="fechaPago">Fecha de pago</label>
+            <input id="fechaPago" type="date" class="control" formControlName="fechaPago" />
+          </div>
         </div>
-        <div class="campo">
-          <label for="fechaPago">Fecha de pago</label>
-          <input id="fechaPago" type="date" class="control" formControlName="fechaPago" />
+        <div class="campo correo-cliente">
+          <div class="etiqueta-con-accion">
+            <label for="correo">Correo del cliente (opcional)</label>
+            <button type="button" class="btn texto chico" (click)="alternarCorreo()">
+              {{ mostrarCorreo() ? 'Ocultar' : '+ Agregar correo' }}
+            </button>
+          </div>
+          @if (mostrarCorreo()) {
+            <input id="correo" type="email" class="control" formControlName="clienteCorreo" placeholder="correo@ejemplo.com" />
+            <small class="ayuda">
+              Si lo escribes, el comprobante en PDF se envía a ese correo. Si lo dejas vacío, se usa
+              el correo de la cuenta del cliente (si tiene) o solo se imprime.
+            </small>
+            @if (formVenta.controls.clienteCorreo.touched && formVenta.controls.clienteCorreo.errors?.['email']) {
+              <small class="secundario">Escribe un correo válido.</small>
+            }
+          } @else {
+            <small class="ayuda">
+              Sin correo solo se imprime el boleto. Si el cliente tiene cuenta, se usa el correo de su perfil.
+            </small>
+          }
         </div>
       </div>
       @if (formVenta.controls.fechaPago.touched && formVenta.controls.fechaPago.errors?.['servidor']) {

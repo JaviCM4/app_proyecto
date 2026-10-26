@@ -6,54 +6,71 @@
     <p class="error">{{ error() }}</p>
   } @else {
     @if (mapa(); as m) {
-      @if (recorrido(); as r) {
-        <div class="recorrido-compra">
-          <app-mapa-recorrido
-            [origenLatitud]="r.origen.latitud"
-            [origenLongitud]="r.origen.longitud"
-            [destinoLatitud]="r.destino.latitud"
-            [destinoLongitud]="r.destino.longitud"
-            [origen]="viaje()?.origenNombre ?? 'Origen'"
-            [destino]="viaje()?.destinoNombre ?? 'Destino'"
-            [alto]="190" />
+      <div class="compra-layout">
+        <div class="compra-bus">
+          <app-selector-asientos [mapa]="m" [resumen]="false" [bloqueado]="invitado()" [maximo]="60"
+                                 (seleccion)="alElegir($event)" />
         </div>
-      }
-      <div class="compra-grid">
-        <div class="compra-info">
-          <p><strong>Salida</strong><br />{{ m.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</p>
-          <p><strong>Bus</strong><br />{{ m.busPlaca }} · {{ m.disponibles }} disponibles</p>
-          <p><strong>Precio</strong><br />{{ m.precioBoleto | currency: 'GTQ' : 'symbol-narrow' }} c/u</p>
-          <p><strong>Elegidos</strong><br />{{ elegidos().length ? elegidos().join(', ') : '—' }}</p>
-          <p class="total"><strong>Total: {{ (m.precioBoleto * elegidos().length) | currency: 'GTQ' : 'symbol-narrow' }}</strong></p>
-
-          @if (pendiente() && !ventaFinal()) {
-            <p class="aviso-info">Boletos reservados, cobrando a tu cartera…</p>
-          }
-          @if (cobrando()) {
-            <p class="aviso-info">Confirmando el cobro, espera un momento…</p>
-          }
-          @if (ventaFinal()?.estado === 'CONFIRMADA') {
-            <p class="aviso-exito">
-              Compra confirmada: {{ ventaFinal()!.boletos.length }} boleto(s) por {{ ventaFinal()!.montoTotal | currency }}.
-            </p>
-          }
-          @if (ventaFinal() && ventaFinal()!.estado !== 'PENDIENTE_PAGO' && ventaFinal()!.estado !== 'CONFIRMADA') {
-            <p class="aviso-error">
-              Compra {{ estadoVenta[ventaFinal()!.estado].texto | lowercase }}:
-              {{ motivo(ventaFinal()!.motivoRechazo, 'no se pudo completar el pago.') }}
-            </p>
-          }
-          @if (fallo()) {
-            <p class="aviso-error">{{ fallo() }}</p>
-          }
-          @if (invitado()) {
-            <p class="suave">Entra a tu cuenta para comprar. Mientras tanto puedes ver los asientos.</p>
+        <div class="compra-mapa">
+          @if (recorrido(); as r) {
+            <app-mapa-recorrido
+              [origenLatitud]="r.origen.latitud"
+              [origenLongitud]="r.origen.longitud"
+              [destinoLatitud]="r.destino.latitud"
+              [destinoLongitud]="r.destino.longitud"
+              [origen]="viaje()?.origenNombre ?? 'Origen'"
+              [destino]="viaje()?.destinoNombre ?? 'Destino'"
+              [alto]="320" />
+          } @else {
+            <p class="suave">El recorrido de este viaje no está disponible.</p>
           }
         </div>
-
-        <app-selector-asientos [mapa]="m" [resumen]="false" [bloqueado]="invitado()" [maximo]="60"
-                               (seleccion)="alElegir($event)" />
       </div>
+
+      <div class="compra-resumen">
+        <p><strong>Salida</strong><br />{{ m.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</p>
+        <p><strong>Bus</strong><br />{{ m.busPlaca }} · {{ m.disponibles }} disponibles</p>
+        <p><strong>Precio</strong><br />{{ m.precioBoleto | currency: 'GTQ' : 'symbol-narrow' }} c/u</p>
+        <p><strong>Elegidos</strong><br />{{ elegidos().length ? elegidos().join(', ') : '—' }}</p>
+        @if (!invitado()) {
+          <p><strong>Pasajero</strong><br />{{ nombreCliente() || '—' }}</p>
+          <p><strong>NIT</strong><br />{{ nitCliente() }}</p>
+          <p>
+            <strong>Comprobante</strong><br />
+            @if (mostrarCorreo()) {
+              {{ correoCliente() || '—' }}
+              <button type="button" class="btn texto chico" (click)="alternarCorreo()">Ocultar</button>
+            } @else {
+              <button type="button" class="btn texto chico" (click)="alternarCorreo()">+ Ver correo</button>
+            }
+          </p>
+        }
+        <p class="total"><strong>Total: {{ (m.precioBoleto * elegidos().length) | currency: 'GTQ' : 'symbol-narrow' }}</strong></p>
+      </div>
+
+      @if (pendiente() && !ventaFinal()) {
+        <p class="aviso-info">Boletos reservados, cobrando a tu cartera…</p>
+      }
+      @if (cobrando()) {
+        <p class="aviso-info">Confirmando el cobro, espera un momento…</p>
+      }
+      @if (ventaFinal()?.estado === 'CONFIRMADA') {
+        <p class="aviso-exito">
+          Compra confirmada: {{ ventaFinal()!.boletos.length }} boleto(s) por {{ ventaFinal()!.montoTotal | currency }}.
+        </p>
+      }
+      @if (ventaFinal() && ventaFinal()!.estado !== 'PENDIENTE_PAGO' && ventaFinal()!.estado !== 'CONFIRMADA') {
+        <p class="aviso-error">
+          Compra {{ estadoVenta[ventaFinal()!.estado].texto | lowercase }}:
+          {{ motivo(ventaFinal()!.motivoRechazo, 'no se pudo completar el pago.') }}
+        </p>
+      }
+      @if (fallo()) {
+        <p class="aviso-error">{{ fallo() }}</p>
+      }
+      @if (invitado()) {
+        <p class="suave">Entra a tu cuenta para comprar. Mientras tanto puedes ver los asientos.</p>
+      }
     } @else {
       <p class="tabla-vacia">No se pudo cargar el mapa de asientos.</p>
     }

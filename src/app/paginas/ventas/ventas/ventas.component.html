@@ -227,48 +227,81 @@
     <p class="secundario">Cargando detalle…</p>
   } @else {
     @if (enDetalle(); as d) {
-    <div class="datos-lista">
-      <p>
-        <strong>{{ d.clienteNombre || 'Sin nombre' }}</strong>
-        <span class="secundario"> · NIT: {{ d.clienteNit || 'CF' }} · {{ canalVenta[d.canal] }} · {{ d.metodoPago ? metodoPago[d.metodoPago] : '—' }}</span>
-      </p>
-      <p class="secundario">
-        Total: {{ d.montoTotal | currency }} · Pagada: {{ d.fechaPago | date: 'dd/MM/yyyy' }}
-        · Estado: <span [class]="'insignia ' + estadoVenta[d.estado].clase">{{ estadoVenta[d.estado].texto }}</span>
-      </p>
-      @if (rutaDe(d); as r) {
-        <p><strong>{{ r.texto }}</strong>
-          @if (r.salida) { <span class="secundario"> · Salida {{ r.salida | date: 'dd/MM/yyyy HH:mm' : zona }}</span> }
-        </p>
-      } @else {
-        <p><span class="insignia">{{ viajeSinDatos(d).etiqueta }}</span></p>
-      }
-      @if (d.motivoRechazo) {
-        <p class="secundario">Motivo del rechazo: {{ motivo(d.motivoRechazo) }}</p>
-      }
-      @if (d.motivoCancelacion) {
-        <p class="secundario">Motivo de la cancelación: {{ motivo(d.motivoCancelacion) }} ({{ d.fechaCancelacion | date: 'dd/MM/yyyy' : 'UTC' }})</p>
-      }
-      <h3>Boleto para imprimir</h3>
-      <app-ticket-boleto [venta]="d" />
-      <h3>Boletos emitidos</h3>
-      <div class="tabla-contenedor">
-        <table class="tabla">
-          <thead>
-            <tr><th>Boleto</th><th>Asiento</th><th class="acciones">Precio</th></tr>
-          </thead>
-          <tbody>
-            @for (b of d.boletos; track b.boletoId) {
-              <tr>
-                <td class="secundario">{{ b.boletoId }}</td>
-                <td><strong>{{ b.numeroAsiento }}</strong></td>
-                <td class="acciones">{{ b.precio | currency }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <div class="detalle-venta">
+        <div class="detalle-ticket">
+          <h3>Boleto para imprimir</h3>
+          <app-ticket-boleto [venta]="d" />
+        </div>
+        <div class="detalle-info">
+          <div class="detalle-encabezado">
+            <h3>{{ d.clienteNombre || 'Sin nombre' }}</h3>
+            <span [class]="'insignia ' + estadoVenta[d.estado].clase">{{ estadoVenta[d.estado].texto }}</span>
+          </div>
+
+          @if (rutaDe(d); as r) {
+            <div class="detalle-ruta">
+              <span class="ruta">{{ r.texto }}</span>
+              @if (r.salida) {
+                <span class="secundario">Salida {{ r.salida | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
+              }
+            </div>
+          } @else {
+            <p>
+              <span class="insignia">{{ viajeSinDatos(d).etiqueta }}</span>
+              @if (viajeSinDatos(d).detalle) {
+                <span class="secundario"> · {{ viajeSinDatos(d).detalle }}</span>
+              }
+            </p>
+          }
+
+          <dl class="datos-lista detalle-datos">
+            <div>
+              <dt>NIT</dt>
+              <dd>{{ d.clienteNit || 'CF' }}</dd>
+            </div>
+            <div>
+              <dt>Total</dt>
+              <dd>{{ d.montoTotal | currency }}</dd>
+            </div>
+            <div>
+              <dt>Fecha de pago</dt>
+              <dd>{{ d.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</dd>
+            </div>
+            <div>
+              <dt>Canal y pago</dt>
+              <dd>{{ canalVenta[d.canal] }} · {{ d.metodoPago ? metodoPago[d.metodoPago] : 'Sin pago' }}</dd>
+            </div>
+          </dl>
+
+          @if (d.motivoRechazo) {
+            <p class="detalle-motivo peligro"><strong>Motivo de rechazo:</strong> {{ motivo(d.motivoRechazo) }}</p>
+          }
+          @if (d.motivoCancelacion) {
+            <p class="detalle-motivo aviso">
+              <strong>Motivo de cancelación:</strong> {{ motivo(d.motivoCancelacion) }}
+              ({{ d.fechaCancelacion | date: 'short' }})
+            </p>
+          }
+
+          <h3 class="titulo-boletos">Boletos emitidos</h3>
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>Boleto</th><th>Asiento</th><th class="acciones">Precio</th></tr>
+              </thead>
+              <tbody>
+                @for (b of d.boletos; track b.boletoId) {
+                  <tr>
+                    <td class="secundario">{{ b.boletoId }}</td>
+                    <td><strong>{{ b.numeroAsiento }}</strong></td>
+                    <td class="acciones">{{ b.precio | currency }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
     }
   }
   <div pie>

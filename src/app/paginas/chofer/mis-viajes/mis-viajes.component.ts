@@ -1,10 +1,14 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { EstadoViaje, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
+import { forkJoin } from 'rxjs';
+import { Sucursal } from '../../../core/models/sucursal.model';
+import { EstadoViaje, Ruta, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
+import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, ahoraGt, fechaHoraGt } from '../../../core/utils/fechas';
+import { Coordenadas, MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -19,12 +23,13 @@ type FiltroEstado = 'TODAS' | EstadoViaje;
 @Component({
   selector: 'app-mis-viajes-chofer',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, MapaRecorridoComponent],
   templateUrl: './mis-viajes.component.html',
   styleUrl: './mis-viajes.component.scss',
 })
 export class MisViajesChoferComponent implements OnInit {
   private readonly servicio = inject(ViajesService);
+  private readonly sucursalesServicio = inject(SucursalesService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
 
@@ -46,6 +51,19 @@ export class MisViajesChoferComponent implements OnInit {
   readonly detalleVisible = signal(false);
   readonly cargandoDetalle = signal(false);
   readonly enDetalle = signal<ViajeDetalle | null>(null);
+
+  /** Origen y destino del recorrido para el mapa del detalle (salen de la ruta y sus sucursales). */
+  readonly origenRecorrido = signal<Coordenadas | null>(null);
+  readonly destinoRecorrido = signal<Coordenadas | null>(null);
+  readonly recorrido = computed(() => {
+    const origen = this.origenRecorrido();
+    const destino = this.destinoRecorrido();
+    return origen && destino ? { origen, destino } : null;
+  });
+
+  private rutas: Ruta[] | null = null;
+  private sucursales: Sucursal[] | null = null;
+  readonly cargandoRecorrido = signal(false);
 
   readonly formSalida = this.fb.nonNullable.group({
     fechaHora: [ahoraGt(), Validators.required],
@@ -99,11 +117,13 @@ export class MisViajesChoferComponent implements OnInit {
   verDetalle(v: Viaje): void {
     this.cargandoDetalle.set(true);
     this.enDetalle.set(null);
+    this.limpiarRecorrido();
     this.detalleVisible.set(true);
     this.servicio.detalleViaje(v.viajeId).subscribe({
       next: (detalle) => {
         this.cargandoDetalle.set(false);
         this.enDetalle.set(detalle);
+        this.cargarRecorrido(detalle);
       },
       error: (e) => {
         this.cargandoDetalle.set(false);
@@ -134,6 +154,7 @@ export class MisViajesChoferComponent implements OnInit {
           this.enSalida.set(null);
           this.avisos.exito('Salida registrada. Buen viaje.');
           this.enDetalle.set(detalle);
+          this.cargarRecorrido(detalle);
           this.detalleVisible.set(true);
           this.cargar();
         },
@@ -171,6 +192,7 @@ export class MisViajesChoferComponent implements OnInit {
           this.enLlegada.set(null);
           this.avisos.exito('Llegada registrada. Viaje completado.');
           this.enDetalle.set(detalle);
+          this.cargarRecorrido(detalle);
           this.detalleVisible.set(true);
           this.cargar();
         },
@@ -185,5 +207,54 @@ export class MisViajesChoferComponent implements OnInit {
   cerrarDetalle(): void {
     this.detalleVisible.set(false);
     this.enDetalle.set(null);
+    this.limpiarRecorrido();
+  }
+
+  private limpiarRecorrido(): void {
+    this.origenRecorrido.set(null);
+    this.destinoRecorrido.set(null);
+  }
+
+  /**
+   * Resuelve el origen y el destino para dibujar el recorrido del viaje. El viaje solo trae
+   * `rutaId`; las coordenadas salen de la ruta y de sus sucursales (mismo criterio que la
+   * compra de boletos). Un viaje privado no tiene ruta: su mapa vive en el alquiler.
+   */
+  private cargarRecorrido(v: Viaje): void {
+    this.limpiarRecorrido();
+    if (!v.rutaId) return;
+    if (this.rutas && this.sucursales) {
+      this.aplicarRecorrido(v.rutaId);
+      return;
+    }
+    if (this.cargandoRecorrido()) return;
+
+    this.cargandoRecorrido.set(true);
+    forkJoin({
+      activas: this.servicio.rutas(true),
+      inactivas: this.servicio.rutas(false),
+      sucursales: this.sucursalesServicio.listar(),
+    }).subscribe({
+      next: ({ activas, inactivas, sucursales }) => {
+        this.rutas = [...activas, ...inactivas];
+        this.sucursales = sucursales;
+        this.cargandoRecorrido.set(false);
+        const actual = this.enDetalle();
+        if (actual?.rutaId) this.aplicarRecorrido(actual.rutaId);
+      },
+      error: () => {
+        this.cargandoRecorrido.set(false);
+      },
+    });
+  }
+
+  private aplicarRecorrido(rutaId: string): void {
+    const ruta = this.rutas?.find((r) => r.rutaId === rutaId);
+    if (!ruta) return;
+    const origen = this.sucursales?.find((s) => s.sucursalId === ruta.sucursalOrigenId);
+    const destino = this.sucursales?.find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    if (!origen || !destino) return;
+    this.origenRecorrido.set({ latitud: origen.latitud, longitud: origen.longitud });
+    this.destinoRecorrido.set({ latitud: destino.latitud, longitud: destino.longitud });
   }
 }
