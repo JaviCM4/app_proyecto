@@ -6,34 +6,61 @@
     <p class="error">{{ error() }}</p>
   } @else {
     @if (mapa(); as m) {
-      <div class="compra-layout">
-        <div class="compra-bus">
-          @if (viaje()?.busFotoUrl) {
-            <!-- Solo la foto del bus: así el pasajero reconoce el color y lo ubica en la terminal. -->
-            <app-foto-tarjeta
-              [url]="viaje()?.busFotoUrl ?? null"
-              [titulo]="'Bus ' + (m.busPlaca ?? '')"
-              [descripcion]="'Bus ' + (m.busPlaca ?? '')"
-              [alto]="140" />
-          }
-          <app-selector-asientos [mapa]="m" [resumen]="false" [bloqueado]="invitado()" [maximo]="60"
-                                 (seleccion)="alElegir($event)" />
-        </div>
-        <div class="compra-mapa">
-          @if (recorrido(); as r) {
-            <app-mapa-recorrido
-              [origenLatitud]="r.origen.latitud"
-              [origenLongitud]="r.origen.longitud"
-              [destinoLatitud]="r.destino.latitud"
-              [destinoLongitud]="r.destino.longitud"
-              [origen]="viaje()?.origenNombre ?? 'Origen'"
-              [destino]="viaje()?.destinoNombre ?? 'Destino'"
-              [alto]="320" />
-          } @else {
-            <p class="suave">El recorrido de este viaje no está disponible.</p>
-          }
-        </div>
+      <div class="pestanas" role="tablist">
+        <button type="button" role="tab" [class.activa]="pestana() === 'viaje'"
+                [attr.aria-selected]="pestana() === 'viaje'" (click)="pestana.set('viaje')">
+          El viaje y los asientos
+        </button>
+        <button type="button" role="tab" [class.activa]="pestana() === 'bus'"
+                [attr.aria-selected]="pestana() === 'bus'" (click)="pestana.set('bus')">
+          El bus
+        </button>
       </div>
+
+      @if (pestana() === 'viaje') {
+        <div class="compra-layout">
+          <div class="compra-bus">
+            <app-selector-asientos [mapa]="m" [resumen]="false" [bloqueado]="invitado()" [maximo]="60"
+                                   (seleccion)="alElegir($event)" />
+          </div>
+          <div class="compra-mapa">
+            @if (recorrido(); as r) {
+              <app-mapa-recorrido
+                [origenLatitud]="r.origen.latitud"
+                [origenLongitud]="r.origen.longitud"
+                [destinoLatitud]="r.destino.latitud"
+                [destinoLongitud]="r.destino.longitud"
+                [origen]="viaje()?.origenNombre ?? 'Origen'"
+                [destino]="viaje()?.destinoNombre ?? 'Destino'"
+                [alto]="320" />
+            } @else {
+              <p class="suave">El recorrido de este viaje no está disponible.</p>
+            }
+          </div>
+        </div>
+      } @else {
+        <!-- Aquí la foto va entera: es para reconocer el bus en la terminal por su color y su forma. -->
+        <div class="bus-ficha">
+          <app-foto-tarjeta
+            [url]="viaje()?.busFotoUrl ?? null"
+            [titulo]="'Bus ' + (m.busPlaca ?? '')"
+            [descripcion]="'Bus ' + (m.busPlaca ?? '')"
+            vacio="Este bus todavía no tiene foto cargada"
+            ajuste="contain"
+            [ampliable]="true"
+            [alto]="300" />
+          <div class="bus-datos">
+            <p><strong>Placa</strong><br />{{ m.busPlaca ?? '—' }}</p>
+            <p><strong>Capacidad</strong><br />{{ m.capacidad }} asientos</p>
+            <p><strong>Disponibles</strong><br />{{ m.disponibles }} libres</p>
+            <p><strong>Ocupados</strong><br />{{ m.capacidad - m.disponibles }} vendidos</p>
+            <p class="suave">
+              Busca este bus en la terminal: la foto es la del vehículo asignado a este viaje.
+              Toca la foto para verla en grande.
+            </p>
+          </div>
+        </div>
+      }
 
       <div class="compra-resumen">
         <p><strong>Salida</strong><br />{{ m.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</p>

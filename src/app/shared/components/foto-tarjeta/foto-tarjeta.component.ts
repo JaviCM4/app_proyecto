@@ -25,4 +25,9 @@ export class FotoTarjetaComponent {
   readonly descripcion = input('');
   /** Abre la foto completa en otra pestaña al hacer clic. */
   readonly ampliable = input(false);
+  /**
+   * 'cover' llena la tarjeta recortando los bordes (sirve para una miniatura al elegir);
+   * 'contain' muestra el bus entero aunque sobre espacio a los lados.
+   */
+  readonly ajuste = input<'cover' | 'contain'>('cover');
 }

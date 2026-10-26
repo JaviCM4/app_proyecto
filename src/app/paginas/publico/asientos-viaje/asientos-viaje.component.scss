@@ -21,10 +21,25 @@
   min-width: 0;
 }
 
-/* La foto del bus va encima del mapa de asientos, separada de él. */
-.compra-bus app-foto-tarjeta {
-  display: block;
-  margin-bottom: 12px;
+/* Pestaña del bus: la foto entera a la izquierda y sus datos al lado. */
+.bus-ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.bus-datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px 18px;
+
+  p { margin: 0; }
+
+  .suave {
+    grid-column: 1 / -1;
+    font-size: 13px;
+  }
 }
 
 /* Resumen del viaje debajo del bus y del mapa. */
@@ -52,5 +67,6 @@
 .error { color: var(--peligro); }
 
 @media (max-width: 900px) {
-  .compra-layout { grid-template-columns: 1fr; }
+  .compra-layout,
+  .bus-ficha { grid-template-columns: 1fr; }
 }

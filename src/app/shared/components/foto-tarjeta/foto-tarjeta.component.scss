@@ -13,7 +13,7 @@ img,
   display: block;
   width: 100%;
   height: var(--alto-foto, 150px);
-  object-fit: cover;
+  object-fit: var(--ajuste-foto, cover);
 }
 
 .sin-foto {

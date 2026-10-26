@@ -1,4 +1,4 @@
-<figure [style.--alto-foto.px]="alto()">
+<figure [style.--alto-foto.px]="alto()" [style.--ajuste-foto]="ajuste()">
   @if (url(); as foto) {
     @if (ampliable()) {
       <a [href]="foto" target="_blank" rel="noopener" title="Ver la foto completa">

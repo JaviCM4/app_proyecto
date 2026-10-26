@@ -64,6 +64,12 @@ export class AsientosViajeComponent {
   /** El correo se muestra solo si el cliente lo pide (queda oculto por defecto). */
   readonly mostrarCorreo = signal(false);
 
+  /**
+   * Pestaña abierta: el viaje (mapa y asientos, que es a lo que se entra) o el bus. La foto del bus
+   * va aparte porque entera no cabe junto al mapa de asientos, y recortada no sirve para reconocerlo.
+   */
+  readonly pestana = signal<'viaje' | 'bus'>('viaje');
+
   readonly nombreCliente = computed(() => {
     const p = this.perfil();
     const completo = p ? `${p.nombres} ${p.apellidos}`.trim() : '';
@@ -101,6 +107,7 @@ export class AsientosViajeComponent {
     effect(() => {
       const v = this.viaje();
       if (v) {
+        this.pestana.set('viaje');   // cada viaje abre en su mapa y sus asientos
         this.cargar(v.viajeId);
         this.cargarRecorrido(v);
       } else {
