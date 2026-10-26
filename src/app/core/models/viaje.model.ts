@@ -13,15 +13,24 @@ export interface Ruta {
 }
 
 export type EstadoViaje = 'PROGRAMADO' | 'EN_RUTA' | 'COMPLETADO';
+export type TipoViaje = 'REGULAR' | 'PRIVADO';
 
 export interface Viaje {
   viajeId: string;
-  tipo: 'REGULAR' | 'PRIVADO';
+  tipo: TipoViaje;
   rutaId: string | null;
   alquilerId: string | null;
   sucursalId: string;
   origenNombre: string;
   destinoNombre: string;
+  /**
+   * Solo en un viaje PRIVADO: los puntos que el cliente marcó al pedir el alquiler. Con ellos el
+   * detalle dibuja su recorrido; un REGULAR lo dibuja con las sucursales de su ruta.
+   */
+  origenLatitud?: number | null;
+  origenLongitud?: number | null;
+  destinoLatitud?: number | null;
+  destinoLongitud?: number | null;
   busId: string;
   busPlaca: string | null;
   /** Foto del bus (copia que Trips guarda de Fleet): el pasajero lo reconoce en la terminal. */
@@ -42,6 +51,8 @@ export interface FiltroViajes {
   desde?: string | null;
   hasta?: string | null;
   estado?: EstadoViaje | null;
+  /** Al vender boletos solo sirven los REGULAR: un viaje privado no lleva pasajeros de mostrador. */
+  tipo?: TipoViaje | null;
 }
 
 export interface NuevaRuta {

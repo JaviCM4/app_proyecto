@@ -1,4 +1,4 @@
-import { EstadoViaje } from '../../core/models/viaje.model';
+import { EstadoViaje, TipoViaje } from '../../core/models/viaje.model';
 import { CanalVenta, EstadoOrdenAlquiler, EstadoVenta, MetodoPago } from '../../core/models/venta.model';
 
 /** Texto e insignia de cada estado de venta (nunca se muestra el código). */
@@ -27,6 +27,20 @@ export const ESTADO_ORDEN_ALQUILER: Record<EstadoOrdenAlquiler, { texto: string;
   RECHAZADA: { texto: 'Rechazada', clase: 'peligro' },
   REEMBOLSADA: { texto: 'Reembolsada', clase: 'info' },
 };
+
+/** Tipo de viaje: el regular vende boletos al público, el privado sale de un alquiler. */
+export const TIPO_VIAJE: Record<TipoViaje, { texto: string; clase: string }> = {
+  REGULAR: { texto: 'Regular', clase: 'info' },
+  PRIVADO: { texto: 'Privado', clase: 'aviso' },
+};
+
+/**
+ * Viajes por salida, el más próximo primero. Es el orden de las pantallas donde se vende o se
+ * compra: ahí lo que interesa es el siguiente bus, no el último que se programó.
+ */
+export function porProximaSalida<T extends { fechaSalidaProgramada: string }>(viajes: T[]): T[] {
+  return [...viajes].sort((a, b) => Date.parse(a.fechaSalidaProgramada) - Date.parse(b.fechaSalidaProgramada));
+}
 
 /** Estado de un viaje, en el orden en que se muestran (primero los que aún se pueden vender o están en curso). */
 export const ESTADO_VIAJE: Record<EstadoViaje, { texto: string; clase: string; orden: number }> = {

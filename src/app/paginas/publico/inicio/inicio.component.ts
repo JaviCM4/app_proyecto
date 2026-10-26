@@ -9,6 +9,7 @@ import { ViajesService } from '../../../core/services/viajes.service';
 import { mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { porProximaSalida } from '../../../shared/constants/ventas';
 import { normalizar, paginar } from '../../../shared/utils/paginacion';
 import { AsientosViajeComponent } from '../asientos-viaje/asientos-viaje.component';
 
@@ -97,8 +98,9 @@ export class InicioComponent implements OnInit {
     const f = { ...this.filtros };
     this.viajesServicio.buscar({ sucursalId: f.origenId, desde: f.desde, hasta: f.hasta }).subscribe({
       next: (viajes) => {
-        // Mismo criterio que la pantalla de compra: solo viajes que todavía se pueden comprar.
-        this.viajes.set(viajes.filter((v) => this.vendible(v)));
+        // Mismo criterio que la pantalla de compra: solo viajes que todavía se pueden comprar,
+        // y el que sale primero arriba (es el que el pasajero busca).
+        this.viajes.set(porProximaSalida(viajes.filter((v) => this.vendible(v))));
         this.aplicados.set(f);
         this.pagina.set(1);
         this.cargando.set(false);

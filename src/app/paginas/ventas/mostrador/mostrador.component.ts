@@ -17,6 +17,7 @@ import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrid
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { SelectorAsientosComponent } from '../../../shared/components/selector-asientos/selector-asientos.component';
 import { TicketBoletoComponent } from '../../../shared/components/ticket-boleto/ticket-boleto.component';
+import { porProximaSalida } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 
 /** Venta en mostrador: buscar viaje, elegir asientos y cobrar en efectivo (confirmada al instante). */
@@ -180,10 +181,17 @@ export class MostradorComponent implements OnInit {
     }
     this.buscando.set(true);
     this.viajesServicio
-      .buscar({ sucursalId: this.sucursalId() || null, desde: fecha, hasta: this.hasta() || null, estado: 'PROGRAMADO' })
+      // Solo REGULAR: un viaje privado sale de un alquiler y no vende boletos de mostrador.
+      .buscar({
+        sucursalId: this.sucursalId() || null,
+        desde: fecha,
+        hasta: this.hasta() || null,
+        estado: 'PROGRAMADO',
+        tipo: 'REGULAR',
+      })
       .subscribe({
         next: (lista) => {
-          this.viajes.set(lista);
+          this.viajes.set(porProximaSalida(lista));   // el próximo bus arriba: es el que más se vende
           this.buscando.set(false);
         },
         error: (e) => {

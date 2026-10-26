@@ -51,6 +51,7 @@
     <thead>
       <tr>
         <th>Salida</th>
+        <th>Tipo</th>
         <th>Ruta</th>
         <th>Bus</th>
         <th>Chofer</th>
@@ -62,6 +63,9 @@
       @for (v of paginaActual().elementos; track v.viajeId) {
         <tr>
           <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</td>
+          <td class="sin-salto">
+            <span [class]="'insignia ' + tipoViaje[v.tipo].clase">{{ tipoViaje[v.tipo].texto }}</span>
+          </td>
           <td>
             <strong>{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
             <div class="secundario">Llega {{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</div>
@@ -87,7 +91,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="6" class="tabla-vacia">
+          <td colspan="7" class="tabla-vacia">
             {{ cargando() ? 'Cargando viajes…' : 'No hay viajes que coincidan con los filtros.' }}
           </td>
         </tr>
@@ -255,9 +259,28 @@
         [alto]="340"
         mensajeVacio="Las sucursales de esta ruta no tienen coordenadas registradas." />
     } @else {
-      <p class="secundario">
-        Este viaje no tiene una ruta con sucursales registradas (los viajes privados van por alquiler).
-      </p>
+      @if (recorridoAlquiler(); as a) {
+        <!-- Viaje PRIVADO: el recorrido son los puntos que el cliente marcó al pedir el alquiler. -->
+        <p class="secundario">
+          Viaje privado: <strong>{{ a.origen }}</strong> → <strong>{{ a.destino }}</strong>
+          · recorrido marcado por el cliente al solicitar el alquiler
+        </p>
+        <app-mapa-recorrido
+          [origenLatitud]="a.origenLatitud"
+          [origenLongitud]="a.origenLongitud"
+          [destinoLatitud]="a.destinoLatitud"
+          [destinoLongitud]="a.destinoLongitud"
+          [origen]="a.origen"
+          [destino]="a.destino"
+          [alto]="340" />
+      } @else if (enDetalle()?.tipo === 'PRIVADO') {
+        <p class="secundario">
+          Este alquiler se pidió sin marcar el origen y el destino en el mapa, así que no hay
+          recorrido que dibujar.
+        </p>
+      } @else {
+        <p class="secundario">Este viaje no tiene una ruta con sucursales registradas.</p>
+      }
     }
   } @else {
   @if (enDetalle(); as d) {

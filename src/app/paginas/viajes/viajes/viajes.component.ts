@@ -18,6 +18,7 @@ import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrid
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { SelectorAsientosComponent } from '../../../shared/components/selector-asientos/selector-asientos.component';
+import { TIPO_VIAJE } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
 
@@ -63,6 +64,7 @@ export class ViajesComponent implements OnInit {
   readonly choferes = signal<Chofer[]>([]);
   readonly cargando = signal(true);
   readonly zona = ZONA_GT;
+  readonly tipoViaje = TIPO_VIAJE;
 
   readonly sucursalId = signal<string>(this.auth.usuario()?.sucursalId ?? '');
   readonly rutaId = signal('');
@@ -150,6 +152,25 @@ export class ViajesComponent implements OnInit {
     const origen = this.sucursales().find((s) => s.sucursalId === ruta.sucursalOrigenId);
     const destino = this.sucursales().find((s) => s.sucursalId === ruta.sucursalDestinoId);
     return origen && destino ? { origen, destino, ruta } : null;
+  });
+
+  /**
+   * Recorrido de un viaje PRIVADO: los puntos que el cliente marcó al pedir el alquiler. Null si
+   * el viaje es regular o si el alquiler se pidió sin marcar el mapa (los primeros no lo traen).
+   */
+  readonly recorridoAlquiler = computed(() => {
+    const v = this.enDetalle();
+    if (!v || v.tipo !== 'PRIVADO') return null;
+    if (v.origenLatitud == null || v.origenLongitud == null) return null;
+    if (v.destinoLatitud == null || v.destinoLongitud == null) return null;
+    return {
+      origenLatitud: v.origenLatitud,
+      origenLongitud: v.origenLongitud,
+      destinoLatitud: v.destinoLatitud,
+      destinoLongitud: v.destinoLongitud,
+      origen: v.origenNombre,
+      destino: v.destinoNombre,
+    };
   });
 
   ngOnInit(): void {
