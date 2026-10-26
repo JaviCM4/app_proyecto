@@ -216,11 +216,18 @@
               [origen]="d.origenNombre"
               [destino]="d.destinoNombre"
               [alto]="380" />
-            <p class="secundario detalle-mapa-nota">Origen y destino de la ruta asignada al viaje.</p>
+            <p class="secundario detalle-mapa-nota">
+              {{ d.tipo === 'PRIVADO'
+                  ? 'Origen y destino que el cliente marcó al solicitar el alquiler.'
+                  : 'Origen y destino de la ruta asignada al viaje.' }}
+            </p>
           } @else if (cargandoRecorrido()) {
             <p class="secundario">Cargando recorrido…</p>
           } @else if (d.tipo === 'PRIVADO') {
-            <p class="secundario">Este viaje es un alquiler privado; el recorrido está marcado en la solicitud del alquiler.</p>
+            <p class="secundario">
+              Este alquiler se pidió sin marcar el origen y el destino en el mapa, así que no hay
+              recorrido que dibujar.
+            </p>
           } @else {
             <p class="secundario">No se pudo cargar el recorrido de la ruta.</p>
           }

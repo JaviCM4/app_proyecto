@@ -222,6 +222,15 @@ export class MisViajesChoferComponent implements OnInit {
    */
   private cargarRecorrido(v: Viaje): void {
     this.limpiarRecorrido();
+    // PRIVADO: el recorrido son los puntos que el cliente marcó al pedir el alquiler y vienen en el
+    // propio viaje, así que el piloto lo ve sin pedirle nada al servicio de alquileres.
+    if (v.tipo === 'PRIVADO') {
+      if (v.origenLatitud == null || v.origenLongitud == null) return;
+      if (v.destinoLatitud == null || v.destinoLongitud == null) return;
+      this.origenRecorrido.set({ latitud: v.origenLatitud, longitud: v.origenLongitud });
+      this.destinoRecorrido.set({ latitud: v.destinoLatitud, longitud: v.destinoLongitud });
+      return;
+    }
     if (!v.rutaId) return;
     if (this.rutas && this.sucursales) {
       this.aplicarRecorrido(v.rutaId);
