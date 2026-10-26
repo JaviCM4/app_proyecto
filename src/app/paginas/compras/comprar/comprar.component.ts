@@ -8,6 +8,7 @@ import { ViajesService } from '../../../core/services/viajes.service';
 import { mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
+import { porProximaSalida } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { normalizar, paginar } from '../../../shared/utils/paginacion';
 import { AsientosViajeComponent } from '../../publico/asientos-viaje/asientos-viaje.component';
@@ -73,7 +74,8 @@ export class ComprarComponent implements OnInit {
     this.pagina.set(1);
     const origen = this.origenId() || null;
     this.viajesServicio
-      .buscar({ sucursalId: origen, desde: this.desde() || null, hasta: this.hasta() || null })
+      // Solo REGULAR: un alquiler privado es de quien lo contrató y no vende boletos.
+      .buscar({ sucursalId: origen, desde: this.desde() || null, hasta: this.hasta() || null, tipo: 'REGULAR' })
       .subscribe({
         next: (lista) => {
           const ahora = Date.now();
@@ -81,13 +83,16 @@ export class ComprarComponent implements OnInit {
             ? this.sucursales().find((s) => s.sucursalId === this.destinoId())
             : undefined;
           this.viajes.set(
-            lista.filter((v) => {
-              if (v.estado !== 'PROGRAMADO') return false;
-              if (Number.isNaN(Date.parse(v.fechaSalidaProgramada))) return false;
-              if (Date.parse(v.fechaSalidaProgramada) <= ahora) return false;
-              if (destino && normalizar(v.destinoNombre) !== normalizar(destino.nombre)) return false;
-              return true;
-            }),
+            porProximaSalida(
+              lista.filter((v) => {
+                if (v.tipo !== 'REGULAR') return false;
+                if (v.estado !== 'PROGRAMADO') return false;
+                if (Number.isNaN(Date.parse(v.fechaSalidaProgramada))) return false;
+                if (Date.parse(v.fechaSalidaProgramada) <= ahora) return false;
+                if (destino && normalizar(v.destinoNombre) !== normalizar(destino.nombre)) return false;
+                return true;
+              }),
+            ),
           );
           this.buscando.set(false);
         },

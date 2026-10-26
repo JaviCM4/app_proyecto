@@ -96,7 +96,10 @@ export class InicioComponent implements OnInit {
     this.cargando.set(true);
     this.error.set('');
     const f = { ...this.filtros };
-    this.viajesServicio.buscar({ sucursalId: f.origenId, desde: f.desde, hasta: f.hasta }).subscribe({
+    // Solo REGULAR: un alquiler privado es de quien lo contrató y no vende boletos al público.
+    // Va explícito porque un cajero o un administrador con sesión abierta también entra aquí,
+    // y a ellos el backend sí les devolvería los privados de su sucursal.
+    this.viajesServicio.buscar({ sucursalId: f.origenId, desde: f.desde, hasta: f.hasta, tipo: 'REGULAR' }).subscribe({
       next: (viajes) => {
         // Mismo criterio que la pantalla de compra: solo viajes que todavía se pueden comprar,
         // y el que sale primero arriba (es el que el pasajero busca).
@@ -115,6 +118,7 @@ export class InicioComponent implements OnInit {
 
   /** Un viaje es comprable si está programado y su salida aún no ha pasado. */
   private vendible(v: Viaje): boolean {
+    if (v.tipo !== 'REGULAR') return false;
     if (v.estado !== 'PROGRAMADO') return false;
     const salida = Date.parse(v.fechaSalidaProgramada);
     return !Number.isNaN(salida) && salida > Date.now();

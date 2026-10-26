@@ -191,7 +191,9 @@ export class MostradorComponent implements OnInit {
       })
       .subscribe({
         next: (lista) => {
-          this.viajes.set(porProximaSalida(lista));   // el próximo bus arriba: es el que más se vende
+          // El próximo bus arriba (es el que más se vende). El filtro de tipo se repite acá por si
+          // la consulta la responde una versión del backend que todavía no lo aplica.
+          this.viajes.set(porProximaSalida(lista.filter((v) => v.tipo === 'REGULAR')));
           this.buscando.set(false);
         },
         error: (e) => {
