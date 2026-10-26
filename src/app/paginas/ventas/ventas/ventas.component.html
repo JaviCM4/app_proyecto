@@ -53,6 +53,9 @@
     <label for="viaje">Viaje</label>
     <select id="viaje" class="control" [ngModel]="viajeId()" (ngModelChange)="filtrarViaje($event)">
       <option value="">Todos los viajes</option>
+      @for (f of filtrosEstadoViaje; track f.valor) {
+        <option [value]="f.valor">{{ f.texto }}</option>
+      }
       @for (g of gruposViaje(); track g.estado) {
         <optgroup [label]="g.texto">
           @for (o of g.opciones; track o.id) {
@@ -107,7 +110,12 @@
                 }
               </div>
             } @else {
-              —
+              @if (viajeSinDatos(v); as sd) {
+                <span class="insignia">{{ sd.etiqueta }}</span>
+                @if (sd.detalle) {
+                  <div class="secundario">{{ sd.detalle }}</div>
+                }
+              }
             }
           </td>
           <td>{{ canalVenta[v.canal] }}</td>
@@ -232,6 +240,8 @@
         <p><strong>{{ r.texto }}</strong>
           @if (r.salida) { <span class="secundario"> · Salida {{ r.salida | date: 'dd/MM/yyyy HH:mm' : zona }}</span> }
         </p>
+      } @else {
+        <p><span class="insignia">{{ viajeSinDatos(d).etiqueta }}</span></p>
       }
       @if (d.motivoRechazo) {
         <p class="secundario">Motivo de rechazo: {{ d.motivoRechazo }}</p>

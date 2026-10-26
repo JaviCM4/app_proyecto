@@ -21,10 +21,11 @@
     <p class="ticket-nota">
       NIT {{ venta().clienteNit || 'CF' }} · Presenta este código al abordar. Llega 30 minutos antes.
     </p>
+    <p class="ticket-nota">Guarda el boleto: con su código se hace cualquier devolución en la sucursal.</p>
   </div>
   <div class="ticket-talon">
-    <div class="codigo-barras"></div>
-    <p class="ticket-codigo">{{ venta().ventaId }}</p>
+    <app-codigo-barras [texto]="codigo()" orientacion="vertical" [modulo]="1.5" [grosor]="74" />
+    <p class="ticket-codigo">{{ codigoEscrito() }}</p>
     <p class="ticket-codigo-titulo">CÓDIGO</p>
   </div>
 </div>

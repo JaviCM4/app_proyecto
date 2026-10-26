@@ -208,6 +208,14 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/ventas/ventas/ventas.component').then((m) => m.VentasComponent),
       },
       {
+        // El administrador del sistema solo consulta: el efectivo lo entrega la sucursal que vendió.
+        path: 'reembolsos',
+        title: 'Reembolsos',
+        canActivate: [rolGuard],
+        data: { roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
+        loadComponent: () => import('./paginas/ventas/reembolsos/reembolsos.component').then((m) => m.ReembolsosComponent),
+      },
+      {
         path: 'ordenes',
         title: 'Órdenes de alquiler',
         canActivate: [rolGuard],

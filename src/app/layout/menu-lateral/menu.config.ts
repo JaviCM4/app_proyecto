@@ -28,7 +28,8 @@ const CLIENTE: Rol[] = ['CLIENTE'];
  * - Todos: Inicio, Mi perfil y Seguridad.
  * - Cliente: Servicios (billetera, comprar boletos, solicitar alquiler) y Mis compras. Cualquier cuenta
  *   con el rol Cliente las ve, sea o no personal (cajero, administrador o piloto que también es cliente).
- * - Cajero: Vender boletos, Ventas, Órdenes de alquiler y Solicitar alquiler (propio o de otra persona).
+ * - Cajero: Vender boletos, Ventas, Reembolsos, Órdenes de alquiler y Solicitar alquiler (propio o de
+ *   otra persona).
  * - Administrador de sucursal: Mi sucursal, Operación, Taller, Reportes y todo lo del cajero.
  * - Administrador del sistema: Administración y Reportes.
  * - Piloto: Mis viajes.
@@ -90,6 +91,8 @@ export const MENU: GrupoMenu[] = [
       // Personal de ventanilla.
       { texto: 'Vender boletos', ruta: '/panel/mostrador', icono: 'boleto', roles: VENTANILLA },
       { texto: 'Ventas', ruta: '/panel/ventas', icono: 'reporte', roles: VENTANILLA },
+      // Devolución del efectivo de una compra cancelada (el admin del sistema solo consulta).
+      { texto: 'Reembolsos', ruta: '/panel/reembolsos', icono: 'cartera', roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
       { texto: 'Órdenes de alquiler', ruta: '/panel/ordenes', icono: 'tarifa', roles: VENTANILLA },
     ],
   },

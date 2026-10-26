@@ -1,0 +1,14 @@
+@if (dibujo(); as d) {
+  <svg
+    [attr.width]="d.ancho"
+    [attr.height]="d.alto"
+    [attr.viewBox]="d.vistas"
+    role="img"
+    [attr.aria-label]="'Código de barras del boleto ' + texto()">
+    <!-- Fondo blanco propio: el boleto es oscuro y un lector necesita contraste. -->
+    <rect class="fondo" x="0" y="0" [attr.width]="d.ancho" [attr.height]="d.alto" />
+    @for (b of d.barras; track $index) {
+      <rect class="barra" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.ancho" [attr.height]="b.alto" />
+    }
+  </svg>
+}

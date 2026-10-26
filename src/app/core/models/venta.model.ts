@@ -13,6 +13,8 @@ export interface Boleto {
 
 export interface Venta {
   ventaId: string;
+  /** Código del boleto impreso (12 caracteres): lo que lleva el código de barras del talón. */
+  codigo?: string | null;
   viajeId: string;
   canal: CanalVenta;
   clienteNit: string | null;
@@ -29,6 +31,8 @@ export interface Venta {
   motivoRechazo: string | null;
   motivoCancelacion: string | null;
   fechaCancelacion: string | null;
+  /** Cuándo volvió el dinero: la cartera lo devuelve sola, el efectivo lo entrega la sucursal. */
+  fechaReembolso?: string | null;
   boletos: Boleto[];
   viaje: {
     origenNombre: string;
@@ -37,6 +41,11 @@ export interface Venta {
     busPlaca: string | null;
     precioBoleto: number;
   } | null;
+  version: number;
+}
+
+/** Reembolso de una venta cancelada: solo la version, para que no se reembolse dos veces. */
+export interface ReembolsarVenta {
   version: number;
 }
 

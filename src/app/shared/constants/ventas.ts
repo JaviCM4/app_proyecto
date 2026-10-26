@@ -35,6 +35,20 @@ export const ESTADO_VIAJE: Record<EstadoViaje, { texto: string; clase: string; o
   COMPLETADO: { texto: 'Completado', clase: '', orden: 2 },
 };
 
+/**
+ * Código del boleto impreso: los primeros 12 caracteres del id de la venta, en mayúsculas. Es lo que
+ * lleva el código de barras del talón y lo que se busca en Reembolsos. Se calcula también en el
+ * frontend para que el boleto se pueda imprimir aunque la respuesta no traiga el campo.
+ */
+export function codigoBoleto(venta: { codigo?: string | null; ventaId: string }): string {
+  return (venta.codigo ?? venta.ventaId.replace(/-/g, '').slice(0, 12)).toUpperCase();
+}
+
+/** El mismo código en grupos de cuatro, para leerlo o dictarlo por teléfono: A1B2-C3D4-E5F6. */
+export function codigoLegible(codigo: string): string {
+  return codigo.replace(/(.{4})(?=.)/g, '$1-');
+}
+
 /** Más reciente primero: por fecha de pago y, el mismo día, por la hora en que se registró. */
 export function ordenarVentas<T extends { fechaPago: string | null; fechaRegistro?: string | null }>(lista: T[]): T[] {
   return [...lista].sort(
