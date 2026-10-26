@@ -2,12 +2,15 @@
 
 .detalle-viaje {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 
-  @media (max-width: 640px) { grid-template-columns: 1fr; }
+  @media (max-width: 760px) { grid-template-columns: 1fr; }
 }
+
+/* Dentro del detalle las dos fotos ya empiezan arriba: no necesitan el margen del par. */
+.fotos-detalle { margin-top: 0; }
 
 .bus-mini {
   margin: 0;

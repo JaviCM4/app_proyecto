@@ -150,7 +150,8 @@
         · Pagada el {{ d.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}
         · Estado: <span [class]="'insignia ' + estadoVenta[d.estado].clase">{{ estadoVenta[d.estado].texto }}</span>
       </p>
-      @if (d.motivoCancelacion) {
+      @if (d.motivoCancelacion && d.viaje) {
+        <!-- Sin viaje, el motivo ya se muestra arriba en negrita: no se repite. -->
         <p class="secundario">Motivo de la cancelación: {{ motivo(d.motivoCancelacion) }}</p>
       }
       @if (d.fechaReembolso) {

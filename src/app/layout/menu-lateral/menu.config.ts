@@ -26,13 +26,13 @@ const CLIENTE: Rol[] = ['CLIENTE'];
 /**
  * Menú del panel: cada cuenta ve la suma de las opciones de todos sus roles.
  * - Todos: Inicio, Mi perfil y Seguridad.
- * - Cliente: Servicios (billetera, comprar boletos, solicitar alquiler) y Mis compras. Cualquier cuenta
- *   con el rol Cliente las ve, sea o no personal (cajero, administrador o piloto que también es cliente).
- * - Cajero: Vender boletos, Ventas, Reembolsos, Órdenes de alquiler y Solicitar alquiler (propio o de
- *   otra persona).
+ * - Cliente: Mis compras, que junta todo lo que puede hacer como cliente (comprar boletos, solicitar
+ *   alquiler, sus boletos, sus alquileres y su billetera). Cualquier cuenta con el rol Cliente lo ve,
+ *   sea o no personal (cajero, administrador o piloto que también es cliente).
+ * - Cajero: Mi sucursal y Ventanilla (vender boletos, ventas, reembolsos y órdenes de alquiler).
  * - Administrador de sucursal: Mi sucursal, Operación, Taller, Reportes y todo lo del cajero.
  * - Administrador del sistema: Administración y Reportes.
- * - Piloto: Mis viajes.
+ * - Piloto: Mi sucursal y Mis viajes.
  * Para agregar una pantalla: crea la ruta en app.routes.ts (con los mismos roles en data.roles) y su opción aquí.
  */
 export const MENU: GrupoMenu[] = [
@@ -40,7 +40,8 @@ export const MENU: GrupoMenu[] = [
     titulo: 'General',
     opciones: [
       { texto: 'Inicio', ruta: '/panel', icono: 'inicio', roles: [] },
-      { texto: 'Mi sucursal', ruta: '/panel/mi-sucursal', icono: 'sucursal', roles: SUCURSAL },
+      // La ven también el cajero y el piloto: es la sucursal donde trabajan.
+      { texto: 'Mi sucursal', ruta: '/panel/mi-sucursal', icono: 'sucursal', roles: ['ADMIN_SUCURSAL', 'CAJERO', 'CHOFER'] },
     ],
   },
   {
@@ -81,14 +82,8 @@ export const MENU: GrupoMenu[] = [
     opciones: [{ texto: 'Reportes', ruta: '/panel/reportes', icono: 'reporte', roles: ['ADMIN_SISTEMA', 'ADMIN_SUCURSAL'] }],
   },
   {
-    titulo: 'Servicios',
+    titulo: 'Ventanilla',
     opciones: [
-      // Cliente: su billetera y sus compras.
-      { texto: 'Billetera digital', ruta: '/panel/cartera', icono: 'cartera', roles: CLIENTE },
-      { texto: 'Comprar boletos', ruta: '/panel/comprar', icono: 'boleto', roles: CLIENTE },
-      // Cliente: para sí. Cajero y administrador de sucursal: para sí o para otra persona (datos a mano).
-      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'] },
-      // Personal de ventanilla.
       { texto: 'Vender boletos', ruta: '/panel/mostrador', icono: 'boleto', roles: VENTANILLA },
       { texto: 'Ventas', ruta: '/panel/ventas', icono: 'reporte', roles: VENTANILLA },
       // Devolución del efectivo de una compra cancelada (el admin del sistema solo consulta).
@@ -97,10 +92,17 @@ export const MENU: GrupoMenu[] = [
     ],
   },
   {
+    // Lo que puede hacer cualquier cuenta con rol Cliente, junto: comprar, pedir un bus, su
+    // billetera y lo que ya compró. También lo ven los cajeros y administradores, que son
+    // clientes además de personal.
     titulo: 'Mis compras',
     opciones: [
+      { texto: 'Comprar boletos', ruta: '/panel/comprar', icono: 'boleto', roles: CLIENTE },
+      // Cliente: para sí. Cajero y administrador de sucursal: también para otra persona.
+      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'] },
       { texto: 'Mis boletos', ruta: '/panel/mis-compras', icono: 'boleto', roles: CLIENTE },
       { texto: 'Mis alquileres', ruta: '/panel/mis-alquileres', icono: 'taller', roles: CLIENTE },
+      { texto: 'Billetera digital', ruta: '/panel/cartera', icono: 'cartera', roles: CLIENTE },
     ],
   },
   {

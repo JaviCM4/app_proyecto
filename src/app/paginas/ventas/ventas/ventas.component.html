@@ -110,12 +110,7 @@
                 }
               </div>
             } @else {
-              @if (viajeSinDatos(v); as sd) {
-                <span class="insignia">{{ sd.etiqueta }}</span>
-                @if (sd.detalle) {
-                  <div class="secundario">{{ sd.detalle }}</div>
-                }
-              }
+              <span class="insignia">{{ viajeSinDatos(v) }}</span>
             }
           </td>
           <td>{{ canalVenta[v.canal] }}</td>
@@ -241,7 +236,7 @@
           @if (r.salida) { <span class="secundario"> · Salida {{ r.salida | date: 'dd/MM/yyyy HH:mm' : zona }}</span> }
         </p>
       } @else {
-        <p><span class="insignia">{{ viajeSinDatos(d).etiqueta }}</span></p>
+        <p><span class="insignia">{{ viajeSinDatos(d) }}</span></p>
       }
       @if (d.motivoRechazo) {
         <p class="secundario">Motivo del rechazo: {{ motivo(d.motivoRechazo) }}</p>

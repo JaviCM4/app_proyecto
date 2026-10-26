@@ -1,0 +1,33 @@
+:host { display: block; }
+
+figure {
+  margin: 0;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  overflow: hidden;
+  background: var(--superficie-alterna);
+}
+
+img,
+.sin-foto {
+  display: block;
+  width: 100%;
+  height: var(--alto-foto, 150px);
+  object-fit: cover;
+}
+
+.sin-foto {
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--texto-tenue);
+}
+
+figcaption {
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--texto-suave);
+  border-top: 1px solid var(--borde);
+}

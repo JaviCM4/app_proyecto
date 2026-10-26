@@ -1,0 +1,16 @@
+<figure [style.--alto-foto.px]="alto()">
+  @if (url(); as foto) {
+    @if (ampliable()) {
+      <a [href]="foto" target="_blank" rel="noopener" title="Ver la foto completa">
+        <img [src]="foto" [alt]="descripcion() || titulo()" loading="lazy" />
+      </a>
+    } @else {
+      <img [src]="foto" [alt]="descripcion() || titulo()" loading="lazy" />
+    }
+  } @else {
+    <div class="sin-foto">{{ vacio() }}</div>
+  }
+  @if (titulo()) {
+    <figcaption>{{ titulo() }}</figcaption>
+  }
+</figure>

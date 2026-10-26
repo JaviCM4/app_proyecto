@@ -107,6 +107,16 @@ a {
   @media (max-width: 640px) { grid-template-columns: 1fr; }
 }
 
+/* Par de fotos (bus y piloto) al elegirlos o al ver un viaje ya armado. */
+.fotos-par {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+
+  @media (max-width: 560px) { grid-template-columns: 1fr; }
+}
+
 /* Pestañas */
 .pestanas {
   display: flex;
