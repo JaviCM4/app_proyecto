@@ -8,14 +8,43 @@
   gap: 8px;
 }
 
-/* Modal: info a la izquierda, bus a la derecha (en móvil se apilan). */
-.compra-grid { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
-.compra-info p { margin: 0 0 10px; }
-.compra-info .total { font-size: 1.1rem; }
-.recorrido-compra { margin-bottom: 16px; }
+/* Bus a la izquierda y mapa a la derecha (en móvil se apilan). */
+.compra-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.compra-bus,
+.compra-mapa {
+  min-width: 0;
+}
+
+/* Resumen del viaje debajo del bus y del mapa. */
+.compra-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 18px;
+  margin: 16px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--borde);
+}
+
+.compra-resumen p { margin: 0; }
+.compra-resumen .total { font-size: 1.1rem; }
+
+/* Botón de "ver correo": se ve como un enlace dentro del resumen. */
+.compra-resumen .btn.texto {
+  height: auto;
+  padding: 0;
+  font-size: 12px;
+  color: var(--primario);
+  vertical-align: baseline;
+}
 
 .error { color: var(--peligro); }
 
-@media (max-width: 860px) {
-  .compra-grid { grid-template-columns: 1fr; }
+@media (max-width: 900px) {
+  .compra-layout { grid-template-columns: 1fr; }
 }

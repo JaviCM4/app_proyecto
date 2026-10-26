@@ -1,10 +1,44 @@
 /* Estilos propios de la página de rutas (los generales viven en styles.scss). */
 
-.distancia-mapa {
+/* Formulario a la izquierda y mapa a la derecha; en pantallas angostas se apilan. */
+.ruta-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.ruta-campos {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ruta-mapa {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  > label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--texto-suave);
+  }
+}
+
+/* La distancia la calcula el mapa: se muestra, pero no se puede escribir. */
+.solo-lectura {
+  background: var(--fondo);
+  color: var(--texto-suave);
+  cursor: default;
+
+  &:focus { border-color: var(--borde-fuerte); box-shadow: none; }
+}
+
+@media (max-width: 900px) {
+  .ruta-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,7 +1,70 @@
 /* Estilos propios de la venta en mostrador (usa las clases globales). */
 
-.recorrido-venta {
-  margin-bottom: 12px;
+/* Bus a la izquierda y mapa a la derecha; en móvil se apilan. */
+.venta-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.venta-bus {
+  min-width: 0;
+}
+
+.venta-mapa {
+  min-width: 0;
+}
+
+.total-venta {
+  margin: 14px 0 6px;
+  font-weight: 600;
+}
+
+.datos-cliente {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--superficie-alterna);
+}
+
+.nit-cliente {
+  max-width: 620px;
+}
+
+.nombre-fecha {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(180px, 1fr);
+  gap: 14px;
+}
+
+.datos-cliente .sugerencias-cliente {
+  margin: -6px 0 0;
+}
+
+/* Correo opcional: oculto hasta que el cajero pulsa el botón. */
+.etiqueta-con-accion {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.correo-cliente {
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .venta-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .nombre-fecha {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* El NIT y su botón de búsqueda van en la misma línea: es el primer paso de la venta. */

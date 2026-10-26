@@ -75,6 +75,34 @@
 
 /* ---------- Detalle del viaje ---------- */
 
+/* Datos y bitácora a la izquierda, recorrido a la derecha (misma convención que las demás pantallas). */
+.detalle-viaje-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.detalle-info,
+.detalle-mapa {
+  min-width: 0;
+}
+
+.detalle-mapa .detalle-titulo {
+  margin-top: 0;
+}
+
+.detalle-mapa-nota {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .detalle-viaje-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .detalle-cabecera {
   display: flex;
   align-items: center;

@@ -3,10 +3,12 @@ import { Component, computed, effect, inject, input, output, signal } from '@ang
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
+import { Perfil } from '../../../core/models/usuario.model';
 import { Venta, VentaPendiente } from '../../../core/models/venta.model';
 import { MapaAsientos, Ruta, Viaje } from '../../../core/models/viaje.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { UsuariosService } from '../../../core/services/usuarios.service';
 import { VentasService } from '../../../core/services/ventas.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { mensajeError } from '../../../core/utils/errores-http';
@@ -33,6 +35,7 @@ export class AsientosViajeComponent {
   private readonly servicio = inject(ViajesService);
   private readonly ventas = inject(VentasService);
   private readonly auth = inject(AuthService);
+  private readonly usuarios = inject(UsuariosService);
   private readonly router = inject(Router);
   private readonly avisos = inject(ToastService);
   private readonly sucursalesServicio = inject(SucursalesService);
@@ -46,6 +49,19 @@ export class AsientosViajeComponent {
 
   /** Sin sesión solo se pueden ver los asientos. */
   readonly invitado = computed(() => !this.auth.autenticado());
+
+  /** Perfil del comprador: de ahí salen el nombre, el NIT y el correo del comprobante. */
+  readonly perfil = signal<Perfil | null>(null);
+  /** El correo se muestra solo si el cliente lo pide (queda oculto por defecto). */
+  readonly mostrarCorreo = signal(false);
+
+  readonly nombreCliente = computed(() => {
+    const p = this.perfil();
+    const completo = p ? `${p.nombres} ${p.apellidos}`.trim() : '';
+    return completo || this.auth.usuario()?.nombre || '';
+  });
+  readonly nitCliente = computed(() => this.perfil()?.nit || 'CF');
+  readonly correoCliente = computed(() => this.perfil()?.correo ?? this.auth.usuario()?.correo ?? '');
 
   readonly mapa = signal<MapaAsientos | null>(null);
   readonly cargando = signal(false);
@@ -86,6 +102,11 @@ export class AsientosViajeComponent {
 
   alElegir(asientos: number[]): void {
     this.elegidos.set(asientos);
+  }
+
+  /** Muestra u oculta el correo al que llegará el comprobante. */
+  alternarCorreo(): void {
+    this.mostrarCorreo.update((visible) => !visible);
   }
 
   /** Invitado: lo manda al login y al volver se reabre este viaje para que pague. */
@@ -165,6 +186,12 @@ export class AsientosViajeComponent {
   private cargar(viajeId: string): void {
     this.reiniciar();
     this.cargando.set(true);
+    if (!this.invitado()) {
+      this.usuarios.perfil().subscribe({
+        next: (p) => this.perfil.set(p),
+        error: () => this.perfil.set(null),
+      });
+    }
     this.servicio.asientos(viajeId).subscribe({
       next: (m) => {
         this.mapa.set(m);
@@ -187,6 +214,8 @@ export class AsientosViajeComponent {
     this.pendiente.set(null);
     this.ventaFinal.set(null);
     this.fallo.set(null);
+    this.perfil.set(null);
+    this.mostrarCorreo.set(false);
     this.origenRecorrido.set(null);
     this.destinoRecorrido.set(null);
   }

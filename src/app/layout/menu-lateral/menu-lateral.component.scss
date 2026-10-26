@@ -39,6 +39,61 @@ nav {
   overflow-y: auto;
 }
 
+/* Cambio del menú según el rol: solo aparece si la cuenta tiene más de uno. */
+.roles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.roles-selector {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--superficie-alterna);
+}
+
+.rol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { color: var(--texto); background: var(--primario-suave); }
+  &:focus-visible { outline: 2px solid var(--primario); outline-offset: 1px; }
+
+  &.activa {
+    background: var(--primario);
+    color: var(--sobre-primario);
+  }
+}
+
+.roles-activo {
+  margin: 0;
+  font-size: 12px;
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+.menu.plegado .roles {
+  padding: 10px 6px;
+}
+
 .grupo {
   margin: 14px 8px 6px;
   font-size: 11px;
