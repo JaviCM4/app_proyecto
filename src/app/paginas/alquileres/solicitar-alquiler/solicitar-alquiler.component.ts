@@ -117,11 +117,16 @@ export class SolicitarAlquilerComponent implements OnInit {
       kilometros(origen, s) < kilometros(origen, cercana) ? s : cercana);
   });
 
+  /**
+   * Sucursal elegida, como señal. El valor de un control reactivo no es una señal, así que un
+   * computed que lo leyera no se enteraría del cambio y el pin del mapa se quedaría donde estaba:
+   * por eso se copia aquí desde valueChanges (ver el constructor).
+   */
+  private readonly sucursalId = signal('');
+
   /** La sucursal que quedó elegida, para dibujarla en el mapa del segundo paso. */
-  readonly sucursalDelAlquiler = computed<Sucursal | null>(() => {
-    const id = this.form.controls.sucursalId.value;
-    return this.sucursales().find((s) => s.sucursalId === id) ?? null;
-  });
+  readonly sucursalDelAlquiler = computed<Sucursal | null>(() =>
+    this.sucursales().find((s) => s.sucursalId === this.sucursalId()) ?? null);
 
   readonly referenciaElegida = computed<PuntoReferencia[]>(() => {
     const s = this.sucursalDelAlquiler();
@@ -146,6 +151,11 @@ export class SolicitarAlquilerComponent implements OnInit {
   });
 
   constructor() {
+    // El mapa del segundo paso sigue a la sucursal elegida, cambie por el select o porque se
+    // propuso la más cercana al nuevo origen.
+    this.form.controls.sucursalId.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((id) => this.sucursalId.set(id ?? ''));
     // Buscador del modal: filtra la lista mientras se escribe (NIT, nombre o correo).
     if (this.esVentanilla) {
       this.buscador.valueChanges

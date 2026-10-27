@@ -89,7 +89,9 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
     // La sucursal de referencia puede cambiar (al elegir otra en el select) o llegar después.
     effect(() => {
       const puntos = this.referencias();
-      if (this.mapa) this.dibujarReferencias(puntos);
+      if (!this.mapa) return;
+      this.dibujarReferencias(puntos);
+      this.encuadrar();
     });
     // Redibuja cuando el formulario cambia el origen o el destino. El primer trazo lo hace
     // ngAfterViewInit (aquí el mapa todavía no existe); después esta comprobación evita repetirlo.
@@ -211,10 +213,12 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
   /** Muestra el recorrido completo con margen, o el único punto que haya con zoom de ciudad. */
   private encuadrar(): void {
     if (!this.mapa) return;
+    // Las referencias (la sucursal) entran en el encuadre: de nada sirve el pin si queda fuera.
+    const referencias: Par[] = this.referencias().map((r) => [r.latitud, r.longitud]);
     if (this.puntosRuta?.length) {
-      this.mapa.fitBounds(L.latLngBounds(this.puntosRuta).pad(0.12));
+      this.mapa.fitBounds(L.latLngBounds([...this.puntosRuta, ...referencias]).pad(0.12));
     } else if (this.origenActual && this.destinoActual) {
-      this.mapa.fitBounds(L.latLngBounds(this.origenActual, this.destinoActual).pad(0.35));
+      this.mapa.fitBounds(L.latLngBounds([this.origenActual, this.destinoActual, ...referencias]).pad(0.25));
     } else if (this.origenActual ?? this.destinoActual) {
       this.mapa.setView((this.origenActual ?? this.destinoActual)!, 12);
     } else if (this.mostrarVacio()) {
