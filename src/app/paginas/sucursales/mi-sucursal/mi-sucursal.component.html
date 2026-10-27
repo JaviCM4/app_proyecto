@@ -62,7 +62,8 @@
           <div class="completo"><dt>Dirección</dt><dd>{{ s.direccion }}</dd></div>
         </dl>
         <div class="mapa">
-          <app-selector-ubicacion [latitud]="s.latitud" [longitud]="s.longitud" [soloLectura]="true" [alto]="240" />
+          <app-selector-ubicacion [latitud]="s.latitud" [longitud]="s.longitud" [soloLectura]="true"
+                                 [alto]="pantallaGrande() ? 480 : 300" />
         </div>
         <p class="nota-suave">Para cambiar estos datos, comunícate con el administrador del sistema.</p>
       </section>

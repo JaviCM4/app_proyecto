@@ -162,7 +162,7 @@ export const routes: Routes = [
       {
         // Desde "Ventanilla": el mismo formulario, pero a nombre de quien llega al mostrador.
         path: 'ventanilla/alquiler',
-        title: 'Alquiler en ventanilla',
+        title: 'Solicitar alquiler',
         canActivate: [rolGuard],
         data: { roles: ['CAJERO', 'ADMIN_SUCURSAL'], ventanilla: true },
         loadComponent: () =>

@@ -88,8 +88,8 @@ export const MENU: GrupoMenu[] = [
       { texto: 'Ventas', ruta: '/panel/ventas', icono: 'reporte', roles: VENTANILLA },
       // Devolución del efectivo de una compra cancelada (el admin del sistema solo consulta).
       { texto: 'Reembolsos', ruta: '/panel/reembolsos', icono: 'cartera', roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
-      // En ventanilla el alquiler puede ser para cualquiera: el cliente se busca por NIT.
-      { texto: 'Alquiler en ventanilla', ruta: '/panel/ventanilla/alquiler', icono: 'taller', roles: VENTANILLA },
+      // Desde el menú de ventanilla el alquiler es para quien llega al mostrador: se busca por NIT.
+      { texto: 'Solicitar alquiler', ruta: '/panel/ventanilla/alquiler', icono: 'taller', roles: VENTANILLA },
       { texto: 'Órdenes de alquiler', ruta: '/panel/ordenes', icono: 'tarifa', roles: VENTANILLA },
     ],
   },
@@ -100,8 +100,10 @@ export const MENU: GrupoMenu[] = [
     titulo: 'Mis compras',
     opciones: [
       { texto: 'Comprar boletos', ruta: '/panel/comprar', icono: 'boleto', roles: CLIENTE },
-      // Siempre para uno mismo. Para pedirlo a nombre de otra persona está "Alquiler en ventanilla".
-      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'] },
+      // Desde el menú de cliente el alquiler es para uno mismo. Un cajero o un administrador ven
+      // esta opción al cambiarse al menú de Cliente; en su propio menú ven la de Ventanilla, que
+      // es la misma pantalla pero a nombre de otra persona.
+      { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: CLIENTE },
       { texto: 'Mis boletos', ruta: '/panel/mis-compras', icono: 'boleto', roles: CLIENTE },
       { texto: 'Mis alquileres', ruta: '/panel/mis-alquileres', icono: 'taller', roles: CLIENTE },
       { texto: 'Billetera digital', ruta: '/panel/cartera', icono: 'cartera', roles: CLIENTE },

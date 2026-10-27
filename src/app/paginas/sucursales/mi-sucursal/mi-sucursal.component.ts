@@ -18,6 +18,7 @@ import { IconoComponent } from '../../../shared/components/icono/icono.component
 import { SelectorUbicacionComponent } from '../../../shared/components/selector-ubicacion/selector-ubicacion.component';
 import { NOMBRE_ROL } from '../../../shared/constants/roles';
 import { ToastService } from '../../../shared/services/toast.service';
+import { pantallaGrande } from '../../../shared/utils/pantalla';
 
 /** Días antes del vencimiento en que una licencia se marca como "por vencer". */
 const DIAS_AVISO_LICENCIA = 30;
@@ -41,6 +42,9 @@ interface Acceso {
   styleUrl: './mi-sucursal.component.scss',
 })
 export class MiSucursalComponent implements OnInit {
+  /** En pantalla grande el mapa de la sucursal va más alto: se ve el entorno, no solo el punto. */
+  readonly pantallaGrande = pantallaGrande();
+
   private readonly auth = inject(AuthService);
   private readonly sucursales = inject(SucursalesService);
   private readonly personalServicio = inject(PersonalService);

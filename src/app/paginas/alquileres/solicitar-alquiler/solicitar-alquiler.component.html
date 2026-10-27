@@ -1,11 +1,11 @@
 <div class="pagina-encabezado">
   <div>
-    <h1>{{ esVentanilla ? 'Alquiler en ventanilla' : 'Solicitar alquiler' }}</h1>
+    <h1>Solicitar alquiler</h1>
     @if (esVentanilla) {
       <p>
-        Registra el alquiler de quien llega al mostrador. Búscalo con <strong>Seleccionar cliente</strong>
-        o escribe su NIT; si no tiene cuenta queda como consumidor final y se cobra en efectivo.
-        El origen, el destino y los kilómetros salen del mapa.
+        Estás en el menú de ventanilla, así que el alquiler va a nombre de quien llega al mostrador.
+        Búscalo con <strong>Seleccionar cliente</strong> o escribe su NIT; si no tiene cuenta queda
+        como consumidor final y se cobra en efectivo. El origen, el destino y los kilómetros salen del mapa.
       </p>
     } @else {
       <p>
