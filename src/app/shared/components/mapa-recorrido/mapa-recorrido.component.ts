@@ -14,6 +14,7 @@ import { Subscription } from 'rxjs';
 import * as L from 'leaflet';
 import { RuteoService } from '../../../core/services/ruteo.service';
 import { agregarCapaBase } from '../../utils/capa-base-mapa';
+import { PuntoReferencia, capaDeReferencias } from '../../utils/pin-referencia';
 
 const CENTRO_GT: L.LatLngTuple = [15.6, -90.25];
 const LIMITES_GT = L.latLngBounds([13.4, -92.6], [18.1, -88.0]);
@@ -27,12 +28,7 @@ export interface Coordenadas {
   longitud: number;
 }
 
-/** Punto fijo que se dibuja de referencia sobre el mapa, como la sucursal que atiende el alquiler. */
-export interface PuntoReferencia {
-  nombre: string;
-  latitud: number;
-  longitud: number;
-}
+export type { PuntoReferencia } from '../../utils/pin-referencia';
 
 /**
  * Mapa de solo lectura con el recorrido de un alquiler o de un viaje: origen (O, verde) y
@@ -143,16 +139,7 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
     this.capaReferencias?.remove();
     this.capaReferencias = undefined;
     if (!puntos.length) return;
-    const icono = L.divIcon({
-      className: 'punto-referencia',
-      html: '<span></span>',
-      iconSize: [14, 14],
-      iconAnchor: [7, 7],
-    });
-    this.capaReferencias = L.layerGroup(
-      puntos.map((p) => L.marker([p.latitud, p.longitud], { icon: icono, interactive: true, keyboard: false })
-        .bindTooltip(p.nombre, { direction: 'top', offset: [0, -8] })),
-    ).addTo(this.mapa);
+    this.capaReferencias = capaDeReferencias(puntos).addTo(this.mapa);
   }
 
   private dibujar(origen: Par | null, destino: Par | null): void {

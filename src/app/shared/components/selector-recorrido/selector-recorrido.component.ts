@@ -16,6 +16,7 @@ import * as L from 'leaflet';
 import { GeocodificacionService, Lugar, seisDecimales } from '../../../core/services/geocodificacion.service';
 import { RuteoService } from '../../../core/services/ruteo.service';
 import { agregarCapaBase } from '../../utils/capa-base-mapa';
+import { PuntoReferencia, capaDeReferencias } from '../../utils/pin-referencia';
 
 /** Centro y límites del mapa: Guatemala. */
 const CENTRO_GT: L.LatLngTuple = [15.6, -90.25];
@@ -30,12 +31,7 @@ export interface Coordenadas {
   longitud: number;
 }
 
-/** Punto fijo que se dibuja de referencia sobre el mapa, como una sucursal. */
-export interface PuntoReferencia {
-  nombre: string;
-  latitud: number;
-  longitud: number;
-}
+export type { PuntoReferencia } from '../../utils/pin-referencia';
 
 /**
  * Mapa para marcar el recorrido de un alquiler: el origen (O, verde) y el destino (D, rojo),
@@ -196,16 +192,7 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
     this.capaReferencias?.remove();
     this.capaReferencias = undefined;
     if (!puntos.length) return;
-    const icono = L.divIcon({
-      className: 'punto-referencia',
-      html: '<span></span>',
-      iconSize: [14, 14],
-      iconAnchor: [7, 7],
-    });
-    this.capaReferencias = L.layerGroup(
-      puntos.map((p) => L.marker([p.latitud, p.longitud], { icon: icono, interactive: true, keyboard: false })
-        .bindTooltip(p.nombre, { direction: 'top', offset: [0, -8] })),
-    ).addTo(this.mapa);
+    this.capaReferencias = capaDeReferencias(puntos).addTo(this.mapa);
   }
 
   private marcar(latlng: L.LatLng): void {

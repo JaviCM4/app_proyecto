@@ -94,13 +94,12 @@
   background: #dc2626;
 }
 
-/* Sucursales dibujadas de referencia sobre el mapa. */
-:host ::ng-deep .punto-referencia span {
+/* Pin de ubicación de las sucursales: gota con la punta en la coordenada exacta. */
+:host ::ng-deep .punto-referencia {
+  color: var(--primario);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+:host ::ng-deep .punto-referencia svg {
   display: block;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--primario);
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
 }
