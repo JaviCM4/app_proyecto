@@ -30,6 +30,13 @@ export interface Coordenadas {
   longitud: number;
 }
 
+/** Punto fijo que se dibuja de referencia sobre el mapa, como una sucursal. */
+export interface PuntoReferencia {
+  nombre: string;
+  latitud: number;
+  longitud: number;
+}
+
 /**
  * Mapa para marcar el recorrido de un alquiler: el origen (O, verde) y el destino (D, rojo),
  * unidos por el recorrido real por carretera (o por una línea recta si el servicio de ruteo no
@@ -52,6 +59,13 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   readonly origenLongitud = input<number | null>(null);
   readonly destinoLatitud = input<number | null>(null);
   readonly destinoLongitud = input<number | null>(null);
+  /** Alto del mapa en píxeles. */
+  readonly alto = input(320);
+  /**
+   * Puntos fijos que se dibujan de referencia (las sucursales): ayudan a elegir el origen sabiendo
+   * de dónde puede salir el bus. No son seleccionables ni estorban al clic para marcar.
+   */
+  readonly referencias = input<PuntoReferencia[]>([]);
 
   readonly origenCambio = output<Coordenadas | null>();
   readonly destinoCambio = output<Coordenadas | null>();
@@ -73,6 +87,7 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   @ViewChild('contenedor', { static: true }) private contenedor!: ElementRef<HTMLDivElement>;
   private mapa?: L.Map;
   private marcadorOrigen?: L.Marker;
+  private capaReferencias?: L.LayerGroup;
   private marcadorDestino?: L.Marker;
   private linea?: L.Polyline;
   private lineaRuta?: L.Polyline;
@@ -83,6 +98,11 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
   private destinoActual: Par | null = null;
 
   constructor() {
+    // Las referencias (sucursales) llegan por HTTP, así que pueden aparecer después del mapa.
+    effect(() => {
+      const puntos = this.referencias();
+      if (this.mapa) this.dibujarReferencias(puntos);
+    });
     // Si la página cambia las coordenadas (por ejemplo, al limpiar el formulario), se redibuja.
     // Cuando el cambio viene de este mismo mapa (clic o arrastre) ya está dibujado: no se toca,
     // para no borrar la ruta por carretera que acaba de llegar.
@@ -101,6 +121,7 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
     }).setView(CENTRO_GT, 7);
     agregarCapaBase(this.mapa);
     this.mapa.on('click', (e: L.LeafletMouseEvent) => this.marcar(e.latlng));
+    this.dibujarReferencias(this.referencias());
     this.dibujar(
       this.punto(this.origenLatitud(), this.origenLongitud()),
       this.punto(this.destinoLatitud(), this.destinoLongitud()),
@@ -164,6 +185,27 @@ export class SelectorRecorridoComponent implements AfterViewInit, OnDestroy {
     this.origenCambio.emit(null);
     this.destinoCambio.emit(null);
     this.distanciaKm.emit(null);
+  }
+
+  /**
+   * Pinta las sucursales como puntos pequeños con su nombre al pasar el cursor. Van en una capa
+   * aparte para poder rehacerla sola, y no interceptan el clic: el mapa sigue sirviendo para marcar.
+   */
+  private dibujarReferencias(puntos: PuntoReferencia[]): void {
+    if (!this.mapa) return;
+    this.capaReferencias?.remove();
+    this.capaReferencias = undefined;
+    if (!puntos.length) return;
+    const icono = L.divIcon({
+      className: 'punto-referencia',
+      html: '<span></span>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+    this.capaReferencias = L.layerGroup(
+      puntos.map((p) => L.marker([p.latitud, p.longitud], { icon: icono, interactive: true, keyboard: false })
+        .bindTooltip(p.nombre, { direction: 'top', offset: [0, -8] })),
+    ).addTo(this.mapa);
   }
 
   private marcar(latlng: L.LatLng): void {
