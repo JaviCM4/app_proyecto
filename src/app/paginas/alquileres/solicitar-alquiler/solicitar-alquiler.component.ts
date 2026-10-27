@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -18,10 +18,22 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import {
   Coordenadas,
+  PuntoReferencia,
   SelectorRecorridoComponent,
 } from '../../../shared/components/selector-recorrido/selector-recorrido.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { pantallaGrande } from '../../../shared/utils/pantalla';
+
+/** Distancia en línea recta entre dos puntos (fórmula del semiverseno), solo para comparar cuál queda más cerca. */
+function kilometros(desde: Coordenadas, hasta: { latitud: number; longitud: number }): number {
+  const RADIO_TIERRA_KM = 6371;
+  const radianes = (grados: number) => (grados * Math.PI) / 180;
+  const dLat = radianes(hasta.latitud - desde.latitud);
+  const dLon = radianes(hasta.longitud - desde.longitud);
+  const a = Math.sin(dLat / 2) ** 2
+      + Math.cos(radianes(desde.latitud)) * Math.cos(radianes(hasta.latitud)) * Math.sin(dLon / 2) ** 2;
+  return 2 * RADIO_TIERRA_KM * Math.asin(Math.min(1, Math.sqrt(a)));
+}
 
 /**
  * Solicitud de alquiler de un bus (T16).
@@ -83,6 +95,42 @@ export class SolicitarAlquilerComponent implements OnInit {
   readonly origenMapa = signal<Coordenadas | null>(null);
   readonly destinoMapa = signal<Coordenadas | null>(null);
 
+  /**
+   * La solicitud va en dos pasos: primero quién la pide y por dónde va el recorrido, y después,
+   * ya sabiendo de dónde sale, qué sucursal la atiende y el resto de los datos.
+   */
+  readonly paso = signal<1 | 2>(1);
+  /** El usuario ya eligió sucursal a mano: entonces no se le vuelve a imponer la más cercana. */
+  private readonly sucursalElegidaAMano = signal(false);
+
+  /** Las sucursales dibujadas sobre el mapa, para elegir el origen sabiendo de dónde sale el bus. */
+  readonly referenciasSucursales = computed<PuntoReferencia[]>(() =>
+    this.sucursales().map((s) => ({ nombre: `${s.nombre} · ${s.municipio}`, latitud: s.latitud, longitud: s.longitud })),
+  );
+
+  /** La sucursal más cercana al origen marcado: es la que se propone para atender el alquiler. */
+  readonly sucursalCercana = computed<Sucursal | null>(() => {
+    const origen = this.origenMapa();
+    const lista = this.sucursales();
+    if (!origen || !lista.length) return null;
+    return lista.reduce((cercana, s) =>
+      kilometros(origen, s) < kilometros(origen, cercana) ? s : cercana);
+  });
+
+  /** La sucursal que quedó elegida, para dibujarla en el mapa del segundo paso. */
+  readonly sucursalDelAlquiler = computed<Sucursal | null>(() => {
+    const id = this.form.controls.sucursalId.value;
+    return this.sucursales().find((s) => s.sucursalId === id) ?? null;
+  });
+
+  readonly referenciaElegida = computed<PuntoReferencia[]>(() => {
+    const s = this.sucursalDelAlquiler();
+    return s ? [{ nombre: `Sale de ${s.nombre}`, latitud: s.latitud, longitud: s.longitud }] : [];
+  });
+
+  /** ¿Ya se puede pasar al segundo paso? Hace falta el recorrido y los datos de quien lo pide. */
+  readonly listoParaSeguir = computed(() => !!this.origenMapa() && !!this.destinoMapa());
+
   readonly form = this.fb.nonNullable.group({
     sucursalId: ['', Validators.required],
     clienteNit: ['', Validators.maxLength(20)],
@@ -115,8 +163,11 @@ export class SolicitarAlquilerComponent implements OnInit {
   }
 
   private reiniciar(): void {
+    // La sucursal ya no se propone de entrada: se decide en el segundo paso con el origen marcado.
+    this.paso.set(1);
+    this.sucursalElegidaAMano.set(false);
     this.form.reset({
-      sucursalId: this.esVentanilla ? (this.auth.usuario()?.sucursalId ?? '') : '',
+      sucursalId: '',
       clienteNit: '',
       clienteNombre: '',
       clienteCorreo: '',
@@ -148,6 +199,50 @@ export class SolicitarAlquilerComponent implements OnInit {
       datos.forEach((c) => c.disable());
       this.llenarConPerfil();
     }
+  }
+
+  // ----- Asistente en dos pasos -----
+
+  /**
+   * Del recorrido a los detalles. Al llegar acá ya se sabe de dónde sale el bus, así que se propone
+   * la sucursal más cercana al origen; si el usuario ya eligió otra a mano, se respeta la suya.
+   */
+  siguiente(): void {
+    const datos = [this.form.controls.clienteNombre, this.form.controls.clienteCorreo];
+    datos.forEach((c) => c.markAsTouched());
+    if (datos.some((c) => c.invalid)) {
+      this.avisos.info('Revisa los datos del cliente antes de seguir.');
+      return;
+    }
+    if (!this.listoParaSeguir()) {
+      this.avisos.info('Marca en el mapa el origen y el destino del recorrido.');
+      return;
+    }
+    const cercana = this.sucursalCercana();
+    if (cercana && !this.sucursalElegidaAMano()) {
+      this.form.controls.sucursalId.setValue(cercana.sucursalId);
+    }
+    this.paso.set(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /** Vuelve al mapa a corregir el recorrido sin perder nada de lo ya escrito. */
+  volver(): void {
+    this.paso.set(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /** El usuario cambió la sucursal: desde aquí manda la suya, no la cercana. */
+  alElegirSucursal(): void {
+    this.sucursalElegidaAMano.set(true);
+  }
+
+  /** Vuelve a proponer la más cercana al origen (por si se arrepiente del cambio). */
+  usarSucursalCercana(): void {
+    const cercana = this.sucursalCercana();
+    if (!cercana) return;
+    this.form.controls.sucursalId.setValue(cercana.sucursalId);
+    this.sucursalElegidaAMano.set(false);
   }
 
   // ----- Buscador de clientes (igual que al vender boletos en ventanilla) -----

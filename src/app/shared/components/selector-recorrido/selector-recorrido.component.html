@@ -35,7 +35,7 @@
     <button type="button" class="btn chico" (click)="limpiar()">Limpiar</button>
   </div>
 
-  <div #contenedor class="mapa"></div>
+  <div #contenedor class="mapa" [style.--alto-mapa.px]="alto()"></div>
 
   <p class="ayuda">
     @if (!origenLatitud() && !destinoLatitud()) {

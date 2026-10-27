@@ -27,6 +27,13 @@ export interface Coordenadas {
   longitud: number;
 }
 
+/** Punto fijo que se dibuja de referencia sobre el mapa, como la sucursal que atiende el alquiler. */
+export interface PuntoReferencia {
+  nombre: string;
+  latitud: number;
+  longitud: number;
+}
+
 /**
  * Mapa de solo lectura con el recorrido de un alquiler o de un viaje: origen (O, verde) y
  * destino (D, rojo). Primero dibuja la línea recta punteada y, cuando el servicio de ruteo
@@ -54,6 +61,8 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
   readonly mostrarVacio = input(false);
   readonly mensajeVacio = input('Esta solicitud no tiene el recorrido marcado en el mapa.');
   readonly mensajeIncompleto = input('Marca el origen y el destino para ver el recorrido.');
+  /** Puntos fijos de referencia (la sucursal que sale del bus), además del origen y el destino. */
+  readonly referencias = input<PuntoReferencia[]>([]);
   /** Kilómetros reales por carretera; null mientras no haya recorrido o si el ruteo falla. */
   readonly distanciaKm = output<number | null>();
 
@@ -68,6 +77,7 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
 
   @ViewChild('contenedor', { static: true }) private contenedor!: ElementRef<HTMLDivElement>;
   private mapa?: L.Map;
+  private capaReferencias?: L.LayerGroup;
   private marcadorOrigen?: L.Marker;
   private marcadorDestino?: L.Marker;
   private linea?: L.Polyline;
@@ -80,6 +90,11 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
   private puntosRuta: Par[] | null = null;
 
   constructor() {
+    // La sucursal de referencia puede cambiar (al elegir otra en el select) o llegar después.
+    effect(() => {
+      const puntos = this.referencias();
+      if (this.mapa) this.dibujarReferencias(puntos);
+    });
     // Redibuja cuando el formulario cambia el origen o el destino. El primer trazo lo hace
     // ngAfterViewInit (aquí el mapa todavía no existe); después esta comprobación evita repetirlo.
     effect(() => {
@@ -97,6 +112,7 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
       scrollWheelZoom: false,
     }).setView(CENTRO_GT, 7);
     agregarCapaBase(this.mapa);
+    this.dibujarReferencias(this.referencias());
 
     this.dibujar(
       this.punto(this.origenLatitud(), this.origenLongitud()),
@@ -121,6 +137,24 @@ export class MapaRecorridoComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Actualiza marcadores, línea y ruta; se llama al crear el mapa y cuando cambian las coordenadas. */
+  /** Dibuja los puntos de referencia (la sucursal) en su propia capa, sin tocar el recorrido. */
+  private dibujarReferencias(puntos: PuntoReferencia[]): void {
+    if (!this.mapa) return;
+    this.capaReferencias?.remove();
+    this.capaReferencias = undefined;
+    if (!puntos.length) return;
+    const icono = L.divIcon({
+      className: 'punto-referencia',
+      html: '<span></span>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+    this.capaReferencias = L.layerGroup(
+      puntos.map((p) => L.marker([p.latitud, p.longitud], { icon: icono, interactive: true, keyboard: false })
+        .bindTooltip(p.nombre, { direction: 'top', offset: [0, -8] })),
+    ).addTo(this.mapa);
+  }
+
   private dibujar(origen: Par | null, destino: Par | null): void {
     if (!this.mapa) return;
     this.origenActual = origen;

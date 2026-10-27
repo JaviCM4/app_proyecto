@@ -177,3 +177,54 @@
     font-size: 13px;
   }
 }
+
+/* Indicador de los dos pasos de la solicitud. */
+.pasos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--superficie);
+  color: var(--texto-tenue);
+
+  strong { display: block; color: var(--texto-suave); }
+  .secundario { font-size: 12px; }
+
+  .numero {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--superficie-alterna);
+    border: 1px solid var(--borde);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  &.activo {
+    border-color: var(--primario);
+    color: var(--texto);
+
+    strong { color: var(--texto); }
+    .numero { background: var(--primario); border-color: var(--primario); color: #fff; }
+  }
+
+  &.hecho .numero { background: var(--exito-suave); border-color: var(--exito); color: var(--exito); }
+}
+
+.acciones-form {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}

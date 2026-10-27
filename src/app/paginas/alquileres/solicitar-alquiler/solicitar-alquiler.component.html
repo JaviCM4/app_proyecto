@@ -16,173 +16,229 @@
   </div>
 </div>
 
+<div class="pasos" role="list">
+  <div class="paso" [class.activo]="paso() === 1" [class.hecho]="paso() === 2" role="listitem">
+    <span class="numero">1</span>
+    <span>
+      <strong>Quién y por dónde</strong>
+      <span class="secundario">Tus datos y el recorrido en el mapa</span>
+    </span>
+  </div>
+  <div class="paso" [class.activo]="paso() === 2" role="listitem">
+    <span class="numero">2</span>
+    <span>
+      <strong>Sucursal y detalles</strong>
+      <span class="secundario">De dónde sale el bus, fechas y pasajeros</span>
+    </span>
+  </div>
+</div>
+
 <div class="tarjeta">
   <form [formGroup]="form" (ngSubmit)="solicitar()">
-    <div class="formulario-grilla">
-      <div class="formulario-seccion">Datos de la solicitud</div>
 
-      <div class="campo">
-        <label for="sucursal">Sucursal que atenderá el alquiler</label>
-        <select id="sucursal" class="control" formControlName="sucursalId">
-          <option value="">Elige la sucursal…</option>
-          @for (s of sucursales(); track s.sucursalId) {
-            <option [value]="s.sucursalId">{{ s.nombre }} · {{ s.municipio }}</option>
-          }
-        </select>
-        @if (form.controls.sucursalId.touched && form.controls.sucursalId.invalid) {
-          <span class="error">Elige una sucursal.</span>
+    @if (paso() === 1) {
+      <div class="formulario-grilla">
+        <div class="formulario-seccion">Datos del cliente</div>
+
+        @if (esVentanilla) {
+          <p class="ayuda completo-fila">
+            Busca al cliente por su NIT. Si tiene cuenta, el alquiler le aparece en <strong>Mis alquileres</strong>
+            y lo puede pagar con su billetera; si no, solo se cobra en efectivo en la ventanilla.
+          </p>
+          <div class="campo">
+            <div class="fila-etiqueta">
+              <label for="nit">NIT del cliente (opcional)</label>
+              <button type="button" class="enlace" (click)="abrirSelector()">Seleccionar cliente</button>
+            </div>
+            <div class="fila-nit">
+              <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF o NIT"
+                     autocomplete="off" (keydown.enter)="$event.preventDefault(); buscarCliente()" />
+              <button type="button" class="btn chico" (click)="buscarCliente()" [disabled]="buscandoCliente()">
+                {{ buscandoCliente() ? 'Buscando…' : 'Buscar' }}
+              </button>
+            </div>
+            @if (clienteLigado(); as c) {
+              <p class="cliente-ligado">
+                Cuenta del sistema: <strong>{{ c.nombre }}</strong> · {{ c.nit }}
+                <button type="button" class="enlace" (click)="quitarCliente()">Quitar</button>
+              </p>
+            } @else if (nitSinCuenta()) {
+              <p class="cliente-sin-cuenta">
+                Ese NIT no existe en el sistema. El alquiler queda sin cuenta y se cobra en efectivo.
+              </p>
+            } @else {
+              <span class="ayuda">Déjalo vacío para consumidor final (CF).</span>
+            }
+          </div>
+        } @else {
+          <p class="ayuda completo-fila">
+            La solicitud va a tu nombre con los datos de tu perfil. Para cambiarlos ve a
+            <a routerLink="/panel/perfil">Mi perfil</a>.
+          </p>
+          <div class="campo">
+            <label for="nit">NIT</label>
+            <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF" />
+            <span class="ayuda">Sale de tu perfil; sin NIT se registra como CF.</span>
+          </div>
         }
-        <span class="ayuda">De aquí sale el bus; puede ser cualquier sucursal.</span>
-      </div>
 
-      <div class="campo">
-        <label for="fechaSolicitud">Fecha de la solicitud</label>
-        <input id="fechaSolicitud" type="date" class="control" [min]="hoy" formControlName="fechaSolicitud" />
-        <span class="ayuda">Con esta fecha se fija el precio por kilómetro vigente.</span>
-      </div>
-
-      <div class="formulario-seccion">Datos del cliente</div>
-
-      @if (esVentanilla) {
-        <p class="ayuda completo-fila">
-          Busca al cliente por su NIT. Si tiene cuenta, el alquiler le aparece en <strong>Mis alquileres</strong>
-          y lo puede pagar con su billetera; si no, solo se cobra en efectivo en la ventanilla.
-        </p>
         <div class="campo">
-          <div class="fila-etiqueta">
-            <label for="nit">NIT del cliente (opcional)</label>
-            <button type="button" class="enlace" (click)="abrirSelector()">Seleccionar cliente</button>
-          </div>
-          <div class="fila-nit">
-            <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF o NIT"
-                   autocomplete="off" (keydown.enter)="$event.preventDefault(); buscarCliente()" />
-            <button type="button" class="btn chico" (click)="buscarCliente()" [disabled]="buscandoCliente()">
-              {{ buscandoCliente() ? 'Buscando…' : 'Buscar' }}
-            </button>
-          </div>
-          @if (clienteLigado(); as c) {
-            <p class="cliente-ligado">
-              Cuenta del sistema: <strong>{{ c.nombre }}</strong> · {{ c.nit }}
-              <button type="button" class="enlace" (click)="quitarCliente()">Quitar</button>
-            </p>
-          } @else if (nitSinCuenta()) {
-            <p class="cliente-sin-cuenta">
-              Ese NIT no existe en el sistema. El alquiler queda sin cuenta y se cobra en efectivo.
-            </p>
-          } @else {
-            <span class="ayuda">Déjalo vacío para consumidor final (CF).</span>
+          <label for="nombre">{{ esVentanilla ? 'Nombre del cliente' : 'Nombre' }}</label>
+          <input id="nombre" class="control" formControlName="clienteNombre" maxlength="150" placeholder="Nombre completo" />
+          @if (form.controls.clienteNombre.touched && form.controls.clienteNombre.invalid) {
+            <span class="error">Escribe el nombre del cliente.</span>
           }
         </div>
-      } @else {
-        <p class="ayuda completo-fila">
-          La solicitud va a tu nombre con los datos de tu perfil. Para cambiarlos ve a
-          <a routerLink="/panel/perfil">Mi perfil</a>.
-        </p>
+
         <div class="campo">
-          <label for="nit">NIT</label>
-          <input id="nit" class="control" formControlName="clienteNit" maxlength="20" placeholder="CF" />
-          <span class="ayuda">Sale de tu perfil; sin NIT se registra como CF.</span>
+          <label for="correo">{{ esVentanilla ? 'Correo (opcional)' : 'Correo' }}</label>
+          <input id="correo" type="email" class="control" formControlName="clienteCorreo" maxlength="150"
+                 placeholder="Para avisarle de la cotización" />
+          @if (form.controls.clienteCorreo.touched && form.controls.clienteCorreo.invalid) {
+            <span class="error">Escribe un correo válido.</span>
+          }
         </div>
-      }
 
-      <div class="campo">
-        <label for="nombre">{{ esVentanilla ? 'Nombre del cliente' : 'Nombre' }}</label>
-        <input id="nombre" class="control" formControlName="clienteNombre" maxlength="150" placeholder="Nombre completo" />
-        @if (form.controls.clienteNombre.touched && form.controls.clienteNombre.invalid) {
-          <span class="error">Escribe el nombre del cliente.</span>
-        }
+        <div class="campo">
+          <label for="fechaSolicitud">Fecha de la solicitud</label>
+          <input id="fechaSolicitud" type="date" class="control" [min]="hoy" formControlName="fechaSolicitud" />
+          <span class="ayuda">Con esta fecha se fija el precio por kilómetro vigente.</span>
+        </div>
       </div>
 
-      <div class="campo">
-        <label for="correo">{{ esVentanilla ? 'Correo (opcional)' : 'Correo' }}</label>
-        <input id="correo" type="email" class="control" formControlName="clienteCorreo" maxlength="150"
-               placeholder="Para avisarle de la cotización" />
-        @if (form.controls.clienteCorreo.touched && form.controls.clienteCorreo.invalid) {
-          <span class="error">Escribe un correo válido.</span>
-        }
+      <div class="mapa-solicitud">
+        <div class="formulario-seccion">Recorrido en el mapa</div>
+        <p class="ayuda">
+          Los puntos marcados son las sucursales. Marca el origen y luego el destino: con el origen
+          se propone después la sucursal más cercana para que salga el bus.
+        </p>
+        <app-selector-recorrido
+          [origenLatitud]="origenMapa()?.latitud ?? null"
+          [origenLongitud]="origenMapa()?.longitud ?? null"
+          [destinoLatitud]="destinoMapa()?.latitud ?? null"
+          [destinoLongitud]="destinoMapa()?.longitud ?? null"
+          [referencias]="referenciasSucursales()"
+          [alto]="pantallaGrande() ? 520 : 340"
+          (origenCambio)="alCambiarOrigen($event)"
+          (destinoCambio)="alCambiarDestino($event)"
+          (distanciaKm)="alCambiarDistancia($event)"
+          (calculandoRuta)="calculandoKm.set($event)"
+          (nombreOrigen)="alSugerirOrigen($event)"
+          (nombreDestino)="alSugerirDestino($event)" />
       </div>
 
-    </div>
+      <div class="formulario-grilla">
+        <div class="campo">
+          <label for="origen">Origen</label>
+          <input id="origen" class="control solo-lectura" formControlName="origen" readonly placeholder="Se marca en el mapa" />
+        </div>
 
-    <div class="mapa-solicitud">
-      <div class="formulario-seccion">Recorrido en el mapa</div>
-      <app-selector-recorrido
-        [origenLatitud]="origenMapa()?.latitud ?? null"
-        [origenLongitud]="origenMapa()?.longitud ?? null"
-        [destinoLatitud]="destinoMapa()?.latitud ?? null"
-        [destinoLongitud]="destinoMapa()?.longitud ?? null"
-        (origenCambio)="alCambiarOrigen($event)"
-        (destinoCambio)="alCambiarDestino($event)"
-        (distanciaKm)="alCambiarDistancia($event)"
-        (calculandoRuta)="calculandoKm.set($event)"
-        (nombreOrigen)="alSugerirOrigen($event)"
-        (nombreDestino)="alSugerirDestino($event)" />
-      <p class="ayuda">
-        Busca un lugar o haz clic en el mapa para marcar el origen y luego el destino. El nombre y
-        los kilómetros se toman del recorrido marcado; no se escriben a mano.
-      </p>
-    </div>
-
-    <div class="formulario-grilla">
-      <div class="formulario-seccion">Recorrido</div>
-
-      <div class="campo">
-        <label for="origen">Origen</label>
-        <input id="origen" class="control solo-lectura" formControlName="origen" readonly placeholder="Se marca en el mapa" />
-        @if (form.controls.origen.touched && form.controls.origen.invalid) {
-          <span class="error">Marca el origen en el mapa.</span>
-        }
+        <div class="campo">
+          <label for="destino">Destino</label>
+          <input id="destino" class="control solo-lectura" formControlName="destino" readonly placeholder="Se marca en el mapa" />
+        </div>
       </div>
 
-      <div class="campo">
-        <label for="destino">Destino</label>
-        <input id="destino" class="control solo-lectura" formControlName="destino" readonly placeholder="Se marca en el mapa" />
-        @if (form.controls.destino.touched && form.controls.destino.invalid) {
-          <span class="error">Marca el destino en el mapa.</span>
-        }
+      <div class="acciones-form">
+        <button type="button" class="btn primario" [disabled]="!listoParaSeguir() || calculandoKm()"
+                (click)="siguiente()">
+          {{ calculandoKm() ? 'Calculando ruta…' : 'Siguiente' }}
+        </button>
+      </div>
+    }
+
+    @if (paso() === 2) {
+      <div class="mapa-solicitud">
+        <div class="formulario-seccion">Recorrido y sucursal</div>
+        <app-mapa-recorrido
+          [origenLatitud]="origenMapa()?.latitud ?? null"
+          [origenLongitud]="origenMapa()?.longitud ?? null"
+          [destinoLatitud]="destinoMapa()?.latitud ?? null"
+          [destinoLongitud]="destinoMapa()?.longitud ?? null"
+          [origen]="form.controls.origen.value || 'Origen'"
+          [destino]="form.controls.destino.value || 'Destino'"
+          [referencias]="referenciaElegida()"
+          [alto]="pantallaGrande() ? 420 : 300" />
+        <p class="ayuda">
+          {{ form.controls.origen.value }} → {{ form.controls.destino.value }}
+          @if (form.controls.kmEstimados.value) {
+            · {{ form.controls.kmEstimados.value }} km
+          }
+          · <button type="button" class="enlace" (click)="volver()">Cambiar el recorrido</button>
+        </p>
       </div>
 
-      <div class="campo">
-        <label for="salida">Salida</label>
-        <input id="salida" type="datetime-local" class="control" formControlName="fechaSalida" />
-        @if (form.controls.fechaSalida.touched && form.controls.fechaSalida.invalid) {
-          <span class="error">Indica la fecha y hora de salida.</span>
-        }
+      <div class="formulario-grilla">
+        <div class="formulario-seccion">Sucursal que atenderá el alquiler</div>
+
+        <div class="campo">
+          <label for="sucursal">Sucursal</label>
+          <select id="sucursal" class="control" formControlName="sucursalId" (change)="alElegirSucursal()">
+            <option value="">Elige la sucursal…</option>
+            @for (s of sucursales(); track s.sucursalId) {
+              <option [value]="s.sucursalId">{{ s.nombre }} · {{ s.municipio }}</option>
+            }
+          </select>
+          @if (form.controls.sucursalId.touched && form.controls.sucursalId.invalid) {
+            <span class="error">Elige una sucursal.</span>
+          }
+          @if (sucursalCercana(); as cercana) {
+            @if (form.controls.sucursalId.value === cercana.sucursalId) {
+              <span class="ayuda">Es la sucursal más cercana al origen. Puedes cambiarla si prefieres otra.</span>
+            } @else {
+              <span class="ayuda">
+                La más cercana al origen es <strong>{{ cercana.nombre }}</strong>.
+                <button type="button" class="enlace" (click)="usarSucursalCercana()">Usar esa</button>
+              </span>
+            }
+          }
+        </div>
+
+        <div class="formulario-seccion">Detalles del viaje</div>
+
+        <div class="campo">
+          <label for="salida">Salida</label>
+          <input id="salida" type="datetime-local" class="control" formControlName="fechaSalida" />
+          @if (form.controls.fechaSalida.touched && form.controls.fechaSalida.invalid) {
+            <span class="error">Indica la fecha y hora de salida.</span>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="retorno">Retorno (opcional)</label>
+          <input id="retorno" type="datetime-local" class="control" formControlName="fechaRetorno" />
+          <span class="ayuda">Déjalo vacío si el viaje es solo de ida.</span>
+          @if (form.controls.fechaRetorno.errors?.['retornoInvalido']) {
+            <span class="error">El retorno no puede ser antes de la salida.</span>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="pasajeros">Cantidad de pasajeros</label>
+          <input id="pasajeros" type="number" min="1" max="120" class="control" formControlName="cantidadPasajeros" />
+          @if (form.controls.cantidadPasajeros.touched && form.controls.cantidadPasajeros.invalid) {
+            <span class="error">Entre 1 y 120 pasajeros.</span>
+          }
+        </div>
+
+        <div class="campo">
+          <label for="km">Kilómetros estimados</label>
+          <input id="km" type="number" class="control solo-lectura" formControlName="kmEstimados" readonly
+                 placeholder="Se calcula con el mapa" />
+          <span class="ayuda">Se calcula con la distancia del recorrido por carretera; si el servicio no responde, en línea recta.</span>
+          @if (form.controls.kmEstimados.touched && form.controls.kmEstimados.invalid) {
+            <span class="error">Marca el origen y el destino para calcular los kilómetros.</span>
+          }
+        </div>
       </div>
 
-      <div class="campo">
-        <label for="retorno">Retorno (opcional)</label>
-        <input id="retorno" type="datetime-local" class="control" formControlName="fechaRetorno" />
-        <span class="ayuda">Déjalo vacío si el viaje es solo de ida.</span>
-        @if (form.controls.fechaRetorno.errors?.['retornoInvalido']) {
-          <span class="error">El retorno no puede ser antes de la salida.</span>
-        }
+      <div class="acciones-form">
+        <button type="button" class="btn" (click)="volver()">Atrás</button>
+        <button type="submit" class="btn primario" [disabled]="enviando() || calculandoKm()">
+          {{ enviando() ? 'Enviando…' : (calculandoKm() ? 'Calculando ruta…' : 'Enviar solicitud') }}
+        </button>
       </div>
-
-      <div class="campo">
-        <label for="pasajeros">Cantidad de pasajeros</label>
-        <input id="pasajeros" type="number" min="1" max="120" class="control" formControlName="cantidadPasajeros" />
-        @if (form.controls.cantidadPasajeros.touched && form.controls.cantidadPasajeros.invalid) {
-          <span class="error">Entre 1 y 120 pasajeros.</span>
-        }
-      </div>
-
-      <div class="campo">
-        <label for="km">Kilómetros estimados</label>
-        <input id="km" type="number" class="control solo-lectura" formControlName="kmEstimados" readonly
-               placeholder="Se calcula con el mapa" />
-        <span class="ayuda">Se calcula con la distancia del recorrido por carretera; si el servicio no responde, en línea recta.</span>
-        @if (form.controls.kmEstimados.touched && form.controls.kmEstimados.invalid) {
-          <span class="error">Marca el origen y el destino para calcular los kilómetros.</span>
-        }
-      </div>
-    </div>
-
-    <div class="acciones-form">
-      <button type="submit" class="btn primario" [disabled]="enviando() || calculandoKm()">
-        {{ enviando() ? 'Enviando…' : (calculandoKm() ? 'Calculando ruta…' : 'Enviar solicitud') }}
-      </button>
-    </div>
+    }
   </form>
 </div>
 
