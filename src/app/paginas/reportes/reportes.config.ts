@@ -223,4 +223,18 @@ export const REPORTES: Reporte[] = [
     agrupar: { por: 'placa', etiqueta: 'Bus', subtotal: 'monto' },
     aplanar: (j) => lista((j as Json)?.['buses']).flatMap((b) => lista(b['gastos']).map((g) => ({ ...g, placa: b['placa'] }))),
   },
+  {
+    codigo: 'taller-bus-categoria', nombre: 'Taller por categoría', ambito: 'sucursal',
+    descripcion: 'Los mismos gastos de taller, sumados: por cada bus, cuánto lleva gastado en cada categoría y el total del bus. Las categorías van de mayor a menor para ver en qué se le va el dinero a cada unidad.',
+    ruta: (id) => `/sucursales/${id}/taller-por-bus-categoria`, filtros: ['fechas', 'bus', 'categoria'],
+    columnas: [
+      { clave: 'placa', etiqueta: 'Bus', formato: 'texto' },
+      { clave: 'categoria', etiqueta: 'Categoría', formato: 'texto' },
+      { clave: 'gastos', etiqueta: 'Gastos', formato: 'numero' },
+      { clave: 'monto', etiqueta: 'Subtotal', formato: 'dinero' },
+    ],
+    totaliza: ['gastos', 'monto'],
+    agrupar: { por: 'placa', etiqueta: 'Bus', subtotal: 'monto' },
+    aplanar: (j) => lista((j as Json)?.['buses']).flatMap((b) => lista(b['categorias']).map((c) => ({ ...c, placa: b['placa'] }))),
+  },
 ];
