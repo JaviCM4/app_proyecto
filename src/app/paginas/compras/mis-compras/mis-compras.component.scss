@@ -1,1 +1,22 @@
 .acciones .btn + .btn { margin-left: 6px; }
+
+/* Mapa de asientos a la izquierda y, al lado, la foto del bus con la placa y el piloto. */
+.asientos-con-bus {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.bus-del-boleto {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+
+  .secundario { font-size: 13px; }
+}
+
+@media (max-width: 860px) {
+  .asientos-con-bus { grid-template-columns: 1fr; }
+}

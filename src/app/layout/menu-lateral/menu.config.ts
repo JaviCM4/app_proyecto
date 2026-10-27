@@ -88,6 +88,8 @@ export const MENU: GrupoMenu[] = [
       { texto: 'Ventas', ruta: '/panel/ventas', icono: 'reporte', roles: VENTANILLA },
       // Devolución del efectivo de una compra cancelada (el admin del sistema solo consulta).
       { texto: 'Reembolsos', ruta: '/panel/reembolsos', icono: 'cartera', roles: ['CAJERO', 'ADMIN_SUCURSAL', 'ADMIN_SISTEMA'] },
+      // En ventanilla el alquiler puede ser para cualquiera: el cliente se busca por NIT.
+      { texto: 'Alquiler en ventanilla', ruta: '/panel/ventanilla/alquiler', icono: 'taller', roles: VENTANILLA },
       { texto: 'Órdenes de alquiler', ruta: '/panel/ordenes', icono: 'tarifa', roles: VENTANILLA },
     ],
   },
@@ -98,7 +100,7 @@ export const MENU: GrupoMenu[] = [
     titulo: 'Mis compras',
     opciones: [
       { texto: 'Comprar boletos', ruta: '/panel/comprar', icono: 'boleto', roles: CLIENTE },
-      // Cliente: para sí. Cajero y administrador de sucursal: también para otra persona.
+      // Siempre para uno mismo. Para pedirlo a nombre de otra persona está "Alquiler en ventanilla".
       { texto: 'Solicitar alquiler', ruta: '/panel/solicitar-alquiler', icono: 'taller', roles: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'] },
       { texto: 'Mis boletos', ruta: '/panel/mis-compras', icono: 'boleto', roles: CLIENTE },
       { texto: 'Mis alquileres', ruta: '/panel/mis-alquileres', icono: 'taller', roles: CLIENTE },

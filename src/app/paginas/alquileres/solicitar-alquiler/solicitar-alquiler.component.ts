@@ -2,7 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { ClienteCuenta } from '../../../core/models/venta.model';
@@ -49,8 +49,11 @@ export class SolicitarAlquilerComponent implements OnInit {
   readonly auth = inject(AuthService);
 
   readonly zona = ZONA_GT;
-  /** Cajero o administrador de sucursal: registra el alquiler de quien llega a la ventanilla. */
-  readonly esVentanilla = this.auth.tieneRol('CAJERO', 'ADMIN_SUCURSAL');
+  /**
+   * El modo lo decide la ruta, no el rol: un cajero también es cliente. Desde "Mis compras" el
+   * alquiler es suyo y sus datos salen del perfil; desde "Ventanilla" puede ser para cualquiera.
+   */
+  readonly esVentanilla = inject(ActivatedRoute).snapshot.data['ventanilla'] === true;
   readonly hoy = hoyGt();
 
   // ----- Cliente del sistema (la ventanilla lo busca por NIT) -----
