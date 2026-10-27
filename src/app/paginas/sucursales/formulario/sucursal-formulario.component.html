@@ -42,7 +42,17 @@
         </div>
         <div class="campo">
           <label for="municipio">Municipio</label>
-          <input id="municipio" class="control" formControlName="municipio" [class.invalido]="invalido('municipio')" />
+          <select id="municipio" class="control" formControlName="municipio" [class.invalido]="invalido('municipio')">
+            <option value="" disabled>
+              {{ form.controls.departamento.value ? 'Selecciona…' : 'Elige primero el departamento' }}
+            </option>
+            @for (m of municipios(); track m) {
+              <option [value]="m">{{ m }}</option>
+            }
+          </select>
+          @if (invalido('municipio')) {
+            <span class="error">Elige el municipio del departamento.</span>
+          }
         </div>
         <div class="campo completo">
           <label for="direccion">Dirección</label>

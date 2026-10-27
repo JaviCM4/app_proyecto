@@ -10,7 +10,7 @@ import { UsuariosService } from '../../../core/services/usuarios.service';
 import { mensajeError } from '../../../core/utils/errores-http';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
-import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
+import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { ESTADO_USUARIO } from '../../../shared/constants/estados';
 import { RolTextoPipe } from '../../../shared/pipes/rol-texto.pipe';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -58,7 +58,7 @@ const DURACIONES = [
 @Component({
   selector: 'app-usuario-detalle',
   standalone: true,
-  imports: [ModalComponent, AvatarComponent, ConfirmacionComponent, RolTextoPipe, DatePipe, AccionPersonalComponent, FormsModule],
+  imports: [ModalComponent, FotoTarjetaComponent, ConfirmacionComponent, RolTextoPipe, DatePipe, AccionPersonalComponent, FormsModule],
   templateUrl: './usuario-detalle.component.html',
   styleUrl: './usuario-detalle.component.scss',
 })

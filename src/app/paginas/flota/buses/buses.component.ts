@@ -8,6 +8,7 @@ import { BusesService } from '../../../core/services/buses.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { hoyGt } from '../../../core/utils/fechas';
+import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -19,7 +20,7 @@ type FiltroEstadoBus = 'todas' | EstadoBus;
 @Component({
   selector: 'app-buses',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, ModalComponent, PaginadorComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, ModalComponent, PaginadorComponent, FotoTarjetaComponent],
   templateUrl: './buses.component.html',
   styleUrl: './buses.component.scss',
 })
@@ -52,6 +53,8 @@ export class BusesComponent implements OnInit {
 
   readonly detalle = signal<BusDetalle | null>(null);
   readonly cargandoDetalle = signal(false);
+  /** Qué tabla se muestra en el detalle: los últimos viajes o la bitácora filtrada por fechas. */
+  readonly pestanaDetalle = signal<'viajes' | 'bitacora'>('viajes');
   readonly bitacora = signal<ViajeKilometraje[]>([]);
   readonly desde = signal('');
   readonly hasta = signal('');
@@ -139,6 +142,7 @@ export class BusesComponent implements OnInit {
       this.bitacora.set([]);
       this.desde.set('');
       this.hasta.set('');
+      this.pestanaDetalle.set('viajes');
       if (b) this.cargarDetalle(b.busId);
     });
   }

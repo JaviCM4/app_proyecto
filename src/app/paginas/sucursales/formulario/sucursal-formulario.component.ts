@@ -9,6 +9,7 @@ import { hoyGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { Coordenadas, SelectorUbicacionComponent } from '../../../shared/components/selector-ubicacion/selector-ubicacion.component';
 import { DEPARTAMENTOS_GT } from '../../../shared/constants/departamentos';
+import { MUNICIPIOS_GT } from '../../../shared/constants/municipios';
 import { ToastService } from '../../../shared/services/toast.service';
 import { CuentaPersonaComponent, ModoCuenta, cuentaElegidaValida } from '../../personal/cuenta-persona/cuenta-persona.component';
 import { grupoCuenta, valoresCuenta } from '../../personal/datos-cuenta/cuenta.form';
@@ -48,6 +49,8 @@ export class SucursalFormularioComponent {
   readonly cerrar = output<void>();
 
   readonly departamentos = DEPARTAMENTOS_GT;
+  /** Municipios del departamento elegido; se eligen de la lista, no se escriben. */
+  readonly municipios = signal<readonly string[]>([]);
   readonly enviando = signal(false);
   readonly paso = signal(0);
   readonly modo = signal<ModoCuenta>('nueva');
@@ -82,6 +85,15 @@ export class SucursalFormularioComponent {
   readonly esUltimo = computed(() => this.paso() === this.pasos().length - 1);
 
   constructor() {
+    // Al cambiar de departamento se recarga la lista y se descarta un municipio que ya no aplica.
+    this.form.controls.departamento.valueChanges.subscribe((departamento) => {
+      this.municipios.set(MUNICIPIOS_GT[departamento] ?? []);
+      const municipio = this.form.controls.municipio.value;
+      if (municipio && !this.municipios().includes(municipio)) {
+        this.form.controls.municipio.setValue('');
+      }
+    });
+
     effect(() => {
       if (!this.abierto()) return;
       const s = this.sucursal();
@@ -93,14 +105,25 @@ export class SucursalFormularioComponent {
       this.form.reset();
       this.form.enable();
       if (s) {
-        this.form.patchValue({ ...s, telefono: s.telefono ?? '' });
+        this.form.patchValue({ ...s, telefono: s.telefono ?? '' }, { emitEvent: false });
+        this.municipios.set(this.opcionesMunicipio(s.departamento, s.municipio));
         this.form.controls.codigo.disable();
         this.form.controls.fechaAsignacion.disable();
         this.form.controls.adminInicial.disable();
       } else {
+        this.municipios.set([]);
         this.form.controls.fechaAsignacion.setValue(hoyGt());
       }
     });
+  }
+
+  /**
+   * Municipios del departamento. Si la sucursal guardada tiene un municipio que no está en la
+   * lista (datos viejos escritos a mano), se agrega para no perderlo al editar.
+   */
+  private opcionesMunicipio(departamento: string, municipio: string): readonly string[] {
+    const lista = MUNICIPIOS_GT[departamento] ?? [];
+    return municipio && !lista.includes(municipio) ? [...lista, municipio] : lista;
   }
 
   invalido(ruta: string): boolean {
