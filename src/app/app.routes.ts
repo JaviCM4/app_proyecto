@@ -150,10 +150,21 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/viajes/alquileres/alquileres.component').then((m) => m.AlquileresComponent),
       },
       {
+        // Desde "Mis compras": el alquiler es para quien lo pide y sus datos salen de su perfil.
+        // Lo ve cualquier cuenta con rol Cliente, incluidos el cajero y el administrador.
         path: 'solicitar-alquiler',
         title: 'Solicitar alquiler',
         canActivate: [rolGuard],
-        data: { roles: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['CLIENTE', 'CAJERO', 'ADMIN_SUCURSAL'], ventanilla: false },
+        loadComponent: () =>
+          import('./paginas/alquileres/solicitar-alquiler/solicitar-alquiler.component').then((m) => m.SolicitarAlquilerComponent),
+      },
+      {
+        // Desde "Ventanilla": el mismo formulario, pero a nombre de quien llega al mostrador.
+        path: 'ventanilla/alquiler',
+        title: 'Alquiler en ventanilla',
+        canActivate: [rolGuard],
+        data: { roles: ['CAJERO', 'ADMIN_SUCURSAL'], ventanilla: true },
         loadComponent: () =>
           import('./paginas/alquileres/solicitar-alquiler/solicitar-alquiler.component').then((m) => m.SolicitarAlquilerComponent),
       },

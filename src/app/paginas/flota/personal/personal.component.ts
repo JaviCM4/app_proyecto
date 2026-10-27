@@ -59,7 +59,30 @@ export class PersonalComponent implements OnInit {
     );
   });
 
-  readonly paginaActual = computed(() => paginar(this.filtrados(), this.pagina(), this.tamano()));
+  /**
+   * Pestaña abierta. "Personal" es la lista de trabajo: los activos y los retirados que todavía se
+   * pueden reintegrar. Los retiros viejos, sobre los que ya no hay nada que hacer, solo estorban
+   * ahí, así que viven en "Historial", que los muestra todos con su estado pero sin acciones.
+   */
+  readonly pestana = signal<'personal' | 'historial'>('personal');
+
+  readonly visibles = computed(() =>
+    this.pestana() === 'historial'
+      ? this.filtrados()
+      : this.filtrados().filter((p) => p.activo || this.puedeReintegrar(p)),
+  );
+
+  readonly paginaActual = computed(() => paginar(this.visibles(), this.pagina(), this.tamano()));
+
+  cambiarPestana(pestana: 'personal' | 'historial'): void {
+    this.pestana.set(pestana);
+    this.pagina.set(1);
+  }
+
+  /** ¿Esta fila ofrece el botón Reintegrar? Es lo único que se puede hacer con un retirado. */
+  puedeReintegrar(p: PersonalSucursal): boolean {
+    return !p.activo && this.puedeGestionar(p) && this.esUltimaAsignacion(p);
+  }
 
   ngOnInit(): void {
     this.sucursalesServicio.listar(true).subscribe({ next: (s) => this.sucursales.set(s) });

@@ -1,10 +1,18 @@
 <div class="pagina-encabezado">
   <div>
-    <h1>Solicitar alquiler</h1>
-    <p>
-      Pide un bus completo para tu recorrido. Un administrador de sucursal revisa la solicitud y
-      confirma el precio antes de que la pagues. El origen, el destino y los kilómetros salen del mapa.
-    </p>
+    <h1>{{ esVentanilla ? 'Alquiler en ventanilla' : 'Solicitar alquiler' }}</h1>
+    @if (esVentanilla) {
+      <p>
+        Registra el alquiler de quien llega al mostrador. Búscalo con <strong>Seleccionar cliente</strong>
+        o escribe su NIT; si no tiene cuenta queda como consumidor final y se cobra en efectivo.
+        El origen, el destino y los kilómetros salen del mapa.
+      </p>
+    } @else {
+      <p>
+        Pide un bus completo para tu recorrido. Un administrador de sucursal revisa la solicitud y
+        confirma el precio antes de que la pagues. El origen, el destino y los kilómetros salen del mapa.
+      </p>
+    }
   </div>
 </div>
 

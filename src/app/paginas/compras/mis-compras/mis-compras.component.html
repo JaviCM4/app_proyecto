@@ -44,7 +44,11 @@
       @for (v of boletosPagina().elementos; track v.ventaId) {
         <tr>
           <td>
-            <strong>{{ v.origenNombre || '—' }} → {{ v.destinoNombre || '—' }}</strong>
+            @if (v.origenNombre || v.destinoNombre) {
+              <strong>{{ v.origenNombre || '—' }} → {{ v.destinoNombre || '—' }}</strong>
+            } @else {
+              <span class="insignia">{{ viajeBorrado }}</span>
+            }
             <div class="secundario">{{ canalVenta[v.canal] }}</div>
           </td>
           <td>{{ v.fechaSalida ? (v.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona) : '—' }}</td>
@@ -98,7 +102,24 @@
       <p class="secundario">Cargando el mapa del bus…</p>
     } @else {
       @if (mapaAsientos(); as m) {
-        <app-selector-asientos [mapa]="m" [bloqueado]="true" [resumen]="false" [propios]="misAsientos()" />
+        <div class="asientos-con-bus">
+          <app-selector-asientos [mapa]="m" [bloqueado]="true" [resumen]="false" [propios]="misAsientos()" />
+          <div class="bus-del-boleto">
+            <app-foto-tarjeta
+              [url]="viajeDelBoleto()?.busFotoUrl ?? null"
+              [titulo]="'Bus ' + (m.busPlaca ?? '')"
+              [descripcion]="'Bus ' + (m.busPlaca ?? '')"
+              vacio="Este bus todavía no tiene foto cargada"
+              ajuste="contain"
+              [ampliable]="true"
+              [alto]="200" />
+            <div class="datos-lista">
+              <div><dt>Placa</dt><dd>{{ m.busPlaca ?? '—' }}</dd></div>
+              <div><dt>Piloto</dt><dd>{{ viajeDelBoleto()?.choferNombre ?? 'Por confirmar' }}</dd></div>
+            </div>
+            <p class="secundario">Así se ve el bus en la terminal; busca la placa en el parabrisas.</p>
+          </div>
+        </div>
       } @else {
         <p class="secundario">{{ sinAsientos() || 'El mapa del bus no está disponible.' }}</p>
       }

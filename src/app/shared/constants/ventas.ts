@@ -28,6 +28,12 @@ export const ESTADO_ORDEN_ALQUILER: Record<EstadoOrdenAlquiler, { texto: string;
   REEMBOLSADA: { texto: 'Reembolsada', clase: 'info' },
 };
 
+/**
+ * Lo que se muestra en lugar de la ruta cuando el viaje ya se borró: al eliminarlo se van con él
+ * su origen, su destino y su salida, y el boleto se queda sin esos datos.
+ */
+export const VIAJE_BORRADO = 'Viaje eliminado';
+
 /** Tipo de viaje: el regular vende boletos al público, el privado sale de un alquiler. */
 export const TIPO_VIAJE: Record<TipoViaje, { texto: string; clase: string }> = {
   REGULAR: { texto: 'Regular', clase: 'info' },
@@ -101,6 +107,9 @@ export function ordenarVentas<T extends { fechaPago: string | null; fechaRegistr
 /** Texto de un viaje para listas y filtros: "Xela → Guate · 19/10/2026 08:00". */
 export function textoViaje(origen: string | null | undefined, destino: string | null | undefined,
                            salida: string | null | undefined): string {
+  // Sin origen ni destino el viaje ya no existe: se borró y con él sus datos. Decirlo es más
+  // claro que dejar "— → —", que parece un error de la pantalla.
+  if (!origen && !destino) return VIAJE_BORRADO;
   const ruta = `${origen || '—'} → ${destino || '—'}`;
   if (!salida) return ruta;
   const fecha = new Date(salida);

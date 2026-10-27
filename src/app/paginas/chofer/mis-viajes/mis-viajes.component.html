@@ -196,6 +196,13 @@
             <div><dt>Tipo de viaje</dt><dd>{{ d.tipo === 'PRIVADO' ? 'Alquiler privado' : 'Regular' }}</dd></div>
             <div><dt>Salida programada</dt><dd>{{ d.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
             <div><dt>Llegada estimada</dt><dd>{{ d.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+            @if (d.tipo === 'PRIVADO') {
+              <!-- Lo que pidió el cliente al contratar: la llegada estimada es la de la ida. -->
+              <div><dt>Tipo de servicio</dt><dd>{{ d.fechaRetorno ? 'Ida y vuelta' : 'Solo ida' }}</dd></div>
+              @if (d.fechaRetorno) {
+                <div><dt>Retorno</dt><dd>{{ d.fechaRetorno | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+              }
+            }
             <div><dt>Chofer</dt><dd>{{ d.choferNombre ?? '—' }}</dd></div>
             <div><dt>Capacidad</dt><dd>{{ d.capacidad }} pasajeros</dd></div>
           </div>

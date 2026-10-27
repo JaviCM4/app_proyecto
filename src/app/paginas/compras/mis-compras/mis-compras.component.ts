@@ -2,16 +2,17 @@ import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Boleto, Historial, Venta, VentaHistorial } from '../../../core/models/venta.model';
-import { MapaAsientos } from '../../../core/models/viaje.model';
+import { MapaAsientos, Viaje } from '../../../core/models/viaje.model';
 import { VentasService } from '../../../core/services/ventas.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT } from '../../../core/utils/fechas';
+import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { SelectorAsientosComponent } from '../../../shared/components/selector-asientos/selector-asientos.component';
 import { TicketBoletoComponent } from '../../../shared/components/ticket-boleto/ticket-boleto.component';
-import { CANAL_VENTA, ESTADO_VENTA, textoViaje } from '../../../shared/constants/ventas';
+import { CANAL_VENTA, ESTADO_VENTA, VIAJE_BORRADO, textoViaje } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
 
@@ -30,6 +31,7 @@ function claveViaje(v: VentaHistorial): string {
     ModalComponent,
     TicketBoletoComponent,
     SelectorAsientosComponent,
+    FotoTarjetaComponent,
     DatePipe,
     CurrencyPipe,
   ],
@@ -52,12 +54,15 @@ export class MisComprasComponent implements OnInit {
 
   readonly estadoVenta = ESTADO_VENTA;
   readonly canalVenta = CANAL_VENTA;
+  readonly viajeBorrado = VIAJE_BORRADO;
 
   /** Pestaña abierta del boleto: el ticket para imprimir o dónde queda su asiento en el bus. */
   readonly pestanaBoleto = signal<'boleto' | 'asientos'>('boleto');
   readonly mapaAsientos = signal<MapaAsientos | null>(null);
   readonly cargandoAsientos = signal(false);
   readonly sinAsientos = signal('');
+  /** Viaje del boleto: de ahí salen la foto del bus y el nombre del piloto que lo maneja. */
+  readonly viajeDelBoleto = signal<Viaje | null>(null);
 
   /** Asientos de este boleto: son los que se pintan en verde dentro del bus. */
   readonly misAsientos = computed(() => (this.ticket()?.boletos ?? []).map((b) => b.numeroAsiento));
@@ -177,6 +182,12 @@ export class MisComprasComponent implements OnInit {
         this.cargandoAsientos.set(false);
         this.sinAsientos.set('El mapa del bus ya no está disponible para este viaje.');
       },
+    });
+    // El detalle del viaje regular es público: de ahí salen la foto del bus y el piloto. Si falla
+    // (viaje borrado) el mapa de asientos se muestra igual, solo sin la foto.
+    this.viajes.detalleViaje(viajeId).subscribe({
+      next: (v) => this.viajeDelBoleto.set(v),
+      error: () => this.viajeDelBoleto.set(null),
     });
   }
 

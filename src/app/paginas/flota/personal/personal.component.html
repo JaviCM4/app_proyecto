@@ -6,6 +6,24 @@
   <button type="button" class="btn primario" (click)="agregando.set(true)">{{ esSistema ? '+ Agregar personal' : '+ Agregar cajero' }}</button>
 </div>
 
+<div class="pestanas" role="tablist">
+  <button type="button" role="tab" [class.activa]="pestana() === 'personal'"
+          [attr.aria-selected]="pestana() === 'personal'" (click)="cambiarPestana('personal')">
+    Personal
+  </button>
+  <button type="button" role="tab" [class.activa]="pestana() === 'historial'"
+          [attr.aria-selected]="pestana() === 'historial'" (click)="cambiarPestana('historial')">
+    Historial
+  </button>
+</div>
+
+@if (pestana() === 'historial') {
+  <p class="secundario">
+    Todas las asignaciones de la sucursal, incluidas las que ya terminaron. Es solo para consultar:
+    las acciones están en la pestaña Personal.
+  </p>
+}
+
 <div class="filtros">
   @if (esSistema) {
     <div class="campo">
@@ -42,7 +60,9 @@
         <th>Asignado</th>
         <th>Retiro</th>
         <th>Estado</th>
-        <th class="acciones">Acciones</th>
+        @if (pestana() === 'personal') {
+          <th class="acciones">Acciones</th>
+        }
       </tr>
     </thead>
     <tbody>
@@ -62,6 +82,7 @@
               <span class="insignia">Retirado</span>
             }
           </td>
+          @if (pestana() === 'personal') {
           <td class="acciones">
             @if (!puedeGestionar(p)) {
               <span class="secundario">—</span>
@@ -71,11 +92,16 @@
               <button type="button" class="btn chico" (click)="enAccion.set({ persona: p, accion: 'reintegrar' })">Reintegrar</button>
             }
           </td>
+          }
         </tr>
       } @empty {
         <tr>
-          <td colspan="6" class="tabla-vacia">
-            {{ cargando() ? 'Cargando personal…' : 'No hay personal que coincida con la búsqueda.' }}
+          <td [attr.colspan]="pestana() === 'personal' ? 6 : 5" class="tabla-vacia">
+            {{ cargando()
+                ? 'Cargando personal…'
+                : pestana() === 'historial'
+                  ? 'No hay asignaciones que coincidan con la búsqueda.'
+                  : 'No hay personal activo ni retiros que se puedan reintegrar.' }}
           </td>
         </tr>
       }

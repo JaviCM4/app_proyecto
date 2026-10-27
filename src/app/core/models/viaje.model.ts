@@ -41,6 +41,11 @@ export interface Viaje {
   precioBoleto: number | null;
   fechaSalidaProgramada: string;
   fechaLlegadaEstimada: string;
+  /**
+   * Solo en un viaje PRIVADO de ida y vuelta: cuándo pidió el cliente el regreso. No es la llegada
+   * estimada, que es la del trayecto de ida.
+   */
+  fechaRetorno?: string | null;
   estado: EstadoViaje;
   version: number;
 }
