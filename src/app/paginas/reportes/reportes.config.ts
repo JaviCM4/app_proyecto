@@ -177,7 +177,7 @@ export const REPORTES: Reporte[] = [
   },
   {
     codigo: 'ingresos-alquiler', nombre: 'Ingresos por alquiler', ambito: 'sucursal',
-    descripcion: 'Alquileres de bus pagados: cliente, origen, destino, fechas de salida y retorno y precio total.',
+    descripcion: 'Alquileres de bus pagados: cliente, origen, destino, fechas de salida y retorno, bus asignado y precio total.',
     ruta: (id) => `/sucursales/${id}/ingresos-alquiler`, filtros: ['fechas'],
     columnas: [
       { clave: 'fecha', etiqueta: 'Fecha de pago', formato: 'fecha' },
@@ -185,6 +185,7 @@ export const REPORTES: Reporte[] = [
       { clave: 'clienteNit', etiqueta: 'NIT', formato: 'texto' },
       { clave: 'origen', etiqueta: 'Origen', formato: 'texto' },
       { clave: 'destino', etiqueta: 'Destino', formato: 'texto' },
+      { clave: 'busPlaca', etiqueta: 'Bus', formato: 'texto' },
       { clave: 'fechaSalida', etiqueta: 'Salida', formato: 'texto' },
       { clave: 'fechaRetorno', etiqueta: 'Retorno', formato: 'texto' },
       { clave: 'monto', etiqueta: 'Precio total', formato: 'dinero' },
