@@ -238,76 +238,93 @@
     <p class="suave">Cargando detalle…</p>
   } @else {
     @if (detalle(); as d) {
-    @if (d.fotoUrl) {
-      <a class="foto-bus" [href]="d.fotoUrl" target="_blank" rel="noopener" title="Abrir la foto en otra pestaña">
-        <img [src]="d.fotoUrl" [alt]="'Foto del bus ' + d.placa" loading="lazy" />
-      </a>
+    <div class="ficha">
+      <app-foto-tarjeta
+        [url]="d.fotoUrl"
+        [titulo]="'Bus ' + d.placa"
+        [descripcion]="'Foto del bus ' + d.placa"
+        vacio="Este bus todavía no tiene foto cargada"
+        ajuste="contain"
+        [ampliable]="true"
+        [alto]="300" />
+      <dl class="datos-lista">
+        <div><dt>Estado</dt><dd><span class="insignia" [class.exito]="d.estado === 'ACTIVO'">{{ textoEstado(d.estado) }}</span></dd></div>
+        <div><dt>En ruta</dt><dd>{{ d.estado === 'EN_RUTA' ? 'Sí' : 'No' }}</dd></div>
+        <div><dt>Año</dt><dd>{{ d.anioFabricacion }}</dd></div>
+        <div><dt>Capacidad</dt><dd>{{ d.capacidadPasajeros }} pasajeros</dd></div>
+        <div><dt>Kilometraje</dt><dd>{{ d.kilometrajeActual }} km</dd></div>
+        <div><dt>Sucursal</dt><dd>{{ nombreSucursal(d.sucursalId) || d.sucursalId }}</dd></div>
+      </dl>
+    </div>
+
+    <div class="pestanas" role="tablist">
+      <button type="button" role="tab" [class.activa]="pestanaDetalle() === 'viajes'"
+              [attr.aria-selected]="pestanaDetalle() === 'viajes'" (click)="pestanaDetalle.set('viajes')">
+        Últimos viajes
+      </button>
+      <button type="button" role="tab" [class.activa]="pestanaDetalle() === 'bitacora'"
+              [attr.aria-selected]="pestanaDetalle() === 'bitacora'" (click)="pestanaDetalle.set('bitacora')">
+        Bitácora de kilometraje
+      </button>
+    </div>
+
+    @if (pestanaDetalle() === 'viajes') {
+      <p class="suave">Los movimientos más recientes que registró el bus al cerrar cada viaje.</p>
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead>
+            <tr><th>Llegada</th><th>Km inicial</th><th>Km final</th><th>Recorridos</th></tr>
+          </thead>
+          <tbody>
+            @for (v of d.ultimosViajes; track v.viajeId) {
+              <tr>
+                <td>{{ v.fechaLlegada | date: 'dd/MM/yyyy HH:mm' : '-0600' }}</td>
+                <td>{{ v.kmInicial }}</td>
+                <td>{{ v.kmFinal }}</td>
+                <td>{{ v.kmRecorridos }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="tabla-vacia">Sin viajes registrados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
     } @else {
-      <p class="foto-bus vacia">Sin foto registrada.</p>
+      <p class="suave">Los mismos movimientos del bus, filtrados por el rango de fechas que elijas.</p>
+      <div class="filtros">
+        <div class="campo">
+          <label for="b-desde">Desde</label>
+          <input id="b-desde" type="date" class="control" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
+        </div>
+        <div class="campo">
+          <label for="b-hasta">Hasta</label>
+          <input id="b-hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+        </div>
+        <div class="campo">
+          <label for="b-filtrar-bitacora">&nbsp;</label>
+          <button id="b-filtrar-bitacora" type="button" class="btn chico" (click)="cargarBitacora()">Filtrar</button>
+        </div>
+      </div>
+      <div class="tabla-contenedor">
+        <table class="tabla">
+          <thead>
+            <tr><th>Llegada</th><th>Km inicial</th><th>Km final</th><th>Recorridos</th></tr>
+          </thead>
+          <tbody>
+            @for (v of bitacora(); track v.viajeId) {
+              <tr>
+                <td>{{ v.fechaLlegada | date: 'dd/MM/yyyy HH:mm' : '-0600' }}</td>
+                <td>{{ v.kmInicial }}</td>
+                <td>{{ v.kmFinal }}</td>
+                <td>{{ v.kmRecorridos }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="4" class="tabla-vacia">Sin movimientos en el rango elegido.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
     }
-    <dl class="datos-lista">
-      <div><dt>Estado</dt><dd><span class="insignia" [class.exito]="d.estado === 'ACTIVO'">{{ textoEstado(d.estado) }}</span></dd></div>
-      <div><dt>Año</dt><dd>{{ d.anioFabricacion }}</dd></div>
-      <div><dt>Capacidad</dt><dd>{{ d.capacidadPasajeros }} pasajeros</dd></div>
-      <div><dt>Kilometraje</dt><dd>{{ d.kilometrajeActual }} km</dd></div>
-      <div><dt>Sucursal</dt><dd>{{ nombreSucursal(d.sucursalId) || d.sucursalId }}</dd></div>
-    </dl>
-
-    <h3>Últimos viajes</h3>
-    <div class="tabla-contenedor">
-      <table class="tabla">
-        <thead>
-          <tr><th>Llegada</th><th>Km inicial</th><th>Km final</th><th>Recorridos</th></tr>
-        </thead>
-        <tbody>
-          @for (v of d.ultimosViajes; track v.viajeId) {
-            <tr>
-              <td>{{ v.fechaLlegada | date: 'dd/MM/yyyy HH:mm' : '-0600' }}</td>
-              <td>{{ v.kmInicial }}</td>
-              <td>{{ v.kmFinal }}</td>
-              <td>{{ v.kmRecorridos }}</td>
-            </tr>
-          } @empty {
-            <tr><td colspan="4" class="tabla-vacia">Sin viajes registrados.</td></tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Bitácora de kilometraje</h3>
-    <div class="filtros">
-      <div class="campo">
-        <label for="b-desde">Desde</label>
-        <input id="b-desde" type="date" class="control" [ngModel]="desde()" (ngModelChange)="desde.set($event)" />
-      </div>
-      <div class="campo">
-        <label for="b-hasta">Hasta</label>
-        <input id="b-hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
-      </div>
-      <div class="campo">
-        <label for="b-filtrar-bitacora">&nbsp;</label>
-        <button id="b-filtrar-bitacora" type="button" class="btn chico" (click)="cargarBitacora()">Filtrar</button>
-      </div>
-    </div>
-    <div class="tabla-contenedor">
-      <table class="tabla">
-        <thead>
-          <tr><th>Llegada</th><th>Km inicial</th><th>Km final</th><th>Recorridos</th></tr>
-        </thead>
-        <tbody>
-          @for (v of bitacora(); track v.viajeId) {
-            <tr>
-              <td>{{ v.fechaLlegada | date: 'dd/MM/yyyy HH:mm' : '-0600' }}</td>
-              <td>{{ v.kmInicial }}</td>
-              <td>{{ v.kmFinal }}</td>
-              <td>{{ v.kmRecorridos }}</td>
-            </tr>
-          } @empty {
-            <tr><td colspan="4" class="tabla-vacia">Sin movimientos en el rango elegido.</td></tr>
-          }
-        </tbody>
-      </table>
-    </div>
     }
   }
   <div pie>

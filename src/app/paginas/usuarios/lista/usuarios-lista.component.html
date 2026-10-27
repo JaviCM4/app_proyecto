@@ -50,8 +50,13 @@
       @for (u of paginaActual().elementos; track u.usuarioId) {
         <tr>
           <td>
-            {{ u.nombre }}
-            <div class="secundario">{{ u.correo }}</div>
+            <div class="fila">
+              <app-avatar [foto]="fotos()[u.usuarioId] ?? null" [nombre]="u.nombre" [tamano]="32" />
+              <div>
+                {{ u.nombre }}
+                <div class="secundario">{{ u.correo }}</div>
+              </div>
+            </div>
           </td>
           <td>{{ u.nit || '—' }}</td>
           <td>{{ u.roles | rolTexto }}</td>

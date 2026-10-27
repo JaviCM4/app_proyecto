@@ -1,1 +1,13 @@
 .acciones .btn + .btn { margin-left: 6px; }
+
+/* Detalle del piloto: la foto a la izquierda y sus datos a la derecha. */
+.ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .ficha { grid-template-columns: 1fr; }
+}

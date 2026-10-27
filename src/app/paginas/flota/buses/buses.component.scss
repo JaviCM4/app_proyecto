@@ -1,25 +1,13 @@
 .acciones .btn + .btn { margin-left: 6px; }
 
-.foto-bus {
-  display: block;
-  margin-bottom: 14px;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  overflow: hidden;
-  background: var(--superficie-alterna);
+/* Detalle del bus: la foto a la izquierda y sus datos a la derecha. */
+.ficha {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
 
-  /* La foto completa, sin recortes: se ajusta al ancho o al alto, lo que llegue primero */
-  img {
-    display: block;
-    width: 100%;
-    height: auto;
-    max-height: 420px;
-    object-fit: contain;
-  }
-
-  &.vacia {
-    padding: 24px;
-    text-align: center;
-    color: var(--texto-suave);
-  }
+@media (max-width: 720px) {
+  .ficha { grid-template-columns: 1fr; }
 }

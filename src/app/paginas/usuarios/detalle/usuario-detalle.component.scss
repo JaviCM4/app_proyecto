@@ -5,3 +5,15 @@
 
   p { margin-top: 4px; font-size: 13px; }
 }
+
+/* Detalle del usuario: la foto a la izquierda y sus datos a la derecha. */
+.ficha-usuario {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .ficha-usuario { grid-template-columns: 1fr; }
+}

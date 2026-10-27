@@ -6,8 +6,10 @@ import { Sucursal } from '../../../core/models/sucursal.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ChoferesService } from '../../../core/services/choferes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { UsuariosService } from '../../../core/services/usuarios.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { hoyGt } from '../../../core/utils/fechas';
+import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ToastService } from '../../../shared/services/toast.service';
@@ -20,13 +22,14 @@ type FiltroEstadoChofer = 'todas' | EstadoChofer;
 @Component({
   selector: 'app-choferes',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, NuevoChoferComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, NuevoChoferComponent, FotoTarjetaComponent],
   templateUrl: './choferes.component.html',
   styleUrl: './choferes.component.scss',
 })
 export class ChoferesComponent implements OnInit {
   private readonly servicio = inject(ChoferesService);
   private readonly sucursalesServicio = inject(SucursalesService);
+  private readonly usuariosServicio = inject(UsuariosService);
   private readonly auth = inject(AuthService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
@@ -54,6 +57,9 @@ export class ChoferesComponent implements OnInit {
 
   readonly detalle = signal<Chofer | null>(null);
   readonly cargandoDetalle = signal(false);
+  /** Foto del perfil de Identity del piloto (el chofer de Fleet solo guarda su usuarioId). */
+  readonly fotoUrl = signal<string | null>(null);
+  readonly cargandoFoto = signal(false);
 
   readonly enviando = signal(false);
 
@@ -109,6 +115,8 @@ export class ChoferesComponent implements OnInit {
     effect(() => {
       const c = this.viendo();
       this.detalle.set(null);
+      this.fotoUrl.set(null);
+      this.cargandoFoto.set(false);
       if (c) this.cargarDetalle(c.choferId);
     });
   }
@@ -257,10 +265,30 @@ export class ChoferesComponent implements OnInit {
       next: (d) => {
         this.detalle.set(d);
         this.cargandoDetalle.set(false);
+        this.cargarFoto(d.usuarioId);
       },
       error: (e) => {
         this.cargandoDetalle.set(false);
         this.avisos.error(mensajeError(e, 'No se pudo cargar el detalle del chofer.'));
+      },
+    });
+  }
+
+  /** La foto vive en Identity; si no se puede consultar, el detalle se muestra sin foto. */
+  private cargarFoto(usuarioId: string): void {
+    this.cargandoFoto.set(true);
+    this.usuariosServicio.detalle(usuarioId).subscribe({
+      next: (u) => {
+        if (this.viendo()?.usuarioId === usuarioId) {
+          this.fotoUrl.set(u.fotoUrl || null);
+          this.cargandoFoto.set(false);
+        }
+      },
+      error: () => {
+        if (this.viendo()?.usuarioId === usuarioId) {
+          this.fotoUrl.set(null);
+          this.cargandoFoto.set(false);
+        }
       },
     });
   }

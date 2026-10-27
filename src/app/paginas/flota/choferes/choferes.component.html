@@ -100,18 +100,30 @@
     <p class="suave">Cargando detalle…</p>
   } @else {
     @if (detalle(); as d) {
-    <dl class="datos-lista">
+    <div class="ficha">
+      <app-foto-tarjeta
+        [url]="fotoUrl()"
+        [titulo]="d.nombreCompleto"
+        [descripcion]="'Foto de ' + d.nombreCompleto"
+        [vacio]="cargandoFoto() ? 'Cargando foto…' : 'Este piloto todavía no tiene foto cargada'"
+        ajuste="contain"
+        [ampliable]="true"
+        [alto]="300" />
       <div>
-        <dt>Estado</dt>
-        <dd><span class="insignia" [class.exito]="d.estado === 'ACTIVO'">{{ d.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></dd>
+        <dl class="datos-lista">
+          <div>
+            <dt>Estado</dt>
+            <dd><span class="insignia" [class.exito]="d.estado === 'ACTIVO'">{{ d.estado === 'ACTIVO' ? 'Activo' : 'Inactivo' }}</span></dd>
+          </div>
+          <div><dt>Sucursal</dt><dd>{{ nombreSucursal(d.sucursalId) || d.sucursalId }}</dd></div>
+          <div><dt>Licencia</dt><dd>{{ d.numeroLicencia }} (Tipo {{ d.tipoLicencia }})</dd></div>
+          <div><dt>Vencimiento</dt><dd>{{ d.fechaVencimientoLicencia | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+          <div><dt>Salario base</dt><dd>{{ d.salarioBaseViaje | currency }} por viaje</dd></div>
+          <div><dt>Usuario</dt><dd class="secundario">{{ d.usuarioId }}</dd></div>
+        </dl>
+        <p class="suave">El nombre, el correo y la foto se editan en el perfil de su cuenta (Identity).</p>
       </div>
-      <div><dt>Sucursal</dt><dd>{{ nombreSucursal(d.sucursalId) || d.sucursalId }}</dd></div>
-      <div><dt>Licencia</dt><dd>{{ d.numeroLicencia }} (Tipo {{ d.tipoLicencia }})</dd></div>
-      <div><dt>Vencimiento</dt><dd>{{ d.fechaVencimientoLicencia | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
-      <div><dt>Salario base</dt><dd>{{ d.salarioBaseViaje | currency }} por viaje</dd></div>
-      <div><dt>Usuario</dt><dd class="secundario">{{ d.usuarioId }}</dd></div>
-    </dl>
-    <p class="suave">El nombre, el correo y la foto se editan en el perfil de su cuenta (Identity).</p>
+    </div>
     }
   }
   <div pie>

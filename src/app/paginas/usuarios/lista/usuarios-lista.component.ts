@@ -1,10 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Rol } from '../../../core/models/auth.model';
 import { EstadoUsuario, UsuarioResumen } from '../../../core/models/usuario.model';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { mensajeError } from '../../../core/utils/errores-http';
+import { AvatarComponent } from '../../../shared/components/avatar/avatar.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ESTADO_USUARIO } from '../../../shared/constants/estados';
 import { NOMBRE_ROL, ORDEN_ROL } from '../../../shared/constants/roles';
@@ -19,7 +20,7 @@ import { AgregarPersonalComponent } from '../../personal/agregar-personal/agrega
 @Component({
   selector: 'app-usuarios-lista',
   standalone: true,
-  imports: [FormsModule, DatePipe, RolTextoPipe, PaginadorComponent, UsuarioDetalleComponent, NuevoAdminComponent, AgregarPersonalComponent],
+  imports: [FormsModule, DatePipe, RolTextoPipe, PaginadorComponent, UsuarioDetalleComponent, NuevoAdminComponent, AgregarPersonalComponent, AvatarComponent],
   templateUrl: './usuarios-lista.component.html',
 })
 export class UsuariosListaComponent implements OnInit {
@@ -41,11 +42,29 @@ export class UsuariosListaComponent implements OnInit {
   readonly creando = signal(false);
   readonly agregandoPersonal = signal(false);
 
+  /** Foto de cada usuario visible; el listado de Identity no la trae, así que se pide al abrir la fila. */
+  readonly fotos = signal<Record<string, string | null>>({});
+  private readonly fotosPedidas = new Set<string>();
+
   readonly filtrados = computed(() => {
     const buscado = normalizar(this.texto());
     return this.usuarios().filter((u) => !buscado || normalizar(`${u.nombre} ${u.correo} ${u.nit}`).includes(buscado));
   });
   readonly paginaActual = computed(() => paginar(this.filtrados(), this.pagina(), this.tamano()));
+
+  constructor() {
+    // Se piden solo las fotos de la página visible (y se recuerdan para no repetir la consulta).
+    effect(() => {
+      for (const u of this.paginaActual().elementos) {
+        if (this.fotosPedidas.has(u.usuarioId)) continue;
+        this.fotosPedidas.add(u.usuarioId);
+        this.servicio.detalle(u.usuarioId).subscribe({
+          next: (d) => this.fotos.update((m) => ({ ...m, [u.usuarioId]: d.fotoUrl ?? null })),
+          error: () => this.fotos.update((m) => ({ ...m, [u.usuarioId]: null })),
+        });
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.cargar();
