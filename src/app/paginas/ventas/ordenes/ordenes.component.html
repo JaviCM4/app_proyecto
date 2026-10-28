@@ -91,51 +91,98 @@
 <app-modal
   [abierto]="enDetalle() !== null"
   titulo="Detalle de la orden"
+  [ancho]="anchoDetalle()"
   (cerrar)="enDetalle.set(null)">
   @if (cargandoDetalle()) {
     <p class="secundario">Cargando detalle…</p>
   } @else {
     @if (enDetalle(); as d) {
-    <div class="datos-lista">
-      <p>
-        <strong>{{ d.clienteNombre || 'Sin nombre' }}</strong>
-        <span class="secundario"> · NIT: {{ d.clienteNit || '—' }} · {{ d.clienteCorreo || 'Sin correo' }}</span>
-      </p>
-      @if (tieneRecorrido(d)) {
-        <app-mapa-recorrido
-          [origenLatitud]="d.origenLatitud ?? null"
-          [origenLongitud]="d.origenLongitud ?? null"
-          [destinoLatitud]="d.destinoLatitud ?? null"
-          [destinoLongitud]="d.destinoLongitud ?? null"
-          [origen]="d.origen"
-          [destino]="d.destino"
-          [alto]="220" />
-      } @else {
-        <p class="secundario">Esta solicitud no trae el recorrido marcado en el mapa.</p>
+    <div class="detalle-encabezado">
+      <h3>{{ d.clienteNombre || 'Consumidor final' }}</h3>
+      <span [class]="'insignia ' + estadoOrden[d.estado].clase">{{ estadoTexto(d.estado) }}</span>
+    </div>
+
+    <div class="detalle-ruta">
+      <span class="ruta">{{ d.origen }} <span class="flecha">→</span> {{ d.destino }}</span>
+      @if (d.fechaSalida) {
+        <span class="secundario">Salida {{ d.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
       }
-      <p class="secundario">
-        {{ d.origen }} → {{ d.destino }} · Precio cotizado: {{ d.monto | currency }}
+      @if (d.fechaRetorno) {
+        <span class="secundario">Retorno {{ d.fechaRetorno | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
+      }
+    </div>
+
+    @if (d.estado === 'PENDIENTE_PAGO') {
+      <p class="detalle-cobro">
+        <span>Por cobrar: <strong>{{ d.monto | currency }}</strong></span>
+        <span class="secundario">{{ textoCobro(d) }}</span>
       </p>
-      <p>
-        <strong>Forma de pago:</strong>
-        @if (d.metodoPago) {
-          {{ metodoPago[d.metodoPago] }}
-          @if (d.estado === 'PAGADA' && d.fechaPago) {
-            <span class="secundario"> · pagada el {{ d.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</span>
-          } @else if (d.estado === 'PENDIENTE_PAGO') {
-            <span class="secundario">
-              · {{ d.metodoPago === 'CARTERA' ? 'cobrando a la billetera del cliente' : 'pendiente de recibir el efectivo' }}
-            </span>
-          }
-        } @else {
-          <span class="secundario">todavía sin elegir</span>
+    } @else if (d.estado === 'PAGADA') {
+      <p class="detalle-cobro exito">
+        <span>Cobrada: <strong>{{ d.monto | currency }}</strong></span>
+        @if (d.fechaPago) {
+          <span class="secundario">el {{ d.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</span>
         }
       </p>
-      <p>
-        Estado: <span [class]="'insignia ' + estadoOrden[d.estado].clase">{{ estadoTexto(d.estado) }}</span>
-      </p>
-      @if (d.motivoRechazo) {
-        <p class="secundario">Motivo del rechazo: {{ motivo(d.motivoRechazo) }}</p>
+    }
+
+    <div class="detalle-con-mapa" [class.con-mapa]="tieneRecorrido(d)">
+      <div class="detalle-info">
+        <dl class="datos-lista detalle-datos">
+          <div><dt>NIT</dt><dd>{{ d.clienteNit || 'CF' }}</dd></div>
+          <div><dt>Correo</dt><dd>{{ d.clienteCorreo || '—' }}</dd></div>
+          <div><dt>Forma de pago</dt><dd>{{ d.metodoPago ? metodoPago[d.metodoPago] : 'Sin elegir' }}</dd></div>
+          <div><dt>Precio cotizado</dt><dd>{{ d.monto | currency }}</dd></div>
+          @if (d.fechaSalida) {
+            <div><dt>Salida</dt><dd>{{ d.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
+          }
+          <div><dt>Retorno</dt><dd>{{ d.fechaRetorno ? (d.fechaRetorno | date: 'dd/MM/yyyy HH:mm' : zona) : 'Solo ida' }}</dd></div>
+          @if (d.fechaPago) {
+            <div><dt>Fecha de pago</dt><dd>{{ d.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+          }
+          @if (d.fechaCancelacion) {
+            <div><dt>Fecha de cancelación</dt><dd>{{ d.fechaCancelacion | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+          }
+          @if (d.fechaReembolso) {
+            <div><dt>Fecha de devolución</dt><dd>{{ d.fechaReembolso | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+          }
+        </dl>
+
+        @if (d.motivoRechazo) {
+          <p class="detalle-motivo peligro">
+            <strong>Motivo del rechazo:</strong> {{ motivo(d.motivoRechazo) }}
+          </p>
+        }
+        @if (d.motivoCancelacion) {
+          <p class="detalle-motivo aviso">
+            <strong>Motivo de cancelación:</strong> {{ d.motivoCancelacion }}
+          </p>
+        }
+        @if (d.montoReembolsado) {
+          <p class="detalle-reembolso">
+            Devolución: <strong>{{ d.montoReembolsado | currency }}</strong>
+            @if (d.porcentajeReembolso) {
+              <span class="secundario"> · {{ d.porcentajeReembolso }}% del pago</span>
+            }
+            @if (d.reembolsoPendiente) {
+              <span class="secundario"> · pendiente de entregar</span>
+            }
+          </p>
+        }
+      </div>
+
+      @if (tieneRecorrido(d)) {
+        <div class="detalle-mapa">
+          <h3 class="detalle-subtitulo">Recorrido en el mapa</h3>
+          <app-mapa-recorrido
+            [origenLatitud]="d.origenLatitud ?? null"
+            [origenLongitud]="d.origenLongitud ?? null"
+            [destinoLatitud]="d.destinoLatitud ?? null"
+            [destinoLongitud]="d.destinoLongitud ?? null"
+            [origen]="d.origen"
+            [destino]="d.destino"
+            [alto]="pantallaGrande() ? 420 : 240" />
+        </div>
       }
     </div>
     }

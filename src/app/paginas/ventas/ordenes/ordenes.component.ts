@@ -7,14 +7,16 @@ import { AuthService } from '../../../core/services/auth.service';
 import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { mensajeError } from '../../../core/utils/errores-http';
-import { hoyGt } from '../../../core/utils/fechas';
+import { hoyGt, ZONA_GT } from '../../../core/utils/fechas';
 import { ConfirmacionComponent } from '../../../shared/components/confirmacion/confirmacion.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ESTADO_ORDEN_ALQUILER, METODO_PAGO, textoMotivo } from '../../../shared/constants/ventas';
+import { AvisosMenuService } from '../../../shared/services/avisos-menu.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
+import { pantallaGrande } from '../../../shared/utils/pantalla';
 
 type FiltroEstado = 'TODAS' | EstadoOrdenAlquiler;
 
@@ -49,10 +51,13 @@ export class OrdenesComponent implements OnInit {
   }
   /** El motivo del backend es un código (SALDO_INSUFICIENTE...): aquí se muestra en palabras. */
   readonly motivo = textoMotivo;
+  readonly zona = ZONA_GT;
+  readonly pantallaGrande = pantallaGrande();
   private readonly auth = inject(AuthService);
   private readonly servicio = inject(OrdenesAlquilerService);
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly avisos = inject(ToastService);
+  private readonly avisosMenu = inject(AvisosMenuService);
   private readonly fb = inject(FormBuilder);
 
   readonly esSistema = this.auth.tieneRol('ADMIN_SISTEMA');
@@ -81,6 +86,19 @@ export class OrdenesComponent implements OnInit {
   });
 
   readonly paginaActual = computed(() => paginar(this.ordenes(), this.pagina(), this.tamano()));
+
+  /** El detalle con mapa necesita más ancho en PC. */
+  readonly anchoDetalle = computed<'amplio' | 'mediano'>(() => {
+    const orden = this.enDetalle();
+    return orden !== null && this.tieneRecorrido(orden) ? 'amplio' : 'mediano';
+  });
+
+  /** Cómo se cobra la orden, en palabras para el cajero. */
+  textoCobro(o: OrdenAlquiler): string {
+    if (o.metodoPago === 'CARTERA') return 'el cliente paga con su billetera digital';
+    if (o.metodoPago === 'EFECTIVO') return 'el cliente paga en efectivo en ventanilla';
+    return 'sin forma de pago elegida: se puede cobrar en efectivo';
+  }
 
   /** Nombre claro del estado de la orden (PENDIENTE_PAGO = alquiler ya cotizado, por cobrar). */
   estadoTexto(estado: EstadoOrdenAlquiler): string {
@@ -180,6 +198,7 @@ export class OrdenesComponent implements OnInit {
         );
         if (this.enDetalle()?.ordenId === actualizada.ordenId) this.enDetalle.set(actualizada);
         this.avisos.exito('Orden pagada en efectivo.');
+        this.avisosMenu.refrescar();
         this.pagando.set(false);
         this.porPagar.set(null);
         this.confirmando.set(false);

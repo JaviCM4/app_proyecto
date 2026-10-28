@@ -22,6 +22,7 @@ import {
   PuntoReferencia,
   SelectorRecorridoComponent,
 } from '../../../shared/components/selector-recorrido/selector-recorrido.component';
+import { AvisosMenuService } from '../../../shared/services/avisos-menu.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { pantallaGrande } from '../../../shared/utils/pantalla';
 
@@ -59,6 +60,7 @@ export class SolicitarAlquilerComponent implements OnInit {
   private readonly usuarios = inject(UsuariosService);
   private readonly clientesServicio = inject(ClientesService);
   private readonly avisos = inject(ToastService);
+  private readonly avisosMenu = inject(AvisosMenuService);
   private readonly fb = inject(FormBuilder);
   readonly auth = inject(AuthService);
 
@@ -457,6 +459,7 @@ export class SolicitarAlquilerComponent implements OnInit {
           this.enviando.set(false);
           this.creado.set(a);
           this.avisos.exito('Solicitud de alquiler enviada.');
+          this.avisosMenu.refrescar();
         },
         error: (e) => {
           this.enviando.set(false);

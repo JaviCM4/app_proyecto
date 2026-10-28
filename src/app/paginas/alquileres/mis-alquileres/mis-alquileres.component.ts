@@ -14,6 +14,7 @@ import { ModalComponent } from '../../../shared/components/modal/modal.component
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { ESTADO_ORDEN_ALQUILER, textoMotivo } from '../../../shared/constants/ventas';
+import { AvisosMenuService } from '../../../shared/services/avisos-menu.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { pantallaGrande } from '../../../shared/utils/pantalla';
 import { paginar } from '../../../shared/utils/paginacion';
@@ -57,6 +58,7 @@ export class MisAlquileresComponent implements OnInit {
   private readonly servicio = inject(AlquileresService);
   private readonly ordenesServicio = inject(OrdenesAlquilerService);
   private readonly avisos = inject(ToastService);
+  private readonly avisosMenu = inject(AvisosMenuService);
   private readonly fb = inject(FormBuilder);
 
   /** En el backend, un alquiler que solicita un cajero es de mostrador: no lo puede pedir como cliente. */
@@ -180,6 +182,7 @@ export class MisAlquileresComponent implements OnInit {
       next: (o) => {
         if (o.estado === 'PENDIENTE_PAGO') return;
         this.pagandoId.set(null);
+        this.avisosMenu.refrescar();
         if (o.estado === 'PAGADA') {
           this.avisos.exito('Alquiler pagado con tu cartera.');
         } else {
@@ -324,6 +327,7 @@ export class MisAlquileresComponent implements OnInit {
           this.enviando.set(false);
           this.porCancelar.set(null);
           this.avisos.exito('Alquiler cancelado. Revisa la orden de pago para ver el reembolso.');
+          this.avisosMenu.refrescar();
           this.cargar();
         },
         error: (e) => {
