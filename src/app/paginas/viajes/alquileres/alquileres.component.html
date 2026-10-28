@@ -332,8 +332,14 @@
         }
       </div>
 
-      <!-- La política la resuelve Trips con la copia local de las tarifas de Sales. -->
-      <app-aviso-cancelacion [politica]="politica()" [cargando]="cargandoPolitica()" />
+      <div class="campo">
+        <label for="motivo-cancelar">Motivo</label>
+        <textarea id="motivo-cancelar" class="control" rows="3" formControlName="motivo"
+                  placeholder="Por qué se cancela el alquiler"></textarea>
+        @if (formCancelar.controls.motivo.touched && formCancelar.controls.motivo.invalid) {
+          <span class="error">Escribe el motivo de la cancelación.</span>
+        }
+      </div>
 
       @if (porCancelar(); as a) {
         @if (a.estado === 'ASIGNADO') {
@@ -343,25 +349,16 @@
         }
       }
 
-      @if (!bloqueada()) {
-        <div class="campo">
-          <label for="motivo-cancelar">Motivo</label>
-          <textarea id="motivo-cancelar" class="control" rows="3" formControlName="motivo"
-                    placeholder="Por qué se cancela el alquiler"></textarea>
-          @if (formCancelar.controls.motivo.touched && formCancelar.controls.motivo.invalid) {
-            <span class="error">Escribe el motivo de la cancelación.</span>
-          }
-        </div>
+      <!-- Lo que respondió el servidor si no la permitió: es la justificación de la tarifa. -->
+      @if (errorCancelar(); as problema) {
+        <p class="aviso-error">{{ problema }}</p>
       }
     </form>
     <div pie>
       <button type="button" class="btn" (click)="porCancelar.set(null)">Volver</button>
-      @if (!bloqueada()) {
-        <button type="submit" form="form-cancelar" class="btn primario peligro"
-                [disabled]="enviando() || cargandoPolitica()">
-          {{ enviando() ? 'Cancelando…' : 'Cancelar alquiler' }}
-        </button>
-      }
+      <button type="submit" form="form-cancelar" class="btn primario peligro" [disabled]="enviando()">
+        {{ enviando() ? 'Cancelando…' : 'Cancelar alquiler' }}
+      </button>
     </div>
   </app-modal>
 }

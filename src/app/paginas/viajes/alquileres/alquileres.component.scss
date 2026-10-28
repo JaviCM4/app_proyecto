@@ -110,3 +110,10 @@
 .detalle-info #form-cotizar {
   margin-top: 14px;
 }
+
+/* Lo que respondió el servidor al rechazar una cancelación (la justificación de la tarifa). */
+.aviso-error {
+  margin: 0;
+  color: var(--peligro);
+  font-size: 0.92rem;
+}

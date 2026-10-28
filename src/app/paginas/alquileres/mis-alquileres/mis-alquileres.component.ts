@@ -1,17 +1,14 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { Alquiler, EstadoAlquiler, EstadoViaje, PoliticaCancelacion } from '../../../core/models/viaje.model';
+import { Alquiler, EstadoAlquiler, EstadoViaje } from '../../../core/models/viaje.model';
 import { OrdenAlquiler } from '../../../core/models/venta.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, ahoraGt, fechaHoraGt, hoyGt } from '../../../core/utils/fechas';
-import { AvisoCancelacionComponent } from '../../../shared/components/aviso-cancelacion/aviso-cancelacion.component';
 import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
@@ -52,7 +49,7 @@ const TEXTO_VIAJE: Record<EstadoViaje, string> = {
   selector: 'app-mis-alquileres',
   standalone: true,
   imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, RouterLink,
-    MapaRecorridoComponent, FotoTarjetaComponent, AvisoCancelacionComponent],
+    MapaRecorridoComponent, FotoTarjetaComponent],
   templateUrl: './mis-alquileres.component.html',
   styleUrl: './mis-alquileres.component.scss',
 })
@@ -92,9 +89,11 @@ export class MisAlquileresComponent implements OnInit {
   readonly enviando = signal(false);
   readonly pagandoId = signal<string | null>(null);
 
-  /** Lo que pasaría al cancelar el alquiler que se está por cancelar (la carga abrirCancelar). */
-  readonly politica = signal<PoliticaCancelacion | null>(null);
-  readonly cargandoPolitica = signal(false);
+  /**
+   * Lo que respondió el servidor si rechazó la cancelación: es la justificación de la tarifa que
+   * aplicó. Se muestra dentro del modal, que queda abierto para poder cambiar la fecha y reintentar.
+   */
+  readonly errorCancelar = signal<string | null>(null);
 
   readonly formCancelar = this.fb.nonNullable.group({
     motivo: ['', [Validators.required, Validators.maxLength(255)]],
@@ -104,16 +103,6 @@ export class MisAlquileresComponent implements OnInit {
      */
     fechaHoraCancelacion: [ahoraGt(), Validators.required],
   });
-
-  constructor() {
-    // Al mover la fecha cambia el tramo: se vuelve a consultar qué se devolvería con esa hora.
-    this.formCancelar.controls.fechaHoraCancelacion.valueChanges
-      .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed())
-      .subscribe((valor) => {
-        const a = this.porCancelar();
-        if (a && valor) this.cargarPolitica(a, valor);
-      });
-  }
 
   readonly filtrados = computed(() => {
     const estado = this.estado();
@@ -296,29 +285,9 @@ export class MisAlquileresComponent implements OnInit {
   }
 
   abrirCancelar(a: Alquiler): void {
-    const ahora = ahoraGt();
-    this.formCancelar.reset({ motivo: '', fechaHoraCancelacion: ahora });
-    this.politica.set(null);
+    this.formCancelar.reset({ motivo: '', fechaHoraCancelacion: ahoraGt() });
+    this.errorCancelar.set(null);
     this.porCancelar.set(a);
-    this.cargarPolitica(a, ahora);
-  }
-
-  /**
-   * Antes de confirmar se consulta qué pasaría a esa hora: si la tarifa vigente permite cancelar y
-   * qué porcentaje se devolvería. Si la consulta falla, se deja cancelar y el backend decide.
-   */
-  private cargarPolitica(a: Alquiler, cuando: string): void {
-    this.cargandoPolitica.set(true);
-    this.servicio.politicaCancelacion(a.alquilerId, fechaHoraGt(cuando)).subscribe({
-      next: (p) => {
-        this.politica.set(p);
-        this.cargandoPolitica.set(false);
-      },
-      error: () => {
-        this.politica.set(null);
-        this.cargandoPolitica.set(false);
-      },
-    });
   }
 
   /** Cierra el detalle y abre la cancelación para el alquiler que se estaba viendo. */
@@ -329,17 +298,20 @@ export class MisAlquileresComponent implements OnInit {
     this.abrirCancelar(a);
   }
 
-  /** Con la tarifa en contra no se envía nada: el backend lo rechazaría igual. */
-  readonly bloqueada = computed(() => this.politica()?.permiteCancelacion === false);
-
+  /**
+   * Se envía siempre: quien decide si la cancelación procede es el backend, que resuelve la tarifa
+   * con la fecha y la hora indicadas. Si la rechaza, el mensaje que devuelve es la justificación de
+   * la tarifa y se muestra dentro del modal, que queda abierto para corregir la fecha y reintentar.
+   */
   cancelar(): void {
     const a = this.porCancelar();
-    if (!a || this.bloqueada()) return;
+    if (!a) return;
     if (this.formCancelar.invalid) {
       this.formCancelar.markAllAsTouched();
       return;
     }
     const f = this.formCancelar.getRawValue();
+    this.errorCancelar.set(null);
     this.enviando.set(true);
     this.servicio
       .cancelar(a.alquilerId, {
@@ -351,13 +323,13 @@ export class MisAlquileresComponent implements OnInit {
         next: () => {
           this.enviando.set(false);
           this.porCancelar.set(null);
-          this.avisos.exito('Alquiler cancelado.');
+          this.avisos.exito('Alquiler cancelado. Revisa la orden de pago para ver el reembolso.');
           this.cargar();
         },
         error: (e) => {
           this.enviando.set(false);
           marcarErroresServidor(this.formCancelar, e);
-          this.avisos.error(mensajeError(e, 'No se pudo cancelar el alquiler.'));
+          this.errorCancelar.set(mensajeError(e, 'No se pudo cancelar el alquiler.'));
         },
       });
   }

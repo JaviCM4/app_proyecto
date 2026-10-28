@@ -293,7 +293,7 @@
            subtitulo="Revisa cuánto se te devuelve antes de confirmar." ancho="chico"
            (cerrar)="porCancelar.set(null)">
   <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
-    <!-- La fecha va primero: es la que decide el tramo, y al cambiarla se recalcula el aviso. -->
+    <!-- La fecha decide qué tramo de la tarifa aplica; quien la evalúa es el backend al enviar. -->
     <div class="campo">
       <label for="fecha-cancelacion">Fecha y hora de cancelación</label>
       <input id="fecha-cancelacion" type="datetime-local" class="control"
@@ -304,33 +304,24 @@
       }
     </div>
 
-    <!-- La política la resuelve el backend con la tarifa vigente: acá solo se muestra. -->
-    <app-aviso-cancelacion [politica]="politica()" [cargando]="cargandoPolitica()" />
-
-    @if (bloqueada()) {
-      @if (porCancelar(); as a) {
-        <p class="secundario">
-          Si necesitas cancelar de todas formas, comunícate con la sucursal de {{ a.origen }}.
-        </p>
+    <div class="campo">
+      <label for="motivo">Motivo</label>
+      <textarea id="motivo" rows="3" class="control" formControlName="motivo"
+                placeholder="Por qué cancelas el alquiler"></textarea>
+      @if (formCancelar.controls.motivo.touched && formCancelar.controls.motivo.invalid) {
+        <span class="error">Escribe el motivo (máximo 255 caracteres).</span>
       }
-    } @else {
-      <div class="campo">
-        <label for="motivo">Motivo</label>
-        <textarea id="motivo" rows="3" class="control" formControlName="motivo"
-                  placeholder="Por qué cancelas el alquiler"></textarea>
-        @if (formCancelar.controls.motivo.touched && formCancelar.controls.motivo.invalid) {
-          <span class="error">Escribe el motivo (máximo 255 caracteres).</span>
-        }
-      </div>
+    </div>
+
+    <!-- Lo que respondió el servidor si no la permitió: es la justificación de la tarifa. -->
+    @if (errorCancelar(); as problema) {
+      <p class="aviso-error">{{ problema }}</p>
     }
   </form>
   <div pie>
     <button type="button" class="btn" (click)="porCancelar.set(null)">Volver</button>
-    @if (!bloqueada()) {
-      <button type="submit" form="form-cancelar" class="btn primario peligro"
-              [disabled]="enviando() || cargandoPolitica()">
-        {{ enviando() ? 'Cancelando…' : 'Cancelar alquiler' }}
-      </button>
-    }
+    <button type="submit" form="form-cancelar" class="btn primario peligro" [disabled]="enviando()">
+      {{ enviando() ? 'Cancelando…' : 'Cancelar alquiler' }}
+    </button>
   </div>
 </app-modal>
