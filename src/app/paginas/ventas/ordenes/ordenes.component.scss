@@ -1,1 +1,103 @@
 /* Estilos propios de las órdenes de alquiler (usa las clases globales). */
+
+.sin-salto {
+  white-space: nowrap;
+}
+
+/* Detalle de la orden: el mismo patrón de ventas y reembolsos. */
+.detalle-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .insignia { flex: none; }
+}
+
+.detalle-ruta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--superficie-alterna);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--primario);
+  border-radius: var(--radio-sm);
+
+  .ruta {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .flecha { color: var(--primario); }
+  .secundario { font-size: 12px; }
+}
+
+/* Lo que hay que cobrar (o lo ya cobrado), destacado antes de los datos. */
+.detalle-cobro {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 14px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--aviso-borde);
+  border-left: 3px solid var(--aviso);
+  border-radius: var(--radio-sm);
+  background: var(--aviso-suave);
+  color: var(--texto);
+
+  &.exito {
+    border-color: var(--borde);
+    border-left-color: var(--exito);
+    background: var(--exito-suave);
+  }
+}
+
+.detalle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.detalle-subtitulo {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.detalle-datos {
+  margin: 0;
+}
+
+.detalle-motivo {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radio-sm);
+  font-size: 13px;
+
+  &.peligro { background: var(--peligro-suave); color: var(--peligro); }
+  &.aviso { background: var(--aviso-suave); color: var(--aviso); }
+}
+
+.detalle-reembolso {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--info);
+  border-radius: var(--radio-sm);
+  background: var(--info-suave);
+  color: var(--texto);
+}

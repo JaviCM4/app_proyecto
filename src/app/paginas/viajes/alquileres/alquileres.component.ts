@@ -17,6 +17,7 @@ import { ahoraGt, fechaHoraGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
+import { AvisosMenuService } from '../../../shared/services/avisos-menu.service';
 import { ToastService } from '../../../shared/services/toast.service';
 import { paginar } from '../../../shared/utils/paginacion';
 import { pantallaGrande } from '../../../shared/utils/pantalla';
@@ -40,6 +41,7 @@ export class AlquileresComponent implements OnInit {
   private readonly choferesServicio = inject(ChoferesService);
   private readonly usuariosServicio = inject(UsuariosService);
   private readonly avisos = inject(ToastService);
+  private readonly avisosMenu = inject(AvisosMenuService);
   private readonly fb = inject(FormBuilder);
 
   readonly esSistema = this.auth.tieneRol('ADMIN_SISTEMA');
@@ -245,6 +247,7 @@ export class AlquileresComponent implements OnInit {
           this.enviando.set(false);
           this.porCotizar.set(null);
           this.avisos.exito('Alquiler cotizado.');
+          this.avisosMenu.refrescar();
           this.cargar();
         },
         error: (e) => {
@@ -292,6 +295,7 @@ export class AlquileresComponent implements OnInit {
           this.enviando.set(false);
           this.porAsignar.set(null);
           this.avisos.exito(`Viaje creado con el bus ${viaje.busPlaca ?? ''}. El alquiler quedó asignado.`);
+          this.avisosMenu.refrescar();
           this.cargar();
         },
         error: (e) => {
@@ -342,6 +346,7 @@ export class AlquileresComponent implements OnInit {
           this.enviando.set(false);
           this.porCancelar.set(null);
           this.avisos.exito('Alquiler cancelado. El reembolso queda registrado en la orden de pago.');
+          this.avisosMenu.refrescar();
           this.cargar();
         },
         error: (e) => {
