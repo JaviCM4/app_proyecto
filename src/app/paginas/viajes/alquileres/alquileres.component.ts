@@ -1,7 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { catchError, forkJoin, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, forkJoin, of } from 'rxjs';
 import { Bus, BusDetalle } from '../../../core/models/bus.model';
 import { Chofer } from '../../../core/models/chofer.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
@@ -13,7 +13,7 @@ import { ChoferesService } from '../../../core/services/choferes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
-import { fechaHoraGt } from '../../../core/utils/fechas';
+import { ahoraGt, fechaHoraGt } from '../../../core/utils/fechas';
 import { AvisoCancelacionComponent } from '../../../shared/components/aviso-cancelacion/aviso-cancelacion.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
@@ -93,6 +93,11 @@ export class AlquileresComponent implements OnInit {
 
   readonly formCancelar = this.fb.nonNullable.group({
     motivo: ['', [Validators.required, Validators.maxLength(255)]],
+    /**
+     * Momento de la cancelación que indica quien cancela. Es el que decide qué tramo de la tarifa
+     * aplica, igual que la fecha de solicitud en T16, para poder probar la política sin esperar.
+     */
+    fechaHoraCancelacion: [ahoraGt(), Validators.required],
   });
 
   readonly paginaActual = computed(() => paginar(this.alquileres(), this.pagina(), this.tamano()));
@@ -112,6 +117,13 @@ export class AlquileresComponent implements OnInit {
       this.fotoChoferAsignar.set(null);
       this.cargarFoto(chofer?.usuarioId ?? null, this.fotoChoferAsignar);
     });
+    // Al mover la fecha de cancelación cambia el tramo: se recalcula qué se le devolvería al cliente.
+    this.formCancelar.controls.fechaHoraCancelacion.valueChanges
+      .pipe(debounceTime(400), distinctUntilChanged())
+      .subscribe((valor) => {
+        const a = this.porCancelar();
+        if (a && valor) this.cargarPolitica(a, valor);
+      });
     this.cargar();
   }
 
@@ -309,17 +321,22 @@ export class AlquileresComponent implements OnInit {
   readonly bloqueada = computed(() => this.politica()?.permiteCancelacion === false);
 
   abrirCancelar(a: Alquiler): void {
-    this.formCancelar.reset({ motivo: '' });
+    const ahora = ahoraGt();
+    this.formCancelar.reset({ motivo: '', fechaHoraCancelacion: ahora });
     this.politica.set(null);
     this.porCancelar.set(a);
+    this.cargarPolitica(a, ahora);
+  }
+
+  /** Qué pasaría si se cancelara a esa hora. Si falla, se deja cancelar y el backend decide. */
+  private cargarPolitica(a: Alquiler, cuando: string): void {
     this.cargandoPolitica.set(true);
-    this.servicio.politicaCancelacion(a.alquilerId).subscribe({
+    this.servicio.politicaCancelacion(a.alquilerId, fechaHoraGt(cuando)).subscribe({
       next: (p) => {
         this.politica.set(p);
         this.cargandoPolitica.set(false);
       },
       error: () => {
-        // Sin política se deja cancelar: el backend vuelve a resolverla y decide.
         this.politica.set(null);
         this.cargandoPolitica.set(false);
       },
@@ -333,9 +350,14 @@ export class AlquileresComponent implements OnInit {
       this.formCancelar.markAllAsTouched();
       return;
     }
+    const f = this.formCancelar.getRawValue();
     this.enviando.set(true);
     this.servicio
-      .cancelar(a.alquilerId, { motivo: this.formCancelar.getRawValue().motivo.trim(), version: a.version })
+      .cancelar(a.alquilerId, {
+        motivo: f.motivo.trim(),
+        fechaHoraCancelacion: fechaHoraGt(f.fechaHoraCancelacion),
+        version: a.version,
+      })
       .subscribe({
         next: () => {
           this.enviando.set(false);

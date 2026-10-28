@@ -320,19 +320,30 @@
   <app-modal [abierto]="porCancelar() !== null" titulo="Cancelar alquiler"
              subtitulo="Si el alquiler ya se pagó, se le devuelve al cliente el porcentaje de la tarifa vigente."
              ancho="chico" (cerrar)="porCancelar.set(null)">
-    <!-- La política la resuelve Trips con la copia local de las tarifas de Sales. -->
-    <app-aviso-cancelacion [politica]="politica()" [cargando]="cargandoPolitica()" />
+    <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
+      <!-- La fecha va primero: es la que decide el tramo, y al cambiarla se recalcula el aviso. -->
+      <div class="campo">
+        <label for="fecha-cancelacion">Fecha y hora de cancelación</label>
+        <input id="fecha-cancelacion" type="datetime-local" class="control"
+               formControlName="fechaHoraCancelacion" />
+        <span class="ayuda">Define el porcentaje que se devuelve, según lo que falte para la salida.</span>
+        @if (formCancelar.controls.fechaHoraCancelacion.touched && formCancelar.controls.fechaHoraCancelacion.invalid) {
+          <span class="error">Indica la fecha y la hora de la cancelación.</span>
+        }
+      </div>
 
-    @if (porCancelar(); as a) {
-      @if (a.estado === 'ASIGNADO') {
-        <p class="secundario">
-          Al cancelar se elimina el viaje de este alquiler, así que el bus y el piloto quedan libres.
-        </p>
+      <!-- La política la resuelve Trips con la copia local de las tarifas de Sales. -->
+      <app-aviso-cancelacion [politica]="politica()" [cargando]="cargandoPolitica()" />
+
+      @if (porCancelar(); as a) {
+        @if (a.estado === 'ASIGNADO') {
+          <p class="secundario">
+            Al cancelar se elimina el viaje de este alquiler, así que el bus y el piloto quedan libres.
+          </p>
+        }
       }
-    }
 
-    @if (!bloqueada()) {
-      <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
+      @if (!bloqueada()) {
         <div class="campo">
           <label for="motivo-cancelar">Motivo</label>
           <textarea id="motivo-cancelar" class="control" rows="3" formControlName="motivo"
@@ -341,8 +352,8 @@
             <span class="error">Escribe el motivo de la cancelación.</span>
           }
         </div>
-      </form>
-    }
+      }
+    </form>
     <div pie>
       <button type="button" class="btn" (click)="porCancelar.set(null)">Volver</button>
       @if (!bloqueada()) {

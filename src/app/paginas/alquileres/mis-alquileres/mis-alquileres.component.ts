@@ -1,20 +1,22 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Alquiler, EstadoAlquiler, EstadoViaje, PoliticaCancelacion } from '../../../core/models/viaje.model';
 import { OrdenAlquiler } from '../../../core/models/venta.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
-import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
+import { ZONA_GT, ahoraGt, fechaHoraGt, hoyGt } from '../../../core/utils/fechas';
 import { AvisoCancelacionComponent } from '../../../shared/components/aviso-cancelacion/aviso-cancelacion.component';
 import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
-import { textoMotivo } from '../../../shared/constants/ventas';
+import { ESTADO_ORDEN_ALQUILER, textoMotivo } from '../../../shared/constants/ventas';
 import { ToastService } from '../../../shared/services/toast.service';
 import { pantallaGrande } from '../../../shared/utils/pantalla';
 import { paginar } from '../../../shared/utils/paginacion';
@@ -66,6 +68,7 @@ export class MisAlquileresComponent implements OnInit {
   readonly zona = ZONA_GT;
   /** El motivo del rechazo viene como código del backend: aquí se muestra en palabras. */
   readonly motivo = textoMotivo;
+  readonly estadoOrden = ESTADO_ORDEN_ALQUILER;
   /** En PC el detalle se abre amplio, con el mapa grande al lado de los datos. */
   readonly pantallaGrande = pantallaGrande();
 
@@ -78,8 +81,8 @@ export class MisAlquileresComponent implements OnInit {
   readonly tamano = signal(9);
 
   readonly enDetalle = signal<Alquiler | null>(null);
-  /** Pestaña del detalle: el alquiler, el bus asignado o el reembolso (las últimas dos solo si aplican). */
-  readonly pestana = signal<'alquiler' | 'bus' | 'reembolso'>('alquiler');
+  /** Pestaña del detalle: el alquiler, el bus asignado o la orden de pago (las dos últimas si aplican). */
+  readonly pestana = signal<'alquiler' | 'bus' | 'orden'>('alquiler');
 
   verDetalle(a: Alquiler): void {
     this.pestana.set('alquiler');
@@ -95,7 +98,22 @@ export class MisAlquileresComponent implements OnInit {
 
   readonly formCancelar = this.fb.nonNullable.group({
     motivo: ['', [Validators.required, Validators.maxLength(255)]],
+    /**
+     * Momento de la cancelación que indica el cliente. Es el que decide qué tramo de la tarifa
+     * aplica, igual que la fecha de solicitud en T16, para poder probar la política sin esperar.
+     */
+    fechaHoraCancelacion: [ahoraGt(), Validators.required],
   });
+
+  constructor() {
+    // Al mover la fecha cambia el tramo: se vuelve a consultar qué se devolvería con esa hora.
+    this.formCancelar.controls.fechaHoraCancelacion.valueChanges
+      .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed())
+      .subscribe((valor) => {
+        const a = this.porCancelar();
+        if (a && valor) this.cargarPolitica(a, valor);
+      });
+  }
 
   readonly filtrados = computed(() => {
     const estado = this.estado();
@@ -241,10 +259,33 @@ export class MisAlquileresComponent implements OnInit {
     return !!orden && (orden.estado === 'CANCELADA' || orden.estado === 'REEMBOLSADA' || orden.estado === 'PAGADA');
   }
 
-  /** ¿Mostrar la pestaña de reembolso? Solo cuando el alquiler cancelado tenía un cobro hecho. */
+  /** La pestaña de la orden aparece en cuanto Sales la crea, o sea desde que el alquiler se cotiza. */
+  tieneOrden(a: Alquiler): boolean {
+    return this.ordenDe(a) !== undefined;
+  }
+
+  /** Dentro de la orden, el bloque del reembolso solo tiene sentido si el alquiler se canceló. */
   tieneReembolso(a: Alquiler): boolean {
     const orden = this.ordenDe(a);
     return !!orden && (orden.estado === 'CANCELADA' || orden.estado === 'REEMBOLSADA');
+  }
+
+  /** Qué le toca hacer al cliente con esta orden, en una línea. */
+  avisoOrden(a: Alquiler): string {
+    const orden = this.ordenDe(a);
+    if (!orden) return '';
+    switch (orden.estado) {
+      case 'PENDIENTE_PAGO':
+        return 'Pendiente de pago: puedes pagarla con tu billetera digital o en la ventanilla de la sucursal.';
+      case 'PAGADA':
+        return 'Pago confirmado.';
+      case 'RECHAZADA':
+        return 'El cobro a tu billetera no se pudo hacer. Puedes reintentarlo desde la tarjeta del alquiler.';
+      case 'CANCELADA':
+        return this.medioDevolucion(a);
+      case 'REEMBOLSADA':
+        return 'El dinero ya se devolvió.';
+    }
   }
 
   /** Cómo le vuelve el dinero al cliente: a su billetera o en la ventanilla. */
@@ -255,19 +296,20 @@ export class MisAlquileresComponent implements OnInit {
   }
 
   abrirCancelar(a: Alquiler): void {
-    this.formCancelar.reset({ motivo: '' });
+    const ahora = ahoraGt();
+    this.formCancelar.reset({ motivo: '', fechaHoraCancelacion: ahora });
     this.politica.set(null);
     this.porCancelar.set(a);
-    this.cargarPolitica(a);
+    this.cargarPolitica(a, ahora);
   }
 
   /**
-   * Antes de confirmar se consulta qué pasaría: si la tarifa vigente permite cancelar a esta hora y
+   * Antes de confirmar se consulta qué pasaría a esa hora: si la tarifa vigente permite cancelar y
    * qué porcentaje se devolvería. Si la consulta falla, se deja cancelar y el backend decide.
    */
-  private cargarPolitica(a: Alquiler): void {
+  private cargarPolitica(a: Alquiler, cuando: string): void {
     this.cargandoPolitica.set(true);
-    this.servicio.politicaCancelacion(a.alquilerId).subscribe({
+    this.servicio.politicaCancelacion(a.alquilerId, fechaHoraGt(cuando)).subscribe({
       next: (p) => {
         this.politica.set(p);
         this.cargandoPolitica.set(false);
@@ -297,9 +339,14 @@ export class MisAlquileresComponent implements OnInit {
       this.formCancelar.markAllAsTouched();
       return;
     }
+    const f = this.formCancelar.getRawValue();
     this.enviando.set(true);
     this.servicio
-      .cancelar(a.alquilerId, { motivo: this.formCancelar.getRawValue().motivo.trim(), version: a.version })
+      .cancelar(a.alquilerId, {
+        motivo: f.motivo.trim(),
+        fechaHoraCancelacion: fechaHoraGt(f.fechaHoraCancelacion),
+        version: a.version,
+      })
       .subscribe({
         next: () => {
           this.enviando.set(false);

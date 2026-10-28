@@ -117,7 +117,7 @@
       <span [class]="'insignia ' + clase(a.estado)">{{ texto(a.estado) }}</span>
     </div>
 
-    @if (a.viaje || tieneReembolso(a)) {
+    @if (a.viaje || tieneOrden(a)) {
       <div class="pestanas" role="tablist">
         <button type="button" role="tab" [class.activa]="pestana() === 'alquiler'"
                 [attr.aria-selected]="pestana() === 'alquiler'" (click)="pestana.set('alquiler')">
@@ -129,54 +129,70 @@
             El bus asignado
           </button>
         }
-        @if (tieneReembolso(a)) {
-          <button type="button" role="tab" [class.activa]="pestana() === 'reembolso'"
-                  [attr.aria-selected]="pestana() === 'reembolso'" (click)="pestana.set('reembolso')">
-            Reembolso
+        @if (tieneOrden(a)) {
+          <button type="button" role="tab" [class.activa]="pestana() === 'orden'"
+                  [attr.aria-selected]="pestana() === 'orden'" (click)="pestana.set('orden')">
+            Orden de pago
           </button>
         }
       </div>
     }
 
-    @if (tieneReembolso(a) && pestana() === 'reembolso') {
+    @if (tieneOrden(a) && pestana() === 'orden') {
       @if (ordenDe(a); as orden) {
-        <!-- Lo que se devuelve y por qué: el porcentaje lo fijó la tarifa vigente al cancelar. -->
         <div class="reembolso-ficha">
+          <!-- El cobro: cuánto, cómo y en qué estado va. -->
           <div class="reembolso-resumen">
-            <span class="etiqueta">Se te devuelve</span>
-            <strong class="reembolso-monto">{{ orden.montoReembolsado | currency: 'GTQ' : 'symbol-narrow' }}</strong>
-            @if (orden.porcentajeReembolso) {
-              <span class="secundario">{{ orden.porcentajeReembolso }}% de {{ orden.monto | currency: 'GTQ' : 'symbol-narrow' }}</span>
-            }
-            <span [class]="'insignia ' + (orden.estado === 'REEMBOLSADA' ? 'exito' : 'aviso')">
-              {{ orden.estado === 'REEMBOLSADA' ? 'Dinero devuelto' : 'Pendiente de devolver' }}
-            </span>
+            <span class="etiqueta">Total de la orden</span>
+            <strong class="reembolso-monto">{{ orden.monto | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+            <span [class]="'insignia ' + estadoOrden[orden.estado].clase">{{ estadoOrden[orden.estado].texto }}</span>
           </div>
-
-          @if (orden.justificacionReembolso) {
-            <p class="reembolso-razon">{{ orden.justificacionReembolso }}</p>
-          }
 
           <div class="datos-lista">
-            <div><dt>Pagaste</dt><dd>{{ orden.monto | currency: 'GTQ' : 'symbol-narrow' }}</dd></div>
-            <div><dt>Forma de pago</dt><dd>{{ orden.metodoPago === 'CARTERA' ? 'Billetera digital' : 'Efectivo en ventanilla' }}</dd></div>
-            @if (orden.fechaCancelacion) {
-              <div><dt>Cancelado el</dt><dd>{{ orden.fechaCancelacion | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
-            }
-            @if (orden.horasAntesViaje !== null && orden.horasAntesViaje !== undefined) {
-              <div><dt>Anticipación</dt><dd>{{ orden.horasAntesViaje }} h antes de la salida</dd></div>
-            }
-            @if (orden.fechaReembolso) {
-              <div><dt>Devuelto el</dt><dd>{{ orden.fechaReembolso | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
-            }
-            <div class="completo"><dt>Retenido</dt>
-              <dd>{{ orden.monto - (orden.montoReembolsado ?? 0) | currency: 'GTQ' : 'symbol-narrow' }}</dd>
+            <div><dt>Forma de pago</dt>
+              <dd>{{ orden.metodoPago === 'CARTERA' ? 'Billetera digital' : (orden.metodoPago === 'EFECTIVO' ? 'Efectivo en ventanilla' : 'Sin definir') }}</dd>
             </div>
+            <div><dt>Fecha de pago</dt><dd>{{ orden.fechaPago ? (orden.fechaPago | date: 'dd/MM/yyyy' : 'UTC') : '—' }}</dd></div>
+            @if (orden.motivoRechazo) {
+              <div class="completo"><dt>Motivo del rechazo</dt><dd>{{ motivo(orden.motivoRechazo) }}</dd></div>
+            }
           </div>
 
-          @if (orden.estado === 'CANCELADA') {
-            <p class="aviso">{{ medioDevolucion(a) }}</p>
+          <!-- Si el alquiler se canceló, lo que se devuelve y por qué (lo fijó la tarifa vigente). -->
+          @if (tieneReembolso(a)) {
+            <h3 class="detalle-subtitulo">Reembolso</h3>
+            <div class="reembolso-resumen">
+              <span class="etiqueta">Se te devuelve</span>
+              <strong class="reembolso-monto">{{ orden.montoReembolsado | currency: 'GTQ' : 'symbol-narrow' }}</strong>
+              @if (orden.porcentajeReembolso) {
+                <span class="secundario">{{ orden.porcentajeReembolso }}% de {{ orden.monto | currency: 'GTQ' : 'symbol-narrow' }}</span>
+              }
+              <span [class]="'insignia ' + (orden.estado === 'REEMBOLSADA' ? 'exito' : 'aviso')">
+                {{ orden.estado === 'REEMBOLSADA' ? 'Dinero devuelto' : 'Pendiente de devolver' }}
+              </span>
+            </div>
+
+            @if (orden.justificacionReembolso) {
+              <p class="reembolso-razon">{{ orden.justificacionReembolso }}</p>
+            }
+
+            <div class="datos-lista">
+              @if (orden.fechaCancelacion) {
+                <div><dt>Cancelado el</dt><dd>{{ orden.fechaCancelacion | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+              }
+              @if (orden.horasAntesViaje !== null && orden.horasAntesViaje !== undefined) {
+                <div><dt>Anticipación</dt><dd>{{ orden.horasAntesViaje }} h antes de la salida</dd></div>
+              }
+              @if (orden.fechaReembolso) {
+                <div><dt>Devuelto el</dt><dd>{{ orden.fechaReembolso | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+              }
+              <div><dt>Retenido</dt>
+                <dd>{{ orden.monto - (orden.montoReembolsado ?? 0) | currency: 'GTQ' : 'symbol-narrow' }}</dd>
+              </div>
+            </div>
           }
+
+          <p class="secundario">{{ avisoOrden(a) }}</p>
         </div>
       }
     } @else if (a.viaje && pestana() === 'bus') {
@@ -276,19 +292,28 @@
 <app-modal [abierto]="porCancelar() !== null" titulo="Cancelar alquiler"
            subtitulo="Revisa cuánto se te devuelve antes de confirmar." ancho="chico"
            (cerrar)="porCancelar.set(null)">
-  <!-- La política la resuelve el backend con la tarifa vigente: acá solo se muestra. -->
-  <app-aviso-cancelacion [politica]="politica()" [cargando]="cargandoPolitica()" />
+  <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
+    <!-- La fecha va primero: es la que decide el tramo, y al cambiarla se recalcula el aviso. -->
+    <div class="campo">
+      <label for="fecha-cancelacion">Fecha y hora de cancelación</label>
+      <input id="fecha-cancelacion" type="datetime-local" class="control"
+             formControlName="fechaHoraCancelacion" />
+      <span class="ayuda">Define cuánto se te devuelve, según lo que falte para la salida.</span>
+      @if (formCancelar.controls.fechaHoraCancelacion.touched && formCancelar.controls.fechaHoraCancelacion.invalid) {
+        <span class="error">Indica la fecha y la hora de la cancelación.</span>
+      }
+    </div>
 
-  @if (porCancelar(); as a) {
+    <!-- La política la resuelve el backend con la tarifa vigente: acá solo se muestra. -->
+    <app-aviso-cancelacion [politica]="politica()" [cargando]="cargandoPolitica()" />
+
     @if (bloqueada()) {
-      <p class="secundario">
-        Si necesitas cancelar de todas formas, comunícate con la sucursal de {{ a.origen }}.
-      </p>
-    }
-  }
-
-  @if (!bloqueada()) {
-    <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
+      @if (porCancelar(); as a) {
+        <p class="secundario">
+          Si necesitas cancelar de todas formas, comunícate con la sucursal de {{ a.origen }}.
+        </p>
+      }
+    } @else {
       <div class="campo">
         <label for="motivo">Motivo</label>
         <textarea id="motivo" rows="3" class="control" formControlName="motivo"
@@ -297,8 +322,8 @@
           <span class="error">Escribe el motivo (máximo 255 caracteres).</span>
         }
       </div>
-    </form>
-  }
+    }
+  </form>
   <div pie>
     <button type="button" class="btn" (click)="porCancelar.set(null)">Volver</button>
     @if (!bloqueada()) {
