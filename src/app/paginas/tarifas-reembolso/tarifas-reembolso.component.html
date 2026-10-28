@@ -1,0 +1,189 @@
+<div class="pagina-encabezado">
+  <div>
+    <h1>Tarifas de reembolso</h1>
+    <p>
+      Cuánto se le devuelve al cliente cuando se cancela su alquiler. Gana el tramo más alto que la
+      cancelación alcanza; si dos coinciden, manda el del estado específico sobre «cualquier estado».
+    </p>
+  </div>
+  @if (puedeEditar) {
+    <button type="button" class="btn primario" (click)="abrirNueva()">+ Agregar tramo</button>
+  }
+</div>
+
+@if (hayInactivas()) {
+  <div class="filtros">
+    <label class="interruptor">
+      <input type="checkbox" [checked]="verInactivas()" (change)="verInactivas.set(!verInactivas())" />
+      Mostrar las tarifas desactivadas
+    </label>
+  </div>
+}
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Estado del alquiler</th>
+        <th>Anticipación</th>
+        <th>¿Se puede cancelar?</th>
+        <th>Reembolso</th>
+        <th>Justificación</th>
+        @if (puedeEditar) {
+          <th class="acciones">Acciones</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of visibles(); track t.tarifaId) {
+        <tr [class.inactiva]="!t.activa">
+          <td class="sin-salto"><strong>{{ textoEstado(t.estadoAlquiler) }}</strong></td>
+          <td class="sin-salto">{{ tramo(t) }}</td>
+          <td class="sin-salto">
+            <span [class]="'insignia ' + (t.permiteCancelacion ? 'exito' : 'peligro')">
+              {{ t.permiteCancelacion ? 'Sí' : 'No' }}
+            </span>
+          </td>
+          <td class="sin-salto porcentaje">{{ t.porcentajeReembolso }}%</td>
+          <td>
+            {{ t.justificacion }}
+            @if (!t.activa) {
+              <div class="secundario">Desactivada: ya no se aplica a cancelaciones nuevas.</div>
+            }
+          </td>
+          @if (puedeEditar) {
+            <td class="acciones">
+              <button type="button" class="btn chico" (click)="abrirEditar(t)">Editar</button>
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="puedeEditar ? 6 : 5" class="tabla-vacia">
+            @if (cargando()) {
+              Cargando las tarifas…
+            } @else {
+              No hay tarifas configuradas. Sin política, una cancelación se permite y se devuelve el total.
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-modal [abierto]="creando()" titulo="Agregar tramo"
+           subtitulo="El estado y la anticipación identifican el tramo: no se pueden repetir."
+           ancho="chico" (cerrar)="creando.set(false)">
+  <form id="form-nueva-tarifa" [formGroup]="formNueva" (ngSubmit)="crear()" class="formulario">
+    <div class="campo">
+      <label for="estado">Estado del alquiler</label>
+      <select id="estado" class="control" formControlName="estadoAlquiler">
+        @for (e of estados; track e) {
+          <option [value]="e">{{ textoEstado(e) }}</option>
+        }
+      </select>
+      <p class="ayuda">«Cualquier estado» cubre los estados que no tengan un tramo propio.</p>
+    </div>
+
+    <div class="campo">
+      <label for="horas">Horas mínimas antes de la salida</label>
+      <input id="horas" type="number" min="0" step="1" class="control" formControlName="horasMinimasAntes" />
+      <p class="ayuda">0 es el tramo de último momento: aplica cuando ya no falta ni una hora.</p>
+      @if (formNueva.controls.horasMinimasAntes.touched && formNueva.controls.horasMinimasAntes.invalid) {
+        <span class="error">Indica un número de horas de 0 o más.</span>
+      }
+    </div>
+
+    <div class="campo">
+      <label class="interruptor">
+        <input type="checkbox" formControlName="permiteCancelacion" />
+        En este tramo todavía se puede cancelar
+      </label>
+    </div>
+
+    @if (formNueva.controls.permiteCancelacion.value) {
+      <div class="campo">
+        <label for="porcentaje">Porcentaje de reembolso</label>
+        <input id="porcentaje" type="number" min="0" max="100" step="0.01" class="control"
+               formControlName="porcentajeReembolso" />
+        @if (formNueva.controls.porcentajeReembolso.touched && formNueva.controls.porcentajeReembolso.invalid) {
+          <span class="error">El porcentaje va de 0 a 100.</span>
+        }
+      </div>
+    } @else {
+      <p class="secundario">Sin cancelación no hay nada que devolver: el porcentaje queda en 0.</p>
+    }
+
+    <div class="campo">
+      <label for="justificacion">Justificación</label>
+      <textarea id="justificacion" rows="3" class="control" formControlName="justificacion"
+                placeholder="Lo que se le explica al cliente al cancelar"></textarea>
+      <p class="ayuda">Este texto es el que lee el cliente, así que conviene que explique el porqué.</p>
+      @if (formNueva.controls.justificacion.touched && formNueva.controls.justificacion.invalid) {
+        <span class="error">Escribe la justificación (máximo 255 caracteres).</span>
+      }
+    </div>
+  </form>
+  <div pie>
+    <button type="button" class="btn" (click)="creando.set(false)">Volver</button>
+    <button type="submit" form="form-nueva-tarifa" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Agregar tramo' }}
+    </button>
+  </div>
+</app-modal>
+
+<app-modal [abierto]="enEdicion() !== null" titulo="Editar tarifa" ancho="chico" (cerrar)="enEdicion.set(null)">
+  @if (enEdicion(); as t) {
+    <p class="secundario">
+      {{ textoEstado(t.estadoAlquiler) }} · {{ tramo(t) }}. Para mover el tramo, desactiva esta tarifa y
+      crea otra.
+    </p>
+    <form id="form-editar-tarifa" [formGroup]="formEditar" (ngSubmit)="guardar()" class="formulario">
+      <div class="campo">
+        <label class="interruptor">
+          <input type="checkbox" formControlName="permiteCancelacion" />
+          En este tramo todavía se puede cancelar
+        </label>
+      </div>
+
+      @if (formEditar.controls.permiteCancelacion.value) {
+        <div class="campo">
+          <label for="porcentaje-editar">Porcentaje de reembolso</label>
+          <input id="porcentaje-editar" type="number" min="0" max="100" step="0.01" class="control"
+                 formControlName="porcentajeReembolso" />
+          @if (formEditar.controls.porcentajeReembolso.touched && formEditar.controls.porcentajeReembolso.invalid) {
+            <span class="error">El porcentaje va de 0 a 100.</span>
+          }
+        </div>
+      } @else {
+        <p class="secundario">Sin cancelación no hay nada que devolver: el porcentaje queda en 0.</p>
+      }
+
+      <div class="campo">
+        <label for="justificacion-editar">Justificación</label>
+        <textarea id="justificacion-editar" rows="3" class="control" formControlName="justificacion"></textarea>
+        @if (formEditar.controls.justificacion.touched && formEditar.controls.justificacion.invalid) {
+          <span class="error">Escribe la justificación (máximo 255 caracteres).</span>
+        }
+      </div>
+
+      <div class="campo">
+        <label class="interruptor">
+          <input type="checkbox" formControlName="activa" />
+          Tarifa activa
+        </label>
+        <p class="ayuda">
+          Una tarifa desactivada deja de aplicarse, pero se conserva para explicar los reembolsos que
+          ya se hicieron con ella.
+        </p>
+      </div>
+    </form>
+  }
+  <div pie>
+    <button type="button" class="btn" (click)="enEdicion.set(null)">Volver</button>
+    <button type="submit" form="form-editar-tarifa" class="btn primario" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : 'Guardar cambios' }}
+    </button>
+  </div>
+</app-modal>

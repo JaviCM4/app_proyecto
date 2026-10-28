@@ -228,3 +228,32 @@
   gap: 10px;
   justify-content: flex-end;
 }
+
+/* Aviso de la política de cancelación antes de enviar la solicitud. */
+.politica-aviso {
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--aviso, #ed9d1f);
+  border-radius: var(--radio, 8px);
+  padding: 0.9rem 1rem;
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.5rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.92rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.92rem;
+  }
+}

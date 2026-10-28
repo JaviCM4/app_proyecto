@@ -91,6 +91,8 @@ export class OrdenesComponent implements OnInit {
         return 'Pagada';
       case 'RECHAZADA':
         return 'Rechazada';
+      case 'CANCELADA':
+        return 'Cancelada';
       case 'REEMBOLSADA':
         return 'Reembolsada';
     }

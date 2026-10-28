@@ -232,6 +232,29 @@
         </div>
       </div>
 
+      <!-- Aviso, no tabla: lo que importa antes de pedir es saber que cancelar tarde tiene costo. -->
+      @if (politicaCancelacion().length > 0) {
+        <aside class="politica-aviso">
+          <h3>Antes de enviar: política de cancelación</h3>
+          <p>
+            Puedes cancelar tu alquiler, pero una vez pagado se retiene una parte según cuánto falte
+            para la salida. A partir de ese momento aplica lo siguiente:
+          </p>
+          <ul>
+            @for (t of politicaCancelacion(); track t.tarifaId) {
+              <li>
+                <strong>{{ textoTramo(t) }}:</strong>
+                {{ t.permiteCancelacion ? 'se te devuelve el ' + t.porcentajeReembolso + '%' : 'ya no se puede cancelar' }}
+              </li>
+            }
+          </ul>
+          <p class="secundario">
+            Si todavía no has pagado, cancelar no tiene ningún costo. Lo verás con el monto exacto al
+            momento de cancelar, desde «Mis alquileres».
+          </p>
+        </aside>
+      }
+
       <div class="acciones-form">
         <button type="button" class="btn" (click)="volver()">Atrás</button>
         <button type="submit" class="btn primario" [disabled]="enviando() || calculandoKm()">

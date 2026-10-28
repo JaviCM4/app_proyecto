@@ -80,6 +80,15 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/tarifas/tarifas.component').then((m) => m.TarifasComponent),
       },
       {
+        // Política de cancelación de alquileres: la tabla vive en Sales, que ejecuta la devolución.
+        path: 'tarifas-reembolso',
+        title: 'Tarifas de reembolso',
+        canActivate: [rolGuard],
+        data: { roles: ['ADMIN_SISTEMA'] },
+        loadComponent: () =>
+          import('./paginas/tarifas-reembolso/tarifas-reembolso.component').then((m) => m.TarifasReembolsoComponent),
+      },
+      {
         path: 'reportes',
         title: 'Reportes',
         canActivate: [rolGuard],

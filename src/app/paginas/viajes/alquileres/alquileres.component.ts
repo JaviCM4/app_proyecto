@@ -5,7 +5,7 @@ import { catchError, forkJoin, of } from 'rxjs';
 import { Bus, BusDetalle } from '../../../core/models/bus.model';
 import { Chofer } from '../../../core/models/chofer.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
-import { Alquiler, EstadoAlquiler, EstadoViaje } from '../../../core/models/viaje.model';
+import { Alquiler, EstadoAlquiler, EstadoViaje, PoliticaCancelacion } from '../../../core/models/viaje.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { BusesService } from '../../../core/services/buses.service';
@@ -14,6 +14,7 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { fechaHoraGt } from '../../../core/utils/fechas';
+import { AvisoCancelacionComponent } from '../../../shared/components/aviso-cancelacion/aviso-cancelacion.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
@@ -27,7 +28,8 @@ const ESTADOS: EstadoAlquiler[] = ['SOLICITADO', 'COTIZADO', 'PAGADO', 'ASIGNADO
 @Component({
   selector: 'app-alquileres',
   standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, MapaRecorridoComponent],
+  imports: [FormsModule, ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent,
+    MapaRecorridoComponent, AvisoCancelacionComponent],
   templateUrl: './alquileres.component.html',
   styleUrl: './alquileres.component.scss',
 })
@@ -73,6 +75,9 @@ export class AlquileresComponent implements OnInit {
   readonly porAsignar = signal<Alquiler | null>(null);
   readonly porCancelar = signal<Alquiler | null>(null);
   readonly enviando = signal(false);
+  /** Lo que pasaría al cancelar: la carga abrirCancelar con la tarifa vigente. */
+  readonly politica = signal<PoliticaCancelacion | null>(null);
+  readonly cargandoPolitica = signal(false);
 
   readonly estados = ESTADOS;
 
@@ -291,14 +296,39 @@ export class AlquileresComponent implements OnInit {
       });
   }
 
+  /**
+   * Se cancela hasta antes de la salida: desde PAGADO hay dinero de por medio y la tarifa vigente
+   * decide si se permite a esa hora y cuánto se devuelve. Un alquiler completado ya no se cancela.
+   */
+  sePuedeCancelar(a: Alquiler): boolean {
+    return this.puedeGestionar
+      && (a.estado === 'SOLICITADO' || a.estado === 'COTIZADO' || a.estado === 'PAGADO' || a.estado === 'ASIGNADO');
+  }
+
+  /** Con la tarifa en contra no se envía nada: el backend lo rechazaría igual. */
+  readonly bloqueada = computed(() => this.politica()?.permiteCancelacion === false);
+
   abrirCancelar(a: Alquiler): void {
     this.formCancelar.reset({ motivo: '' });
+    this.politica.set(null);
     this.porCancelar.set(a);
+    this.cargandoPolitica.set(true);
+    this.servicio.politicaCancelacion(a.alquilerId).subscribe({
+      next: (p) => {
+        this.politica.set(p);
+        this.cargandoPolitica.set(false);
+      },
+      error: () => {
+        // Sin política se deja cancelar: el backend vuelve a resolverla y decide.
+        this.politica.set(null);
+        this.cargandoPolitica.set(false);
+      },
+    });
   }
 
   cancelar(): void {
     const a = this.porCancelar();
-    if (!a) return;
+    if (!a || this.bloqueada()) return;
     if (this.formCancelar.invalid) {
       this.formCancelar.markAllAsTouched();
       return;

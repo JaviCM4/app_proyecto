@@ -25,6 +25,7 @@ export const ESTADO_ORDEN_ALQUILER: Record<EstadoOrdenAlquiler, { texto: string;
   PENDIENTE_PAGO: { texto: 'Pendiente de pago', clase: 'aviso' },
   PAGADA: { texto: 'Pagada', clase: 'exito' },
   RECHAZADA: { texto: 'Rechazada', clase: 'peligro' },
+  CANCELADA: { texto: 'Cancelada', clase: 'peligro' },
   REEMBOLSADA: { texto: 'Reembolsada', clase: 'info' },
 };
 

@@ -153,3 +153,27 @@
 @media (max-width: 900px) {
   .bus-ficha { grid-template-columns: 1fr; }
 }
+
+/* Pestaña de reembolso del detalle: cuánto se devuelve, por qué y cómo. */
+.reembolso-ficha {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.reembolso-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+}
+
+.reembolso-monto {
+  font-size: 1.6rem;
+  line-height: 1.1;
+}
+
+.reembolso-razon {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--texto-secundario, #5f6b7a);
+}

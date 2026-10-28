@@ -1,0 +1,27 @@
+@if (cargando()) {
+  <p class="politica cargando secundario">Consultando la política de cancelación…</p>
+} @else {
+  <!-- `as` no se puede usar en un @else if, así que el @if de la política va anidado. -->
+  @if (politica(); as p) {
+  <div class="politica" [class.bloqueada]="!p.permiteCancelacion" [class.permitida]="p.permiteCancelacion">
+    <div class="politica-cabecera">
+      @if (p.permiteCancelacion) {
+        @if (hayDevolucion()) {
+          <strong class="politica-monto">Se te devuelve {{ p.porcentajeReembolso }}%</strong>
+          <span class="politica-importe">{{ p.montoEstimadoReembolso | currency: 'GTQ' : 'symbol-narrow' }}</span>
+        } @else if (sinPago()) {
+          <strong class="politica-monto">Sin cobro: no hay nada que devolver</strong>
+        } @else {
+          <strong class="politica-monto">No hay devolución</strong>
+        }
+      } @else {
+        <strong class="politica-monto">Ya no se puede cancelar</strong>
+      }
+      @if (plazo()) {
+        <span class="secundario politica-plazo">{{ plazo() }}</span>
+      }
+    </div>
+    <p class="politica-razon">{{ p.justificacion }}</p>
+  </div>
+  }
+}

@@ -125,7 +125,7 @@ export interface Historial {
   alquileres: AlquilerHistorial[];
 }
 
-export type EstadoOrdenAlquiler = 'PENDIENTE_PAGO' | 'PAGADA' | 'RECHAZADA' | 'REEMBOLSADA';
+export type EstadoOrdenAlquiler = 'PENDIENTE_PAGO' | 'PAGADA' | 'RECHAZADA' | 'CANCELADA' | 'REEMBOLSADA';
 
 export interface OrdenAlquiler {
   ordenId: string;
@@ -141,12 +141,71 @@ export interface OrdenAlquiler {
   origenLongitud?: number | null;
   destinoLatitud?: number | null;
   destinoLongitud?: number | null;
+  /** Intervalo del alquiler, para saber de qué viaje era la orden en la pantalla de reembolsos. */
+  fechaSalida?: string | null;
+  fechaRetorno?: string | null;
   monto: number;
   metodoPago: MetodoPago | null;
   fechaPago: string | null;
   estado: EstadoOrdenAlquiler;
   motivoRechazo: string | null;
+  // ----- Cancelación del alquiler y devolución del dinero -----
+  fechaCancelacion?: string | null;
+  motivoCancelacion?: string | null;
+  /** Horas que faltaban para la salida al cancelar: explica qué tramo de la tarifa se aplicó. */
+  horasAntesViaje?: number | null;
+  porcentajeReembolso?: number | null;
+  justificacionReembolso?: string | null;
+  /** Lo que le toca al cliente según la tarifa. 0 si no se había pagado o no hay derecho. */
+  montoReembolsado?: number | null;
+  fechaReembolso?: string | null;
+  /** Quién entregó el efectivo en la ventanilla; null cuando lo devolvió la cartera. */
+  reembolsadoPor?: string | null;
+  /** true mientras quede dinero por entregarle al cliente. */
+  reembolsoPendiente?: boolean;
   version: number;
+}
+
+/** A qué estado del alquiler aplica una tarifa de reembolso. CUALQUIERA es el comodín. */
+export type EstadoAlquilerTarifa = 'SOLICITADO' | 'COTIZADO' | 'PAGADO' | 'ASIGNADO' | 'CUALQUIERA';
+
+/** Una fila de tarifas_reembolso (Sales): cuánto se devuelve al cancelar un alquiler. */
+export interface TarifaReembolso {
+  tarifaId: string;
+  estadoAlquiler: EstadoAlquilerTarifa;
+  /** Horas mínimas antes de la salida para que esta tarifa aplique (0 = tramo de último momento). */
+  horasMinimasAntes: number;
+  permiteCancelacion: boolean;
+  porcentajeReembolso: number;
+  justificacion: string;
+  activa: boolean;
+  version: number;
+}
+
+export interface NuevaTarifaReembolso {
+  estadoAlquiler: EstadoAlquilerTarifa;
+  horasMinimasAntes: number;
+  permiteCancelacion: boolean;
+  porcentajeReembolso: number;
+  justificacion: string;
+}
+
+/** El estado y el tramo de horas identifican la tarifa: no se editan. */
+export interface ActualizarTarifaReembolso {
+  permiteCancelacion: boolean;
+  porcentajeReembolso: number;
+  justificacion: string;
+  activa: boolean;
+  version: number;
+}
+
+/** La tarifa ya resuelta para un estado y unas horas concretas. */
+export interface ReglaReembolso {
+  tarifaId: string | null;
+  permiteCancelacion: boolean;
+  porcentajeReembolso: number;
+  justificacion: string;
+  horasMinimasAntes: number | null;
 }
 
 export interface FiltroOrdenes {

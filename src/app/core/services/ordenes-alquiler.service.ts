@@ -36,6 +36,15 @@ export class OrdenesAlquilerService {
     return this.http.post<OrdenAlquiler>(`${this.url}/${id}/pago-efectivo`, { fechaPago });
   }
 
+  /**
+   * Devuelve en ventanilla el dinero de un alquiler cancelado. El monto ya salió de la tarifa de
+   * reembolso al cancelar: aquí solo se registra la entrega. Si el alquiler se pagó con la billetera,
+   * la orden sigue CANCELADA y se le vuelve a pedir el reembolso a Wallet.
+   */
+  reembolsar(id: string, version: number): Observable<OrdenAlquiler> {
+    return this.http.post<OrdenAlquiler>(`${this.url}/${id}/reembolso`, { version });
+  }
+
   /** Consulta el detalle cada 2 s hasta que deja de estar pendiente. Máximo ~2 minutos. */
   seguirHastaFin(id: string): Observable<OrdenAlquiler> {
     return interval(2000).pipe(
@@ -46,6 +55,6 @@ export class OrdenesAlquilerService {
   }
 
   estados(): EstadoOrdenAlquiler[] {
-    return ['PENDIENTE_PAGO', 'PAGADA', 'RECHAZADA', 'REEMBOLSADA'];
+    return ['PENDIENTE_PAGO', 'PAGADA', 'RECHAZADA', 'CANCELADA', 'REEMBOLSADA'];
   }
 }

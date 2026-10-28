@@ -83,7 +83,7 @@
               @if (a.estado === 'PAGADO') {
                 <button type="button" class="btn chico" (click)="abrirAsignar(a)">Asignar</button>
               }
-              @if (a.estado !== 'CANCELADO' && a.estado !== 'COMPLETADO') {
+              @if (sePuedeCancelar(a)) {
                 <button type="button" class="btn chico peligro" (click)="abrirCancelar(a)">Cancelar</button>
               }
             }
@@ -318,22 +318,39 @@
   </app-modal>
 
   <app-modal [abierto]="porCancelar() !== null" titulo="Cancelar alquiler"
-             subtitulo="Indica el motivo de la cancelación." ancho="chico" (cerrar)="porCancelar.set(null)">
-    <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
-      <div class="campo">
-        <label for="motivo-cancelar">Motivo</label>
-        <textarea id="motivo-cancelar" class="control" rows="3" formControlName="motivo"
-                  placeholder="Por qué se cancela el alquiler"></textarea>
-        @if (formCancelar.controls.motivo.touched && formCancelar.controls.motivo.invalid) {
-          <span class="error">Escribe el motivo de la cancelación.</span>
-        }
-      </div>
-    </form>
+             subtitulo="Si el alquiler ya se pagó, se le devuelve al cliente el porcentaje de la tarifa vigente."
+             ancho="chico" (cerrar)="porCancelar.set(null)">
+    <!-- La política la resuelve Trips con la copia local de las tarifas de Sales. -->
+    <app-aviso-cancelacion [politica]="politica()" [cargando]="cargandoPolitica()" />
+
+    @if (porCancelar(); as a) {
+      @if (a.estado === 'ASIGNADO') {
+        <p class="secundario">
+          Al cancelar se elimina el viaje de este alquiler, así que el bus y el piloto quedan libres.
+        </p>
+      }
+    }
+
+    @if (!bloqueada()) {
+      <form id="form-cancelar" [formGroup]="formCancelar" (ngSubmit)="cancelar()" class="formulario">
+        <div class="campo">
+          <label for="motivo-cancelar">Motivo</label>
+          <textarea id="motivo-cancelar" class="control" rows="3" formControlName="motivo"
+                    placeholder="Por qué se cancela el alquiler"></textarea>
+          @if (formCancelar.controls.motivo.touched && formCancelar.controls.motivo.invalid) {
+            <span class="error">Escribe el motivo de la cancelación.</span>
+          }
+        </div>
+      </form>
+    }
     <div pie>
       <button type="button" class="btn" (click)="porCancelar.set(null)">Volver</button>
-      <button type="submit" form="form-cancelar" class="btn primario peligro" [disabled]="enviando()">
-        {{ enviando() ? 'Cancelando…' : 'Cancelar alquiler' }}
-      </button>
+      @if (!bloqueada()) {
+        <button type="submit" form="form-cancelar" class="btn primario peligro"
+                [disabled]="enviando() || cargandoPolitica()">
+          {{ enviando() ? 'Cancelando…' : 'Cancelar alquiler' }}
+        </button>
+      }
     </div>
   </app-modal>
 }

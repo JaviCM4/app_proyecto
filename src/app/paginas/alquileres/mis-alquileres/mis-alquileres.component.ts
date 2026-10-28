@@ -2,13 +2,14 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Alquiler, EstadoAlquiler, EstadoViaje } from '../../../core/models/viaje.model';
+import { Alquiler, EstadoAlquiler, EstadoViaje, PoliticaCancelacion } from '../../../core/models/viaje.model';
 import { OrdenAlquiler } from '../../../core/models/venta.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, hoyGt } from '../../../core/utils/fechas';
+import { AvisoCancelacionComponent } from '../../../shared/components/aviso-cancelacion/aviso-cancelacion.component';
 import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
@@ -49,7 +50,7 @@ const TEXTO_VIAJE: Record<EstadoViaje, string> = {
   selector: 'app-mis-alquileres',
   standalone: true,
   imports: [ReactiveFormsModule, DatePipe, CurrencyPipe, ModalComponent, PaginadorComponent, RouterLink,
-    MapaRecorridoComponent, FotoTarjetaComponent],
+    MapaRecorridoComponent, FotoTarjetaComponent, AvisoCancelacionComponent],
   templateUrl: './mis-alquileres.component.html',
   styleUrl: './mis-alquileres.component.scss',
 })
@@ -77,8 +78,8 @@ export class MisAlquileresComponent implements OnInit {
   readonly tamano = signal(9);
 
   readonly enDetalle = signal<Alquiler | null>(null);
-  /** Pestaña del detalle: el alquiler o el bus asignado (la segunda solo si ya hay viaje). */
-  readonly pestana = signal<'alquiler' | 'bus'>('alquiler');
+  /** Pestaña del detalle: el alquiler, el bus asignado o el reembolso (las últimas dos solo si aplican). */
+  readonly pestana = signal<'alquiler' | 'bus' | 'reembolso'>('alquiler');
 
   verDetalle(a: Alquiler): void {
     this.pestana.set('alquiler');
@@ -87,6 +88,10 @@ export class MisAlquileresComponent implements OnInit {
   readonly porCancelar = signal<Alquiler | null>(null);
   readonly enviando = signal(false);
   readonly pagandoId = signal<string | null>(null);
+
+  /** Lo que pasaría al cancelar el alquiler que se está por cancelar (la carga abrirCancelar). */
+  readonly politica = signal<PoliticaCancelacion | null>(null);
+  readonly cargandoPolitica = signal(false);
 
   readonly formCancelar = this.fb.nonNullable.group({
     motivo: ['', [Validators.required, Validators.maxLength(255)]],
@@ -219,13 +224,59 @@ export class MisAlquileresComponent implements OnInit {
       case 'COMPLETADO':
         return 'Viaje completado. ¡Gracias por viajar con nosotros!';
       case 'CANCELADO':
-        return 'Solicitud cancelada. No se realizó ningún cobro.';
+        return this.huboCobro(a)
+          ? 'Alquiler cancelado. En la pestaña de reembolso ves cuánto se devuelve y cómo.'
+          : 'Solicitud cancelada. No se realizó ningún cobro.';
     }
+  }
+
+  /** ¿Se puede cancelar? Desde PAGADO el cliente también puede, aceptando la penalización. */
+  sePuedeCancelar(a: Alquiler): boolean {
+    return a.estado === 'SOLICITADO' || a.estado === 'COTIZADO' || a.estado === 'PAGADO' || a.estado === 'ASIGNADO';
+  }
+
+  /** La orden llegó a pagarse, así que hay dinero de por medio (cancelar implica devolver algo). */
+  huboCobro(a: Alquiler): boolean {
+    const orden = this.ordenDe(a);
+    return !!orden && (orden.estado === 'CANCELADA' || orden.estado === 'REEMBOLSADA' || orden.estado === 'PAGADA');
+  }
+
+  /** ¿Mostrar la pestaña de reembolso? Solo cuando el alquiler cancelado tenía un cobro hecho. */
+  tieneReembolso(a: Alquiler): boolean {
+    const orden = this.ordenDe(a);
+    return !!orden && (orden.estado === 'CANCELADA' || orden.estado === 'REEMBOLSADA');
+  }
+
+  /** Cómo le vuelve el dinero al cliente: a su billetera o en la ventanilla. */
+  medioDevolucion(a: Alquiler): string {
+    return this.ordenDe(a)?.metodoPago === 'CARTERA'
+      ? 'Se acredita en tu billetera digital automáticamente.'
+      : 'Pasa a la sucursal con tu documento: el efectivo se entrega en ventanilla.';
   }
 
   abrirCancelar(a: Alquiler): void {
     this.formCancelar.reset({ motivo: '' });
+    this.politica.set(null);
     this.porCancelar.set(a);
+    this.cargarPolitica(a);
+  }
+
+  /**
+   * Antes de confirmar se consulta qué pasaría: si la tarifa vigente permite cancelar a esta hora y
+   * qué porcentaje se devolvería. Si la consulta falla, se deja cancelar y el backend decide.
+   */
+  private cargarPolitica(a: Alquiler): void {
+    this.cargandoPolitica.set(true);
+    this.servicio.politicaCancelacion(a.alquilerId).subscribe({
+      next: (p) => {
+        this.politica.set(p);
+        this.cargandoPolitica.set(false);
+      },
+      error: () => {
+        this.politica.set(null);
+        this.cargandoPolitica.set(false);
+      },
+    });
   }
 
   /** Cierra el detalle y abre la cancelación para el alquiler que se estaba viendo. */
@@ -236,9 +287,12 @@ export class MisAlquileresComponent implements OnInit {
     this.abrirCancelar(a);
   }
 
+  /** Con la tarifa en contra no se envía nada: el backend lo rechazaría igual. */
+  readonly bloqueada = computed(() => this.politica()?.permiteCancelacion === false);
+
   cancelar(): void {
     const a = this.porCancelar();
-    if (!a) return;
+    if (!a || this.bloqueada()) return;
     if (this.formCancelar.invalid) {
       this.formCancelar.markAllAsTouched();
       return;

@@ -148,6 +148,8 @@ export interface Alquiler {
   confirmadoPor: string | null;
   estado: EstadoAlquiler;
   motivoCancelacion: string | null;
+  /** Momento en que se canceló, el que indicó quien canceló. Null si no está cancelado. */
+  fechaHoraCancelacion: string | null;
   fechaSolicitud: string;
   viajeId: string | null;
   /** Viaje privado ya asignado (T22): bus, chofer y fechas. Null hasta que administración asigne. */
@@ -169,7 +171,27 @@ export interface CotizarAlquiler {
 
 export interface CancelarAlquiler {
   motivo: string;
+  /**
+   * Momento de la cancelación (OffsetDateTime). Decide qué tramo de la tarifa de reembolso aplica.
+   * Se envía igual que la fecha de solicitud en T16; si se omite, el backend usa el momento actual.
+   */
+  fechaHoraCancelacion?: string | null;
   version: number;
+}
+
+/**
+ * Qué pasaría si el alquiler se cancelara en un momento dado (GET /trips/alquileres/{id}/politica-cancelacion).
+ * El porcentaje es informativo: el monto que se paga lo calcula Sales con su propia tabla de tarifas.
+ */
+export interface PoliticaCancelacion {
+  tarifaId: string | null;
+  permiteCancelacion: boolean;
+  porcentajeReembolso: number;
+  justificacion: string;
+  /** Horas que faltan para la salida; negativa si el viaje ya debió salir. */
+  horasAntesDeSalida: number;
+  /** Lo que se devolvería del precio confirmado, o null si el alquiler todavía no se pagó. */
+  montoEstimadoReembolso: number | null;
 }
 
 export interface AsignarAlquiler {

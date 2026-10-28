@@ -5,12 +5,13 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
-import { ClienteCuenta } from '../../../core/models/venta.model';
+import { ClienteCuenta, TarifaReembolso } from '../../../core/models/venta.model';
 import { Alquiler } from '../../../core/models/viaje.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ClientesService } from '../../../core/services/clientes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
+import { TarifasReembolsoService } from '../../../core/services/tarifas-reembolso.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, ahoraGt, fechaHoraGt, hoyGt } from '../../../core/utils/fechas';
@@ -54,6 +55,7 @@ function kilometros(desde: Coordenadas, hasta: { latitud: number; longitud: numb
 export class SolicitarAlquilerComponent implements OnInit {
   private readonly alquileres = inject(AlquileresService);
   private readonly sucursalesServicio = inject(SucursalesService);
+  private readonly tarifasServicio = inject(TarifasReembolsoService);
   private readonly usuarios = inject(UsuariosService);
   private readonly clientesServicio = inject(ClientesService);
   private readonly avisos = inject(ToastService);
@@ -85,6 +87,8 @@ export class SolicitarAlquilerComponent implements OnInit {
   readonly buscador = this.fb.nonNullable.control('');
 
   readonly sucursales = signal<Sucursal[]>([]);
+  /** Tramos de la política de cancelación que aplican ya pagado el alquiler (aviso del paso 2). */
+  readonly politicaCancelacion = signal<TarifaReembolso[]>([]);
   readonly enviando = signal(false);
   readonly calculandoKm = signal(false);
   readonly creado = signal<Alquiler | null>(null);
@@ -169,7 +173,35 @@ export class SolicitarAlquilerComponent implements OnInit {
       next: (lista) => this.sucursales.set(lista),
       error: (e) => this.avisos.error(mensajeError(e, 'No se pudieron cargar las sucursales.')),
     });
+    this.cargarPoliticaCancelacion();
     this.reiniciar();
+  }
+
+  /**
+   * Tramos que aplican una vez pagado el alquiler, para el aviso previo. Antes de pagar cancelar no
+   * cuesta nada, así que esos tramos no se muestran: solo meterían ruido. Si la consulta falla, el
+   * aviso simplemente no aparece y la solicitud sigue igual.
+   */
+  private cargarPoliticaCancelacion(): void {
+    this.tarifasServicio.listar().subscribe({
+      next: (lista) =>
+        this.politicaCancelacion.set(
+          lista
+            .filter((t) => t.activa && t.estadoAlquiler !== 'SOLICITADO' && t.estadoAlquiler !== 'COTIZADO')
+            .sort((a, b) => b.horasMinimasAntes - a.horasMinimasAntes),
+        ),
+      error: () => this.politicaCancelacion.set([]),
+    });
+  }
+
+  /** El tramo en palabras, como lo lee el cliente en el aviso. */
+  textoTramo(t: TarifaReembolso): string {
+    if (t.horasMinimasAntes === 0) return 'A última hora';
+    if (t.horasMinimasAntes % 24 === 0) {
+      const dias = t.horasMinimasAntes / 24;
+      return `Con ${dias} ${dias === 1 ? 'día' : 'días'} o más de anticipación`;
+    }
+    return `Con ${t.horasMinimasAntes} horas o más de anticipación`;
   }
 
   private reiniciar(): void {

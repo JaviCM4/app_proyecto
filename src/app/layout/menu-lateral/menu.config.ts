@@ -51,6 +51,8 @@ export const MENU: GrupoMenu[] = [
       { texto: 'Usuarios', ruta: '/panel/usuarios', icono: 'usuarios', roles: SISTEMA },
       { texto: 'Billetera del sistema', ruta: '/panel/billetera-sistema', icono: 'banco', roles: SISTEMA },
       { texto: 'Tarifas de depreciación', ruta: '/panel/tarifas', icono: 'tarifa', roles: SISTEMA },
+      // Política de cancelación: qué porcentaje se devuelve al cancelar un alquiler
+      { texto: 'Tarifas de reembolso', ruta: '/panel/tarifas-reembolso', icono: 'cartera', roles: SISTEMA },
       { texto: 'Precio de alquiler', ruta: '/panel/precio-alquiler', icono: 'tarifa', roles: SISTEMA },
       { texto: 'Categorías de gasto', ruta: '/panel/categorias', icono: 'taller', roles: SISTEMA },
     ],

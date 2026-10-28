@@ -1,0 +1,25 @@
+.porcentaje {
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Las desactivadas se ven apagadas: siguen ahí solo como historial. */
+tr.inactiva {
+  opacity: 0.6;
+}
+
+.interruptor {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  input {
+    width: auto;
+    margin: 0;
+  }
+}
+
+.filtros {
+  margin-bottom: 0.75rem;
+}

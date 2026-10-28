@@ -11,6 +11,7 @@ import {
   FiltroAlquileres,
   NuevaConfigAlquiler,
   NuevoAlquiler,
+  PoliticaCancelacion,
   ViajeDetalle,
 } from '../models/viaje.model';
 
@@ -50,6 +51,15 @@ export class AlquileresService {
 
   cancelar(id: string, datos: CancelarAlquiler): Observable<Alquiler> {
     return this.http.post<Alquiler>(`${this.url}/${id}/cancelar`, datos);
+  }
+
+  /**
+   * Qué pasaría si el alquiler se cancelara en ese momento: si se permite, qué porcentaje se
+   * devolvería y por qué. Sirve para el aviso al cliente y para el diálogo de confirmación.
+   */
+  politicaCancelacion(id: string, cuando?: string | null): Observable<PoliticaCancelacion> {
+    const params = cuando ? new HttpParams().set('cuando', cuando) : undefined;
+    return this.http.get<PoliticaCancelacion>(`${this.url}/${id}/politica-cancelacion`, { params });
   }
 
   /** Asigna bus y chofer: crea el viaje privado y lo devuelve con su detalle. */

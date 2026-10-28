@@ -2,28 +2,53 @@
   <div>
     <h1>Reembolsos</h1>
     <p>
-      Compras canceladas que esperan devolución. Escanea el código de barras del boleto con la pistola,
-      o busca por código, NIT, nombre o correo del cliente.
+      @if (ambito() === 'BOLETOS') {
+        Compras canceladas que esperan devolución. Escanea el código de barras del boleto con la pistola,
+        o busca por código, NIT, nombre o correo del cliente.
+      } @else {
+        Alquileres cancelados que esperan devolución. El monto ya salió de la tarifa de reembolso al
+        cancelar: aquí solo se registra la entrega del efectivo.
+      }
     </p>
   </div>
 </div>
 
+<div class="pestanas" role="tablist">
+  <button type="button" role="tab" [class.activa]="ambito() === 'BOLETOS'"
+          [attr.aria-selected]="ambito() === 'BOLETOS'" (click)="cambiarAmbito('BOLETOS')">
+    Boletos
+  </button>
+  <button type="button" role="tab" [class.activa]="ambito() === 'ALQUILERES'"
+          [attr.aria-selected]="ambito() === 'ALQUILERES'" (click)="cambiarAmbito('ALQUILERES')">
+    Alquileres
+  </button>
+</div>
+
 <div class="filtros">
-  <div class="campo crece escaneo">
-    <label for="buscar">Escanear o buscar boleto</label>
-    <input
-      #buscador
-      id="buscar"
-      class="control"
-      autocomplete="off"
-      placeholder="Código del boleto, NIT, nombre o correo"
-      [ngModel]="texto()"
-      (ngModelChange)="filtrar($event)"
-      (keydown.enter)="buscar()" />
-    <p class="ayuda">
-      {{ buscandoCodigo() ? 'Buscando el boleto…' : 'La pistola escribe el código y manda Enter: el boleto se abre solo.' }}
-    </p>
-  </div>
+  @if (ambito() === 'BOLETOS') {
+    <div class="campo crece escaneo">
+      <label for="buscar">Escanear o buscar boleto</label>
+      <input
+        #buscador
+        id="buscar"
+        class="control"
+        autocomplete="off"
+        placeholder="Código del boleto, NIT, nombre o correo"
+        [ngModel]="texto()"
+        (ngModelChange)="filtrar($event)"
+        (keydown.enter)="buscar()" />
+      <p class="ayuda">
+        {{ buscandoCodigo() ? 'Buscando el boleto…' : 'La pistola escribe el código y manda Enter: el boleto se abre solo.' }}
+      </p>
+    </div>
+  } @else {
+    <div class="campo crece">
+      <label for="buscar-alquiler">Buscar alquiler</label>
+      <input id="buscar-alquiler" class="control" autocomplete="off"
+             placeholder="NIT, nombre, correo, origen o destino"
+             [ngModel]="texto()" (ngModelChange)="filtrar($event)" />
+    </div>
+  }
   @if (esSistema) {
     <div class="campo">
       <label for="sucursal">Sucursal</label>
@@ -43,6 +68,8 @@
     </select>
   </div>
 </div>
+
+@if (ambito() === 'BOLETOS') {
 
 @if (vista() === 'POR_DEVOLVER' && totalEnEfectivo() > 0) {
   <p class="resumen-efectivo">
@@ -116,6 +143,183 @@
   [total]="paginaActual().total"
   (cambioPagina)="pagina.set($event)"
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
+
+} @else {
+
+<!-- Alquileres cancelados: el monto a devolver ya lo fijó la tarifa de reembolso al cancelar. -->
+@if (vista() === 'POR_DEVOLVER' && totalAlquileresEnEfectivo() > 0) {
+  <p class="resumen-efectivo">
+    Pendiente de entregar en efectivo: <strong>{{ totalAlquileresEnEfectivo() | currency }}</strong>
+    <span class="secundario"> · lo pagado con billetera digital se devuelve solo</span>
+  </p>
+}
+
+<div class="tabla-contenedor">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Alquiler</th>
+        <th>Pago</th>
+        <th>Pagado</th>
+        <th>A devolver</th>
+        <th>Estado</th>
+        <th class="acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (o of paginaOrdenesActual().elementos; track o.ordenId) {
+        <tr>
+          <td>
+            <strong>{{ o.clienteNombre || '—' }}</strong>
+            <div class="secundario">{{ o.clienteNit || 'CF' }}</div>
+          </td>
+          <td>
+            {{ o.origen }} → {{ o.destino }}
+            <div class="secundario">
+              @if (o.fechaCancelacion) {
+                Cancelado {{ o.fechaCancelacion | date: 'dd/MM/yyyy' : 'UTC' }}
+              }
+              @if (o.fechaReembolso) {
+                · devuelto {{ o.fechaReembolso | date: 'dd/MM/yyyy' : 'UTC' }}
+              }
+            </div>
+          </td>
+          <td class="sin-salto">{{ o.metodoPago ? metodoPago[o.metodoPago] : '—' }}</td>
+          <td class="sin-salto">{{ o.monto | currency }}</td>
+          <td class="sin-salto">
+            <strong>{{ o.montoReembolsado | currency }}</strong>
+            @if (o.porcentajeReembolso) {
+              <div class="secundario">{{ o.porcentajeReembolso }}%</div>
+            }
+          </td>
+          <td class="sin-salto">
+            <span [class]="'insignia ' + estadoOrden[o.estado].clase">{{ estadoOrden[o.estado].texto }}</span>
+          </td>
+          <td class="acciones">
+            <button type="button" class="btn chico" (click)="abrirOrden(o)">Ver</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="tabla-vacia">
+            @if (cargandoOrdenes()) {
+              Cargando…
+            } @else if (vista() === 'DEVUELTAS') {
+              Aún no hay alquileres con la devolución cerrada.
+            } @else {
+              No hay alquileres cancelados esperando devolución.
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginador
+  [pagina]="paginaOrdenesActual().pagina"
+  [tamano]="tamano()"
+  [total]="paginaOrdenesActual().total"
+  (cambioPagina)="paginaOrdenes.set($event)"
+  (cambioTamano)="tamano.set($event); paginaOrdenes.set(1)" />
+
+}
+
+<app-modal
+  [abierto]="ordenEnDetalle() !== null"
+  titulo="Alquiler cancelado"
+  subtitulo="Revisa el monto con el cliente antes de entregar el efectivo."
+  ancho="mediano"
+  (cerrar)="cerrarOrden()">
+  @if (ordenEnDetalle(); as o) {
+    <div class="detalle-encabezado">
+      <h3>{{ o.clienteNombre || 'Consumidor final' }}</h3>
+      <span [class]="'insignia ' + estadoOrden[o.estado].clase">{{ estadoOrden[o.estado].texto }}</span>
+    </div>
+
+    <div class="detalle-ruta">
+      <span class="ruta">{{ o.origen }} → {{ o.destino }}</span>
+      @if (o.fechaSalida) {
+        <span class="secundario">Salida {{ o.fechaSalida | date: 'dd/MM/yyyy HH:mm' : zona }}</span>
+      }
+    </div>
+
+    <p class="resumen-efectivo">
+      A devolver: <strong>{{ o.montoReembolsado | currency }}</strong>
+      <span class="secundario">
+        · de {{ o.monto | currency }} pagados
+        @if (o.porcentajeReembolso) {
+          ({{ o.porcentajeReembolso }}%, se retienen {{ retenido(o) | currency }})
+        }
+      </span>
+    </p>
+
+    @if (o.justificacionReembolso) {
+      <p class="detalle-motivo aviso">
+        <strong>Por qué ese monto:</strong> {{ o.justificacionReembolso }}
+      </p>
+    }
+
+    <dl class="datos-lista detalle-datos">
+      <div><dt>NIT</dt><dd>{{ o.clienteNit || 'CF' }}</dd></div>
+      @if (o.clienteCorreo) {
+        <div><dt>Correo</dt><dd>{{ o.clienteCorreo }}</dd></div>
+      }
+      <div><dt>Forma de pago</dt><dd>{{ o.metodoPago ? metodoPago[o.metodoPago] : '—' }}</dd></div>
+      @if (o.fechaPago) {
+        <div><dt>Fecha de pago</dt><dd>{{ o.fechaPago | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+      }
+      @if (o.fechaCancelacion) {
+        <div><dt>Fecha de cancelación</dt><dd>{{ o.fechaCancelacion | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+      }
+      @if (o.horasAntesViaje !== null && o.horasAntesViaje !== undefined) {
+        <div><dt>Anticipación</dt><dd>{{ o.horasAntesViaje }} h antes de la salida</dd></div>
+      }
+      @if (o.fechaReembolso) {
+        <div><dt>Fecha de devolución</dt><dd>{{ o.fechaReembolso | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
+      }
+    </dl>
+
+    @if (o.motivoCancelacion) {
+      <p class="detalle-motivo aviso">
+        <strong>Motivo de cancelación:</strong> {{ o.motivoCancelacion }}
+      </p>
+    }
+    @if (!ordenEnEfectivo(o) && sePuedeReembolsarOrden(o)) {
+      <p class="aviso-cartera">
+        Este alquiler se pagó con la billetera digital: el dinero vuelve a la billetera del cliente, no
+        se entrega en efectivo. Si no se ha acreditado, aquí se le puede volver a pedir.
+      </p>
+    }
+    @if (o.reembolsoPendiente !== true && o.estado === 'CANCELADA') {
+      <p class="aviso-cartera">
+        Esta cancelación no daba derecho a devolución, así que no hay nada que entregar.
+      </p>
+    }
+  }
+  <div pie>
+    @if (ordenEnDetalle(); as o) {
+      @if (sePuedeReembolsarOrden(o)) {
+        <button type="button" class="btn primario chico" (click)="confirmandoOrden.set(true)">
+          {{ ordenEnEfectivo(o) ? 'Reembolsar en efectivo' : 'Volver a pedir el reembolso' }}
+        </button>
+      }
+      <button type="button" class="btn chico" (click)="cerrarOrden()">Cerrar</button>
+    }
+  </div>
+</app-modal>
+
+<app-confirmacion
+  [abierto]="confirmandoOrden()"
+  titulo="¿Devolver el dinero del alquiler?"
+  [mensaje]="ordenEnDetalle() && ordenEnEfectivo(ordenEnDetalle()!)
+    ? 'El alquiler queda reembolsado y no se puede deshacer. Entrega el efectivo al cliente.'
+    : 'Se le volverá a pedir el reembolso a la billetera digital del cliente.'"
+  textoAceptar="Sí, reembolsar"
+  [procesando]="reembolsandoOrden()"
+  (aceptar)="confirmarReembolsoOrden()"
+  (cancelar)="confirmandoOrden.set(false)" />
 
 <app-modal
   [abierto]="enDetalle() !== null"

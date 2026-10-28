@@ -1,0 +1,46 @@
+.politica {
+  border: 1px solid var(--borde);
+  border-left-width: 4px;
+  border-radius: var(--radio, 8px);
+  padding: 0.75rem 0.9rem;
+  display: grid;
+  gap: 0.35rem;
+
+  &.permitida {
+    border-left-color: var(--exito, #2e7d32);
+  }
+
+  &.bloqueada {
+    border-left-color: var(--peligro, #c62828);
+  }
+
+  &.cargando {
+    border-left-color: var(--borde);
+  }
+}
+
+.politica-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+}
+
+.politica-monto {
+  font-size: 1rem;
+}
+
+.politica-importe {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.politica-plazo {
+  margin-left: auto;
+}
+
+.politica-razon {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--texto-secundario, #5f6b7a);
+}
