@@ -75,6 +75,10 @@
           @if (sePuedeCancelar(a)) {
             <button type="button" class="btn chico peligro" (click)="abrirCancelar(a)">Cancelar</button>
           }
+          @if (enCotizacion(a)) {
+            <!-- Todavía se está cotizando: la baja la hace la sucursal, no el cliente. -->
+            <button type="button" class="btn chico" (click)="verSucursal(a)">¿Cancelar? Llama a la sucursal</button>
+          }
           @if (a.estado === 'COTIZADO') {
             @if (ordenDe(a); as orden) {
               @if (orden.estado === 'PENDIENTE_PAGO' || orden.estado === 'RECHAZADA') {
@@ -319,6 +323,9 @@
     @if (enDetalle(); as d) {
       @if (sePuedeCancelar(d)) {
         <button type="button" class="btn peligro" (click)="cancelarDesdeDetalle()">Cancelar alquiler</button>
+      }
+      @if (enCotizacion(d)) {
+        <button type="button" class="btn" (click)="pestana.set('sucursal')">Llamar a la sucursal</button>
       }
       @if (d.estado === 'COTIZADO' && (ordenDe(d)?.estado === 'PENDIENTE_PAGO' || ordenDe(d)?.estado === 'RECHAZADA')) {
         <button type="button" class="btn primario" [disabled]="pagandoId() === ordenDe(d)?.ordenId"

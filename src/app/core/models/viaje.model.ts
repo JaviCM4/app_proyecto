@@ -35,6 +35,8 @@ export interface Viaje {
   destinoLongitud?: number | null;
   busId: string;
   busPlaca: string | null;
+  /** Odómetro del bus (de Flota): el piso del kilometraje inicial al registrar la salida. */
+  busKilometrajeActual?: number | null;
   /** Foto del bus (copia que Trips guarda de Fleet): el pasajero lo reconoce en la terminal. */
   busFotoUrl?: string | null;
   choferId: string;

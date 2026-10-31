@@ -262,8 +262,24 @@ export class MisAlquileresComponent implements OnInit {
   }
 
   /** ¿Se puede cancelar? Desde PAGADO el cliente también puede, aceptando la penalización. */
+  /**
+   * El cliente solo cancela lo que ya pagó. Mientras el alquiler está en cotización (SOLICITADO o
+   * COTIZADO) lo da de baja la sucursal, que es con quien está hablando el precio; el backend
+   * responde SOLO_LA_SUCURSAL_CANCELA si se intenta igual.
+   */
   sePuedeCancelar(a: Alquiler): boolean {
-    return a.estado === 'SOLICITADO' || a.estado === 'COTIZADO' || a.estado === 'PAGADO' || a.estado === 'ASIGNADO';
+    return a.estado === 'PAGADO' || a.estado === 'ASIGNADO';
+  }
+
+  /** En cotización: no se cancela aquí, se llama a la sucursal (se le muestran sus datos). */
+  enCotizacion(a: Alquiler): boolean {
+    return a.estado === 'SOLICITADO' || a.estado === 'COTIZADO';
+  }
+
+  /** Abre el detalle del alquiler directo en la pestaña de la sucursal, con su teléfono. */
+  verSucursal(a: Alquiler): void {
+    this.enDetalle.set(a);
+    this.pestana.set('sucursal');
   }
 
   /** La orden llegó a pagarse, así que hay dinero de por medio (cancelar implica devolver algo). */

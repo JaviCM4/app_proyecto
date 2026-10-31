@@ -4,7 +4,7 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { Bus } from '../../../core/models/bus.model';
 import { Chofer } from '../../../core/models/chofer.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
-import { EstadoViaje, MapaAsientos, Ruta, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
+import { EstadoViaje, MapaAsientos, Ruta, SalidaViaje, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { BusesService } from '../../../core/services/buses.service';
 import { ChoferesService } from '../../../core/services/choferes.service';
@@ -12,7 +12,7 @@ import { SucursalesService } from '../../../core/services/sucursales.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
-import { ZONA_GT, fechaHoraGt } from '../../../core/utils/fechas';
+import { ZONA_GT, aLocalGt, fechaHoraGt } from '../../../core/utils/fechas';
 import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
@@ -94,6 +94,8 @@ export class ViajesComponent implements OnInit {
   readonly cargandoAsientos = signal(false);
   readonly sinAsientos = signal('');
   readonly porEliminar = signal<Viaje | null>(null);
+  /** Salida ya registrada del viaje que se va a cerrar: su hora y su kilometraje son el piso. */
+  readonly salidaRegistrada = signal<SalidaViaje | null>(null);
   readonly enSalida = signal<Viaje | null>(null);
   readonly enLlegada = signal<Viaje | null>(null);
   readonly enviando = signal(false);
@@ -504,8 +506,12 @@ export class ViajesComponent implements OnInit {
     });
   }
 
+  /** Se propone la hora programada del viaje y el odómetro del bus: los mínimos que exige Trips. */
   abrirSalida(v: Viaje): void {
-    this.formSalida.reset({ fechaHora: '', kmInicial: null });
+    this.formSalida.reset({
+      fechaHora: aLocalGt(v.fechaSalidaProgramada),
+      kmInicial: v.busKilometrajeActual ?? null,
+    });
     this.enSalida.set(v);
   }
 
@@ -539,9 +545,27 @@ export class ViajesComponent implements OnInit {
       });
   }
 
+  /** La llegada se propone con la estimada, y el kilometraje con el de la salida ya registrada. */
   abrirLlegada(v: Viaje): void {
-    this.formLlegada.reset({ fechaHora: '', kmFinal: null, costoCombustible: null });
+    this.formLlegada.reset({
+      fechaHora: aLocalGt(v.fechaLlegadaEstimada),
+      kmFinal: null,
+      costoCombustible: null,
+    });
+    this.salidaRegistrada.set(null);
     this.enLlegada.set(v);
+    this.servicio.detalleViaje(v.viajeId).subscribe({
+      next: (detalle) => {
+        if (this.enLlegada()?.viajeId !== v.viajeId) return;
+        this.salidaRegistrada.set(detalle.salida);
+        if (detalle.salida) {
+          this.formLlegada.patchValue({ kmFinal: detalle.salida.kmInicial });
+        }
+      },
+      error: () => {
+        /* Sin el detalle se registra igual: el backend valida la hora y el kilometraje. */
+      },
+    });
   }
 
   confirmarLlegada(): void {

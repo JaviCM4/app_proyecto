@@ -284,6 +284,17 @@
         <div class="campo">
           <label for="a-llegada">Llegada estimada</label>
           <input id="a-llegada" type="datetime-local" class="control" formControlName="llegadaEstimada" />
+          @if (porAsignar(); as a) {
+            <p class="ayuda">
+              Sale el {{ a.fechaSalida | date: 'dd/MM/yyyy HH:mm' }}
+              @if (a.fechaRetorno) {
+                y el cliente pide el retorno el {{ a.fechaRetorno | date: 'dd/MM/yyyy HH:mm' }}:
+                la llegada no puede ser antes de esa hora.
+              } @else {
+                (solo ida). La propuesta considera el regreso del bus a la sucursal.
+              }
+            </p>
+          }
         </div>
       </form>
 

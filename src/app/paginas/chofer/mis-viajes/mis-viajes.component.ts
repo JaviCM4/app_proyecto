@@ -4,11 +4,11 @@ import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angu
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
-import { EstadoViaje, Ruta, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
+import { EstadoViaje, Ruta, SalidaViaje, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { ViajesService } from '../../../core/services/viajes.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
-import { ZONA_GT, ahoraGt, fechaHoraGt } from '../../../core/utils/fechas';
+import { ZONA_GT, aLocalGt, fechaHoraGt } from '../../../core/utils/fechas';
 import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
 import { Coordenadas, MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
@@ -72,13 +72,19 @@ export class MisViajesChoferComponent implements OnInit {
   private sucursales: Sucursal[] | null = null;
   readonly cargandoRecorrido = signal(false);
 
+  /**
+   * Salida del viaje abierto en el modal de llegada: de ahí salen la hora y el kilometraje con que
+   * arrancó, que son el piso de lo que se puede registrar ahora.
+   */
+  readonly salidaRegistrada = signal<SalidaViaje | null>(null);
+
   readonly formSalida = this.fb.nonNullable.group({
-    fechaHora: [ahoraGt(), Validators.required],
+    fechaHora: ['', Validators.required],
     kmInicial: [null as number | null, [Validators.required, Validators.min(0)]],
   });
 
   readonly formLlegada = this.fb.nonNullable.group({
-    fechaHora: [ahoraGt(), Validators.required],
+    fechaHora: ['', Validators.required],
     kmFinal: [null as number | null, [Validators.required, Validators.min(0)]],
     costoCombustible: [null as number | null, [Validators.required, Validators.min(0)]],
   });
@@ -175,8 +181,15 @@ export class MisViajesChoferComponent implements OnInit {
     this.router.navigate(['/panel/mostrador'], { queryParams: { viaje: v.viajeId } });
   }
 
+  /**
+   * La salida se propone con la hora a la que estaba programado el viaje y con el odómetro del bus:
+   * son los valores que el backend exige como mínimo, y así el piloto solo corrige lo que cambió.
+   */
   abrirSalida(v: Viaje): void {
-    this.formSalida.reset({ fechaHora: ahoraGt(), kmInicial: null });
+    this.formSalida.reset({
+      fechaHora: aLocalGt(v.fechaSalidaProgramada),
+      kmInicial: v.busKilometrajeActual ?? null,
+    });
     this.enSalida.set(v);
   }
 
@@ -209,9 +222,30 @@ export class MisViajesChoferComponent implements OnInit {
       });
   }
 
+  /**
+   * La llegada se propone con la hora estimada del viaje; el kilometraje final se completa con el
+   * de la salida en cuanto llega el detalle, que es el mínimo que acepta el backend.
+   */
   abrirLlegada(v: Viaje): void {
-    this.formLlegada.reset({ fechaHora: ahoraGt(), kmFinal: null, costoCombustible: null });
+    this.formLlegada.reset({
+      fechaHora: aLocalGt(v.fechaLlegadaEstimada),
+      kmFinal: null,
+      costoCombustible: null,
+    });
+    this.salidaRegistrada.set(null);
     this.enLlegada.set(v);
+    this.servicio.detalleViaje(v.viajeId).subscribe({
+      next: (detalle) => {
+        if (this.enLlegada()?.viajeId !== v.viajeId) return;
+        this.salidaRegistrada.set(detalle.salida);
+        if (detalle.salida) {
+          this.formLlegada.patchValue({ kmFinal: detalle.salida.kmInicial });
+        }
+      },
+      error: () => {
+        /* Sin el detalle se registra igual: el backend valida la hora y el kilometraje. */
+      },
+    });
   }
 
   confirmarLlegada(): void {

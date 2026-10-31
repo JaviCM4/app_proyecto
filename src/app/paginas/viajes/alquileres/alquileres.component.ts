@@ -259,7 +259,7 @@ export class AlquileresComponent implements OnInit {
   }
 
   abrirAsignar(a: Alquiler): void {
-    this.formAsignar.reset({ busId: '', choferId: '', llegadaEstimada: '' });
+    this.formAsignar.reset({ busId: '', choferId: '', llegadaEstimada: this.llegadaPropuesta(a) });
     this.busElegido.set(null);
     this.choferElegido.set(null);
     this.fotoChoferAsignar.set(null);
@@ -272,6 +272,34 @@ export class AlquileresComponent implements OnInit {
       next: (lista) => this.choferes.set(lista),
       error: (e) => this.avisos.error(mensajeError(e, 'No se pudieron cargar los choferes.')),
     });
+  }
+
+  /**
+   * Llegada estimada que se propone para el viaje privado. Con retorno, el bus no puede estar de
+   * vuelta antes de esa hora (el backend lo rechaza), así que se le suma el viaje de regreso a la
+   * sucursal. Sin retorno, es ida y vuelta seguidas desde la salida. Son horas sobre los kilómetros
+   * estimados del alquiler; el administrador la ajusta si conoce mejor la ruta.
+   */
+  private llegadaPropuesta(a: Alquiler): string {
+    const kmDeRegreso = this.horasDeRecorrido(a.kmEstimados);
+    if (a.fechaRetorno) {
+      return this.sumarHoras(a.fechaRetorno, kmDeRegreso);
+    }
+    return this.sumarHoras(a.fechaSalida, this.horasDeRecorrido(a.kmEstimados * 2));
+  }
+
+  /** Horas de carretera para esos kilómetros, a 60 km/h y mínimo una hora. */
+  private horasDeRecorrido(kilometros: number): number {
+    const horas = Math.round((kilometros || 0) / 60);
+    return horas < 1 ? 1 : horas;
+  }
+
+  /** Suma horas a una fecha del backend y la devuelve como datetime-local. */
+  private sumarHoras(fecha: string, horas: number): string {
+    const resultado = new Date(fecha);
+    if (Number.isNaN(resultado.getTime())) return '';
+    resultado.setHours(resultado.getHours() + horas);
+    return new Date(resultado.getTime() - resultado.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   }
 
   asignar(): void {

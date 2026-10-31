@@ -20,3 +20,11 @@ export function fechaHoraGt(local: string): string {
   if (/[+-]\d{2}:?\d{2}$|Z$/.test(local)) return local;
   return local.length === 16 ? `${local}:00-06:00` : local;
 }
+
+/**
+ * Pasa una fecha del backend ("2026-10-25T06:00:00-06:00") al formato de un input datetime-local
+ * ("2026-10-25T06:00"). Como el backend ya responde en hora de Guatemala, basta con recortarla.
+ */
+export function aLocalGt(fecha: string | null | undefined): string {
+  return fecha && fecha.length >= 16 ? fecha.slice(0, 16) : '';
+}

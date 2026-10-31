@@ -72,8 +72,8 @@
             @if (esOperable(v)) {
               <button type="button" class="btn primario" (click)="abrirSalida(v)">Registrar salida</button>
             }
-            @if (v.ventaPorChofer) {
-              <!-- Viaje con venta a bordo: la ventanilla se abre con este viaje ya fijado. -->
+            <!-- Venta a bordo: solo en un viaje regular. Un alquiler privado ya está vendido entero. -->
+            @if (v.ventaPorChofer && v.tipo === 'REGULAR') {
               <button type="button" class="btn" (click)="venderBoletos(v)">Boletos</button>
             }
           } @else if (v.estado === 'EN_RUTA') {
@@ -115,10 +115,21 @@
     <div class="campo">
       <label for="s-fecha">Fecha y hora de salida</label>
       <input id="s-fecha" type="datetime-local" class="control" formControlName="fechaHora" />
+      @if (enSalida(); as v) {
+        <p class="ayuda">
+          Programada: {{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}. Si el bus salió
+          después, corrige la hora; antes de esa hora no se acepta.
+        </p>
+      }
     </div>
     <div class="campo">
       <label for="s-km">Kilometraje inicial</label>
       <input id="s-km" type="number" min="0" step="1" class="control" formControlName="kmInicial" />
+      @if (enSalida(); as v) {
+        <p class="ayuda">
+          Último kilometraje del bus: {{ v.busKilometrajeActual ?? 0 }} km. No puede ser menor.
+        </p>
+      }
       @if (formSalida.controls.kmInicial.touched && formSalida.controls.kmInicial.invalid) {
         <span class="error">Escribe un kilometraje válido.</span>
       }
@@ -141,10 +152,21 @@
     <div class="campo">
       <label for="ll-fecha">Fecha y hora de llegada</label>
       <input id="ll-fecha" type="datetime-local" class="control" formControlName="fechaHora" />
+      @if (enLlegada(); as v) {
+        <p class="ayuda">
+          Llegada estimada: {{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}.
+          @if (salidaRegistrada(); as s) {
+            Salió el {{ s.fechaHoraSalida | date: 'dd/MM/yyyy HH:mm' : zona }}: no puede ser antes de eso.
+          }
+        </p>
+      }
     </div>
     <div class="campo">
       <label for="ll-km">Kilometraje final</label>
       <input id="ll-km" type="number" min="0" step="1" class="control" formControlName="kmFinal" />
+      @if (salidaRegistrada(); as s) {
+        <p class="ayuda">Salió con {{ s.kmInicial }} km. El final no puede ser menor.</p>
+      }
       @if (formLlegada.controls.kmFinal.touched && formLlegada.controls.kmFinal.invalid) {
         <span class="error">Escribe un kilometraje válido.</span>
       }
