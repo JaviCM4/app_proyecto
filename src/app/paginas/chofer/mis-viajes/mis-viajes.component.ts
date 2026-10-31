@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { EstadoViaje, Ruta, Viaje, ViajeDetalle } from '../../../core/models/viaje.model';
@@ -34,6 +35,7 @@ export class MisViajesChoferComponent implements OnInit {
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
 
   readonly zona = ZONA_GT;
 
@@ -138,6 +140,15 @@ export class MisViajesChoferComponent implements OnInit {
     });
   }
 
+  /**
+   * Vender boletos presenciales de este viaje. No se duplica la ventanilla: se abre la misma con el
+   * viaje fijado en la URL. Quién puede vender lo decide el backend (viaje con venta a bordo, piloto
+   * activo, piloto asignado y viaje todavía programado).
+   */
+  venderBoletos(v: Viaje): void {
+    this.router.navigate(['/panel/mostrador'], { queryParams: { viaje: v.viajeId } });
+  }
+
   abrirSalida(v: Viaje): void {
     this.formSalida.reset({ fechaHora: ahoraGt(), kmInicial: null });
     this.enSalida.set(v);
@@ -239,7 +250,7 @@ export class MisViajesChoferComponent implements OnInit {
     }
     if (!v.rutaId) return;
     if (this.rutas && this.sucursales) {
-      this.aplicarRecorrido(v.rutaId);
+      this.aplicarRecorrido(v);
       return;
     }
     if (this.cargandoRecorrido()) return;
@@ -255,7 +266,7 @@ export class MisViajesChoferComponent implements OnInit {
         this.sucursales = sucursales;
         this.cargandoRecorrido.set(false);
         const actual = this.enDetalle();
-        if (actual?.rutaId) this.aplicarRecorrido(actual.rutaId);
+        if (actual?.rutaId) this.aplicarRecorrido(actual);
       },
       error: () => {
         this.cargandoRecorrido.set(false);
@@ -263,11 +274,15 @@ export class MisViajesChoferComponent implements OnInit {
     });
   }
 
-  private aplicarRecorrido(rutaId: string): void {
-    const ruta = this.rutas?.find((r) => r.rutaId === rutaId);
+  private aplicarRecorrido(viaje: Viaje): void {
+    const ruta = this.rutas?.find((r) => r.rutaId === viaje.rutaId);
     if (!ruta) return;
-    const origen = this.sucursales?.find((s) => s.sucursalId === ruta.sucursalOrigenId);
-    const destino = this.sucursales?.find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    // El viaje de regreso recorre la ruta al revés: sale del destino y llega al origen.
+    const invertido = viaje.sentido === 'REGRESO';
+    const puntaA = this.sucursales?.find((s) => s.sucursalId === ruta.sucursalOrigenId);
+    const puntaB = this.sucursales?.find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    const origen = invertido ? puntaB : puntaA;
+    const destino = invertido ? puntaA : puntaB;
     if (!origen || !destino) return;
     this.origenRecorrido.set({ latitud: origen.latitud, longitud: origen.longitud });
     this.destinoRecorrido.set({ latitud: destino.latitud, longitud: destino.longitud });

@@ -42,6 +42,47 @@
   }
 }
 
+/* Casilla con su texto al lado (venta por el piloto, programar el regreso). */
+.interruptor {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  input {
+    width: auto;
+    margin: 0;
+  }
+}
+
+/* Dato que no se edita: el recorrido del regreso lo manda la ruta de la ida. */
+.valor-fijo {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--superficie-alterna);
+  font-weight: 600;
+}
+
+/* Resumen de la ida en el segundo paso de la programación. */
+.resumen-ida {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie-alterna);
+
+  h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--texto-suave);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
 .titulo-recorrido {
   margin: 16px 0 6px;
   font-size: 15px;

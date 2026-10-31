@@ -54,13 +54,25 @@
         <dl class="viaje-datos">
           <div><dt>Salida programada</dt><dd>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
           <div><dt>Llegada estimada</dt><dd>{{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</dd></div>
-          <div><dt>Tipo</dt><dd>{{ v.tipo === 'PRIVADO' ? 'Alquiler' : 'Regular' }}</dd></div>
+          <div>
+            <dt>Tipo</dt>
+            <dd>
+              {{ v.tipo === 'PRIVADO' ? 'Alquiler' : 'Regular' }}
+              @if (v.sentido === 'REGRESO') {
+                <span class="insignia">Regreso</span>
+              }
+            </dd>
+          </div>
           <div><dt>Pasajeros</dt><dd>{{ v.capacidad }}</dd></div>
         </dl>
 
         <div class="viaje-acciones">
           @if (v.estado === 'PROGRAMADO') {
             <button type="button" class="btn primario" (click)="abrirSalida(v)">Registrar salida</button>
+            @if (v.ventaPorChofer) {
+              <!-- Viaje con venta a bordo: la ventanilla se abre con este viaje ya fijado. -->
+              <button type="button" class="btn" (click)="venderBoletos(v)">Boletos</button>
+            }
           } @else if (v.estado === 'EN_RUTA') {
             <button type="button" class="btn primario" (click)="abrirLlegada(v)">Registrar llegada</button>
           } @else {

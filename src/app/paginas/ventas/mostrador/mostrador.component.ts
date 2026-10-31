@@ -2,6 +2,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { ClienteCuenta, Venta } from '../../../core/models/venta.model';
@@ -45,6 +46,8 @@ export class MostradorComponent implements OnInit {
   private readonly sucursalesServicio = inject(SucursalesService);
   private readonly avisos = inject(ToastService);
   private readonly fb = inject(FormBuilder);
+  private readonly rutaActiva = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly esSistema = this.auth.tieneRol('ADMIN_SISTEMA');
   readonly zona = ZONA_GT;
@@ -57,6 +60,12 @@ export class MostradorComponent implements OnInit {
 
   private readonly viajes = signal<Viaje[]>([]);
   readonly buscando = signal(false);
+
+  /**
+   * Venta de un solo viaje: el piloto llega desde «Mis viajes» con ?viaje=<id>. La ventanilla es la
+   * misma, solo que sin búsqueda: se abre directo el viaje y al cerrar se regresa a sus viajes.
+   */
+  readonly viajeFijo = signal<string | null>(null);
 
   /** Viaje elegido: abre el modal de asientos y cobro. */
   readonly viajeElegido = signal<Viaje | null>(null);
@@ -94,10 +103,15 @@ export class MostradorComponent implements OnInit {
     fechaPago: [hoyGt(), Validators.required],
   });
 
-  readonly filtrados = computed(() => {    const d = this.destinoId();
+  readonly filtrados = computed(() => {
+    const d = this.destinoId();
     if (!d) return this.viajes();
-    const rutasDestino = new Set(this.rutasOrigen().filter((r) => r.sucursalDestinoId === d).map((r) => r.rutaId));
-    return this.viajes().filter((v) => v.rutaId !== null && rutasDestino.has(v.rutaId));
+    // Un viaje de REGRESO recorre su ruta al revés: su destino es la sucursal de origen de la ruta.
+    const deIda = new Set(this.rutasOrigen().filter((r) => r.sucursalDestinoId === d).map((r) => r.rutaId));
+    const deRegreso = new Set(this.rutasOrigen().filter((r) => r.sucursalOrigenId === d).map((r) => r.rutaId));
+    return this.viajes().filter(
+      (v) => v.rutaId !== null && (v.sentido === 'REGRESO' ? deRegreso : deIda).has(v.rutaId),
+    );
   });
 
   /** Rutas que salen de la sucursal (para el combo de destino). */
@@ -127,8 +141,12 @@ export class MostradorComponent implements OnInit {
     if (!viaje?.rutaId) return null;
     const ruta = this.rutas().find((r) => r.rutaId === viaje.rutaId);
     if (!ruta) return null;
-    const origen = this.sucursales().find((s) => s.sucursalId === ruta.sucursalOrigenId);
-    const destino = this.sucursales().find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    // El regreso va al revés: el mapa sale de la sucursal destino de la ruta.
+    const invertido = viaje.sentido === 'REGRESO';
+    const puntaA = this.sucursales().find((s) => s.sucursalId === ruta.sucursalOrigenId);
+    const puntaB = this.sucursales().find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    const origen = invertido ? puntaB : puntaA;
+    const destino = invertido ? puntaA : puntaB;
     return origen && destino ? { origen, destino } : null;
   });
 
@@ -148,7 +166,33 @@ export class MostradorComponent implements OnInit {
       },
       error: (e) => this.avisos.error(mensajeError(e, 'No se pudieron cargar las sucursales.')),
     });
+    const fijo = this.rutaActiva.snapshot.queryParamMap.get('viaje');
+    if (fijo) {
+      this.viajeFijo.set(fijo);
+      this.abrirViajeFijo(fijo);
+      return;
+    }
     this.buscar();
+  }
+
+  /** Abre el modal de venta del viaje que llegó en la URL (el piloto ya lo eligió en «Mis viajes»). */
+  private abrirViajeFijo(viajeId: string): void {
+    this.buscando.set(true);
+    this.viajesServicio.detalleViaje(viajeId).subscribe({
+      next: (viaje) => {
+        this.buscando.set(false);
+        this.elegir(viaje);
+      },
+      error: (e) => {
+        this.buscando.set(false);
+        this.avisos.error(mensajeError(e, 'No se pudo abrir la venta de este viaje.'));
+      },
+    });
+  }
+
+  /** Vuelve a «Mis viajes»: es de donde entra el piloto a vender. */
+  volverAMisViajes(): void {
+    this.router.navigate(['/panel/mis-viajes']);
   }
 
   cambiarSucursal(id: string): void {
@@ -174,6 +218,8 @@ export class MostradorComponent implements OnInit {
   }
 
   buscar(): void {
+    // Con el viaje fijado no hay lista que refrescar: la ventanilla solo vende ese viaje.
+    if (this.viajeFijo()) return;
     const fecha = this.fecha();
     if (!fecha) {
       this.avisos.info('Elige la fecha del viaje para buscar.');
@@ -318,6 +364,7 @@ export class MostradorComponent implements OnInit {
     this.viajeElegido.set(null);
     this.mapa.set(null);
     this.asientosElegidos.set([]);
+    if (this.viajeFijo()) this.volverAMisViajes();
   }
 
   vender(): void {
@@ -364,6 +411,9 @@ export class MostradorComponent implements OnInit {
   nuevaVenta(): void {
     this.ventaConfirmada.set(null);
     this.mostrarCorreo.set(false);
+    // El piloto vende varios boletos del mismo viaje: se le vuelve a abrir con los asientos al día.
+    const fijo = this.viajeFijo();
+    if (fijo) this.abrirViajeFijo(fijo);
   }
 
   /** Muestra u oculta el campo de correo (solo se envía el comprobante si hay correo). */

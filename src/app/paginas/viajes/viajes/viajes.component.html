@@ -55,6 +55,7 @@
         <th>Ruta</th>
         <th>Bus</th>
         <th>Chofer</th>
+        <th>Venta a bordo</th>
         <th>Estado</th>
         <th class="acciones">Acciones</th>
       </tr>
@@ -65,13 +66,24 @@
           <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</td>
           <td class="sin-salto">
             <span [class]="'insignia ' + tipoViaje[v.tipo].clase">{{ tipoViaje[v.tipo].texto }}</span>
+            @if (v.sentido === 'REGRESO') {
+              <span class="insignia info">Regreso</span>
+            }
           </td>
           <td>
+            <!-- El recorrido ya llega invertido del backend cuando el viaje es de regreso. -->
             <strong>{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
             <div class="secundario">Llega {{ v.fechaLlegadaEstimada | date: 'dd/MM/yyyy HH:mm' : zona }}</div>
           </td>
           <td>{{ v.busPlaca ?? '—' }}</td>
           <td>{{ v.choferNombre ?? '—' }}</td>
+          <td class="sin-salto">
+            @if (v.ventaPorChofer) {
+              <span class="insignia exito">El piloto vende</span>
+            } @else {
+              —
+            }
+          </td>
           <td>
             <span class="insignia" [class.exito]="v.estado === 'COMPLETADO'">
               {{ v.estado === 'PROGRAMADO' ? 'Programado' : v.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }}
@@ -91,7 +103,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="7" class="tabla-vacia">
+          <td colspan="8" class="tabla-vacia">
             {{ cargando() ? 'Cargando viajes…' : 'No hay viajes que coincidan con los filtros.' }}
           </td>
         </tr>
@@ -107,46 +119,119 @@
   (cambioPagina)="pagina.set($event)"
   (cambioTamano)="tamano.set($event); pagina.set(1)" />
 
-<app-modal [abierto]="programando()" titulo="Programar viaje"
-           subtitulo="Bus y chofer activos de la sucursal, con fecha y hora de salida y llegada."
+<app-modal [abierto]="programando()"
+           [titulo]="paso() === 1 ? 'Programar viaje' : 'Programar el regreso'"
+           [subtitulo]="paso() === 1
+             ? 'Bus y chofer activos de la sucursal, con fecha y hora de salida y llegada.'
+             : 'La vuelta por la misma ruta: el recorrido va del destino al origen.'"
            (cerrar)="programando.set(false)">
-  <form id="form-viaje" [formGroup]="formViaje" (ngSubmit)="programar()" class="formulario">
-    <div class="campo">
-      <label for="v-ruta">Ruta</label>
-      <select id="v-ruta" class="control" formControlName="rutaId">
-        <option value="">Elige la ruta…</option>
-        @for (r of rutasDeSucursal(); track r.rutaId) {
-          <option [value]="r.rutaId">{{ r.origenNombre }} → {{ r.destinoNombre }}</option>
-        }
-      </select>
+  <!-- Paso 1: la ida. Al marcar «programar también el regreso» se esconde y se llena el paso 2. -->
+  @if (paso() === 1) {
+    <form id="form-viaje" [formGroup]="formViaje" (ngSubmit)="programar()" class="formulario">
+      <div class="campo">
+        <label for="v-ruta">Ruta</label>
+        <select id="v-ruta" class="control" formControlName="rutaId">
+          <option value="">Elige la ruta…</option>
+          @for (r of rutasDeSucursal(); track r.rutaId) {
+            <option [value]="r.rutaId">{{ r.origenNombre }} → {{ r.destinoNombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="v-bus">Bus</label>
+        <select id="v-bus" class="control" formControlName="busId">
+          <option value="">Elige el bus…</option>
+          @for (b of buses(); track b.busId) {
+            <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="v-chofer">Chofer</label>
+        <select id="v-chofer" class="control" formControlName="choferId">
+          <option value="">Elige el chofer…</option>
+          @for (c of choferes(); track c.choferId) {
+            <option [value]="c.choferId">{{ c.nombreCompleto }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="v-salida">Salida programada</label>
+        <input id="v-salida" type="datetime-local" class="control" formControlName="salida" />
+      </div>
+      <div class="campo">
+        <label for="v-llegada">Llegada estimada</label>
+        <input id="v-llegada" type="datetime-local" class="control" formControlName="llegada" />
+      </div>
+      <div class="campo">
+        <label class="interruptor">
+          <input type="checkbox" formControlName="ventaPorChofer" />
+          El piloto puede vender boletos presenciales de este viaje
+        </label>
+        <p class="ayuda">
+          Útil cuando no hay cajero a bordo: el piloto vende desde «Mis viajes» mientras el viaje
+          siga programado.
+        </p>
+      </div>
+      <div class="campo">
+        <label class="interruptor">
+          <input type="checkbox" formControlName="conRegreso" />
+          Programar también el viaje de regreso por esta ruta
+        </label>
+        <p class="ayuda">La vuelta usa la misma ruta al revés: del destino al origen.</p>
+      </div>
+    </form>
+  } @else {
+    <!-- Paso 2: el regreso. La ida queda como resumen; la ruta es la misma, al revés. -->
+    <div class="resumen-ida">
+      <h4>Ida ya lista</h4>
+      <dl class="datos-lista">
+        <div><dt>Ruta</dt><dd>{{ resumenIda().ruta }}</dd></div>
+        <div><dt>Bus</dt><dd>{{ resumenIda().bus }}</dd></div>
+        <div><dt>Piloto</dt><dd>{{ resumenIda().chofer }}</dd></div>
+        <div><dt>Sale</dt><dd>{{ resumenIda().salida | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+        <div><dt>Llega</dt><dd>{{ resumenIda().llegada | date: 'dd/MM/yyyy HH:mm' }}</dd></div>
+      </dl>
     </div>
-    <div class="campo">
-      <label for="v-bus">Bus</label>
-      <select id="v-bus" class="control" formControlName="busId">
-        <option value="">Elige el bus…</option>
-        @for (b of buses(); track b.busId) {
-          <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
-        }
-      </select>
-    </div>
-    <div class="campo">
-      <label for="v-chofer">Chofer</label>
-      <select id="v-chofer" class="control" formControlName="choferId">
-        <option value="">Elige el chofer…</option>
-        @for (c of choferes(); track c.choferId) {
-          <option [value]="c.choferId">{{ c.nombreCompleto }}</option>
-        }
-      </select>
-    </div>
-    <div class="campo">
-      <label for="v-salida">Salida programada</label>
-      <input id="v-salida" type="datetime-local" class="control" formControlName="salida" />
-    </div>
-    <div class="campo">
-      <label for="v-llegada">Llegada estimada</label>
-      <input id="v-llegada" type="datetime-local" class="control" formControlName="llegada" />
-    </div>
-  </form>
+    <form id="form-regreso" [formGroup]="formRegreso" (ngSubmit)="programar()" class="formulario">
+      <div class="campo">
+        <label>Recorrido del regreso</label>
+        <p class="valor-fijo">{{ resumenIda().rutaRegreso }}</p>
+      </div>
+      <div class="campo">
+        <label for="r-bus">Bus</label>
+        <select id="r-bus" class="control" formControlName="busId">
+          <option value="">Elige el bus…</option>
+          @for (b of buses(); track b.busId) {
+            <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="r-chofer">Chofer</label>
+        <select id="r-chofer" class="control" formControlName="choferId">
+          <option value="">Elige el chofer…</option>
+          @for (c of choferes(); track c.choferId) {
+            <option [value]="c.choferId">{{ c.nombreCompleto }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="r-salida">Salida programada</label>
+        <input id="r-salida" type="datetime-local" class="control" formControlName="salida" />
+      </div>
+      <div class="campo">
+        <label for="r-llegada">Llegada estimada</label>
+        <input id="r-llegada" type="datetime-local" class="control" formControlName="llegada" />
+      </div>
+      <div class="campo">
+        <label class="interruptor">
+          <input type="checkbox" formControlName="ventaPorChofer" />
+          El piloto puede vender boletos presenciales del regreso
+        </label>
+      </div>
+    </form>
+  }
   <div class="fotos-par">
     <app-foto-tarjeta
       [url]="busElegido()?.fotoUrl ?? null"
@@ -158,10 +243,21 @@
       vacio="Elige un piloto para ver su foto" />
   </div>
   <div pie>
-    <button type="button" class="btn" (click)="programando.set(false)">Cancelar</button>
-    <button type="submit" form="form-viaje" class="btn primario" [disabled]="enviando()">
-      {{ enviando() ? 'Guardando…' : 'Programar' }}
-    </button>
+    @if (paso() === 1) {
+      <button type="button" class="btn" (click)="programando.set(false)">Cancelar</button>
+      @if (formViaje.controls.conRegreso.value) {
+        <button type="button" class="btn primario" (click)="siguiente()">Siguiente: el regreso</button>
+      } @else {
+        <button type="submit" form="form-viaje" class="btn primario" [disabled]="enviando()">
+          {{ enviando() ? 'Guardando…' : 'Programar' }}
+        </button>
+      }
+    } @else {
+      <button type="button" class="btn" (click)="volverAIda()">Atrás</button>
+      <button type="submit" form="form-regreso" class="btn primario" [disabled]="enviando()">
+        {{ enviando() ? 'Guardando…' : 'Programar ida y regreso' }}
+      </button>
+    }
   </div>
 </app-modal>
 
@@ -192,6 +288,13 @@
     <div class="campo">
       <label for="e-llegada">Llegada estimada</label>
       <input id="e-llegada" type="datetime-local" class="control" formControlName="llegada" />
+    </div>
+    <div class="campo">
+      <label class="interruptor">
+        <input type="checkbox" formControlName="ventaPorChofer" />
+        El piloto puede vender boletos presenciales de este viaje
+      </label>
+      <p class="ayuda">Se puede cambiar mientras el viaje siga programado.</p>
     </div>
   </form>
   <div class="fotos-par">

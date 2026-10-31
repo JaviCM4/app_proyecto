@@ -104,13 +104,34 @@ export class ViajesComponent implements OnInit {
     choferId: ['', Validators.required],
     salida: ['', Validators.required],
     llegada: ['', Validators.required],
+    /** El piloto de la ida puede vender boletos presenciales a bordo. */
+    ventaPorChofer: [false],
+    /** Programar también la vuelta por la misma ruta: abre el segundo paso del formulario. */
+    conRegreso: [false],
   });
+
+  /**
+   * El viaje de vuelta. No pide ruta: es la misma de la ida, recorrida al revés. Se abre al marcar
+   * la casilla y llega con el bus y el piloto de la ida ya puestos, que es lo normal: la misma
+   * unidad se va y se regresa.
+   */
+  readonly formRegreso = this.fb.nonNullable.group({
+    busId: ['', Validators.required],
+    choferId: ['', Validators.required],
+    salida: ['', Validators.required],
+    llegada: ['', Validators.required],
+    ventaPorChofer: [false],
+  });
+
+  /** Paso del formulario de programación: 1 la ida, 2 el regreso. */
+  readonly paso = signal<1 | 2>(1);
 
   readonly formEditar = this.fb.nonNullable.group({
     busId: ['', Validators.required],
     choferId: ['', Validators.required],
     salida: ['', Validators.required],
     llegada: ['', Validators.required],
+    ventaPorChofer: [false],
   });
 
   readonly formSalida = this.fb.nonNullable.group({
@@ -149,8 +170,12 @@ export class ViajesComponent implements OnInit {
     if (!viaje?.rutaId) return null;
     const ruta = this.rutas().find((r) => r.rutaId === viaje.rutaId);
     if (!ruta) return null;
-    const origen = this.sucursales().find((s) => s.sucursalId === ruta.sucursalOrigenId);
-    const destino = this.sucursales().find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    // Si el viaje es de regreso el recorrido va del destino de la ruta a su origen.
+    const invertido = viaje.sentido === 'REGRESO';
+    const puntaA = this.sucursales().find((s) => s.sucursalId === ruta.sucursalOrigenId);
+    const puntaB = this.sucursales().find((s) => s.sucursalId === ruta.sucursalDestinoId);
+    const origen = invertido ? puntaB : puntaA;
+    const destino = invertido ? puntaA : puntaB;
     return origen && destino ? { origen, destino, ruta } : null;
   });
 
@@ -179,7 +204,7 @@ export class ViajesComponent implements OnInit {
       error: (e) => this.avisos.error(mensajeError(e, 'No se pudieron cargar las sucursales.')),
     });
     // Vista previa: al elegir bus o piloto se ve su foto antes de guardar (igual que al asignar un alquiler).
-    for (const form of [this.formViaje, this.formEditar]) {
+    for (const form of [this.formViaje, this.formRegreso, this.formEditar]) {
       form.controls.busId.valueChanges.subscribe((id) => this.elegirBus(id));
       form.controls.choferId.valueChanges.subscribe((id) => this.elegirChofer(id));
     }
@@ -282,8 +307,75 @@ export class ViajesComponent implements OnInit {
   }
 
   abrirProgramar(): void {
-    this.formViaje.reset({ rutaId: this.rutaId() || '', busId: '', choferId: '', salida: '', llegada: '' });
+    this.formViaje.reset({
+      rutaId: this.rutaId() || '', busId: '', choferId: '', salida: '', llegada: '',
+      ventaPorChofer: false, conRegreso: false,
+    });
+    this.formRegreso.reset({ busId: '', choferId: '', salida: '', llegada: '', ventaPorChofer: false });
+    this.paso.set(1);
     this.programando.set(true);
+  }
+
+  /**
+   * Pasa al segundo paso con los datos de la ida ya validados. El regreso se propone con el mismo
+   * bus y el mismo piloto, y saliendo una hora después de que llegue la ida: es el caso normal y
+   * evita que choque con su propia ida, que el backend rechazaría.
+   */
+  siguiente(): void {
+    if (this.formViaje.invalid) {
+      this.formViaje.markAllAsTouched();
+      return;
+    }
+    const v = this.formViaje.getRawValue();
+    const salidaRegreso = this.sumarHoras(v.llegada, 1);
+    this.formRegreso.reset({
+      busId: v.busId,
+      choferId: v.choferId,
+      salida: salidaRegreso,
+      llegada: this.sumarHoras(salidaRegreso, this.horasDeViaje(v.salida, v.llegada)),
+      ventaPorChofer: false,
+    });
+    this.paso.set(2);
+  }
+
+  volverAIda(): void {
+    this.paso.set(1);
+    const v = this.formViaje.getRawValue();
+    this.elegirBus(v.busId);
+    this.elegirChofer(v.choferId);
+  }
+
+  /**
+   * Resumen de la ida para el segundo paso. Son valores de un formulario reactivo, que no son
+   * señales, así que esto se lee como método en la plantilla y no como computed.
+   */
+  resumenIda(): { ruta: string; rutaRegreso: string; bus: string; chofer: string; salida: string; llegada: string } {
+    const v = this.formViaje.getRawValue();
+    const ruta = this.rutas().find((r) => r.rutaId === v.rutaId);
+    const bus = this.buses().find((b) => b.busId === v.busId);
+    const chofer = this.choferes().find((c) => c.choferId === v.choferId);
+    return {
+      ruta: ruta ? `${ruta.origenNombre} → ${ruta.destinoNombre}` : '—',
+      rutaRegreso: ruta ? `${ruta.destinoNombre} → ${ruta.origenNombre}` : '—',
+      bus: bus?.placa ?? '—',
+      chofer: chofer?.nombreCompleto ?? '—',
+      salida: v.salida,
+      llegada: v.llegada,
+    };
+  }
+
+  /** Suma horas a un datetime-local ("2026-10-25T06:00") y lo devuelve en el mismo formato. */
+  private sumarHoras(local: string, horas: number): string {
+    if (!local) return '';
+    const fecha = new Date(local);
+    fecha.setHours(fecha.getHours() + horas);
+    return new Date(fecha.getTime() - fecha.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+
+  /** Cuánto dura la ida, para proponerle al regreso la misma duración (mínimo una hora). */
+  private horasDeViaje(salida: string, llegada: string): number {
+    const horas = (new Date(llegada).getTime() - new Date(salida).getTime()) / 3600000;
+    return Number.isFinite(horas) && horas >= 1 ? Math.round(horas) : 1;
   }
 
   programar(): void {
@@ -292,6 +384,17 @@ export class ViajesComponent implements OnInit {
       return;
     }
     const v = this.formViaje.getRawValue();
+    const conRegreso = v.conRegreso;
+    // Enter en el primer paso con el regreso marcado: pasa al segundo paso, no envía a medias.
+    if (conRegreso && this.paso() === 1) {
+      this.siguiente();
+      return;
+    }
+    if (conRegreso && this.formRegreso.invalid) {
+      this.formRegreso.markAllAsTouched();
+      return;
+    }
+    const r = this.formRegreso.getRawValue();
     this.enviando.set(true);
     this.servicio
       .programarViaje({
@@ -300,12 +403,24 @@ export class ViajesComponent implements OnInit {
         choferId: v.choferId,
         fechaSalidaProgramada: fechaHoraGt(v.salida),
         fechaLlegadaEstimada: fechaHoraGt(v.llegada),
+        ventaPorChofer: v.ventaPorChofer,
+        // Los dos viajes van en la misma petición: el backend los crea juntos o no crea ninguno.
+        regreso: conRegreso
+          ? {
+              busId: r.busId,
+              choferId: r.choferId,
+              fechaSalidaProgramada: fechaHoraGt(r.salida),
+              fechaLlegadaEstimada: fechaHoraGt(r.llegada),
+              ventaPorChofer: r.ventaPorChofer,
+            }
+          : null,
       })
       .subscribe({
         next: () => {
           this.enviando.set(false);
           this.programando.set(false);
-          this.avisos.exito('Viaje programado.');
+          this.paso.set(1);
+          this.avisos.exito(conRegreso ? 'Viajes de ida y regreso programados.' : 'Viaje programado.');
           this.cargarViajes();
         },
         error: (e) => {
@@ -322,6 +437,7 @@ export class ViajesComponent implements OnInit {
       choferId: v.choferId,
       salida: this.aLocal(v.fechaSalidaProgramada),
       llegada: this.aLocal(v.fechaLlegadaEstimada),
+      ventaPorChofer: v.ventaPorChofer === true,
     });
     this.editando.set(v);
   }
@@ -341,6 +457,7 @@ export class ViajesComponent implements OnInit {
         choferId: f.choferId,
         fechaSalidaProgramada: fechaHoraGt(f.salida),
         fechaLlegadaEstimada: fechaHoraGt(f.llegada),
+        ventaPorChofer: f.ventaPorChofer,
         version: v.version,
       })
       .subscribe({

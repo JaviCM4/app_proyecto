@@ -15,6 +15,8 @@ export interface Ruta {
 export type EstadoViaje = 'PROGRAMADO' | 'EN_RUTA' | 'COMPLETADO';
 export type TipoViaje = 'REGULAR' | 'PRIVADO';
 
+export type SentidoViaje = 'IDA' | 'REGRESO';
+
 export interface Viaje {
   viajeId: string;
   tipo: TipoViaje;
@@ -47,6 +49,13 @@ export interface Viaje {
    */
   fechaRetorno?: string | null;
   estado: EstadoViaje;
+  /**
+   * IDA o REGRESO. El viaje de vuelta comparte la ruta con su ida; el backend ya devuelve el origen
+   * y el destino invertidos, así que aquí solo sirve para distinguirlo en la lista.
+   */
+  sentido?: SentidoViaje;
+  /** El piloto asignado puede vender boletos presenciales de este viaje. */
+  ventaPorChofer?: boolean;
   version: number;
 }
 
@@ -80,6 +89,19 @@ export interface NuevoViaje {
   choferId: string;
   fechaSalidaProgramada: string;
   fechaLlegadaEstimada: string;
+  /** Si el piloto de la ida puede vender boletos presenciales. */
+  ventaPorChofer?: boolean;
+  /** El viaje de vuelta por la misma ruta, o null si solo se programa la ida. */
+  regreso?: NuevoViajeRegreso | null;
+}
+
+/** El viaje de vuelta: no lleva ruta (es la misma), pero sí su propio bus, piloto y horario. */
+export interface NuevoViajeRegreso {
+  busId: string;
+  choferId: string;
+  fechaSalidaProgramada: string;
+  fechaLlegadaEstimada: string;
+  ventaPorChofer?: boolean;
 }
 
 export interface ActualizarViaje {
@@ -87,6 +109,8 @@ export interface ActualizarViaje {
   choferId: string;
   fechaSalidaProgramada: string;
   fechaLlegadaEstimada: string;
+  /** Null deja la marca como está; no se apaga sin querer al cambiar el horario. */
+  ventaPorChofer?: boolean | null;
   version: number;
 }
 
