@@ -2,11 +2,13 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Sucursal } from '../../../core/models/sucursal.model';
 import { Alquiler, EstadoAlquiler, EstadoViaje } from '../../../core/models/viaje.model';
 import { OrdenAlquiler } from '../../../core/models/venta.model';
 import { AlquileresService } from '../../../core/services/alquileres.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { OrdenesAlquilerService } from '../../../core/services/ordenes-alquiler.service';
+import { SucursalesService } from '../../../core/services/sucursales.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
 import { ZONA_GT, ahoraGt, fechaHoraGt, hoyGt } from '../../../core/utils/fechas';
 import { FotoTarjetaComponent } from '../../../shared/components/foto-tarjeta/foto-tarjeta.component';
@@ -57,6 +59,7 @@ const TEXTO_VIAJE: Record<EstadoViaje, string> = {
 export class MisAlquileresComponent implements OnInit {
   private readonly servicio = inject(AlquileresService);
   private readonly ordenesServicio = inject(OrdenesAlquilerService);
+  private readonly sucursalesServicio = inject(SucursalesService);
   private readonly avisos = inject(ToastService);
   private readonly avisosMenu = inject(AvisosMenuService);
   private readonly fb = inject(FormBuilder);
@@ -80,8 +83,20 @@ export class MisAlquileresComponent implements OnInit {
   readonly tamano = signal(9);
 
   readonly enDetalle = signal<Alquiler | null>(null);
-  /** Pestaña del detalle: el alquiler, el bus asignado o la orden de pago (las dos últimas si aplican). */
-  readonly pestana = signal<'alquiler' | 'bus' | 'orden'>('alquiler');
+  /**
+   * Pestaña del detalle: el alquiler, la sucursal que lo atiende, el bus asignado o la orden de pago
+   * (las dos últimas solo si aplican; la sucursal está siempre, en cualquier estado).
+   */
+  readonly pestana = signal<'alquiler' | 'sucursal' | 'bus' | 'orden'>('alquiler');
+
+  /** Sucursales (consulta pública): de ahí sale el contacto de la que atiende cada alquiler. */
+  private readonly sucursales = signal<Sucursal[]>([]);
+
+  /** La sucursal donde se programó el alquiler abierto, para su pestaña de contacto. */
+  readonly sucursalDelDetalle = computed(() => {
+    const a = this.enDetalle();
+    return a ? (this.sucursales().find((s) => s.sucursalId === a.sucursalId) ?? null) : null;
+  });
 
   verDetalle(a: Alquiler): void {
     this.pestana.set('alquiler');
@@ -115,6 +130,12 @@ export class MisAlquileresComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+    this.sucursalesServicio.listar().subscribe({
+      next: (lista) => this.sucursales.set(lista),
+      error: () => {
+        /* Sin el catálogo el alquiler se ve igual: solo se queda sin los datos de la sucursal. */
+      },
+    });
   }
 
   cargar(): void {

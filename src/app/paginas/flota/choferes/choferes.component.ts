@@ -3,6 +3,7 @@ import { Component, OnInit, computed, effect, inject, signal } from '@angular/co
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Chofer, EstadoChofer, TipoLicencia } from '../../../core/models/chofer.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
+import { UsuarioDetalle } from '../../../core/models/usuario.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { ChoferesService } from '../../../core/services/choferes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
@@ -60,6 +61,11 @@ export class ChoferesComponent implements OnInit {
   /** Foto del perfil de Identity del piloto (el chofer de Fleet solo guarda su usuarioId). */
   readonly fotoUrl = signal<string | null>(null);
   readonly cargandoFoto = signal(false);
+  /**
+   * Cuenta del piloto en Identity: de ahí salen el correo y el teléfono para contactarlo. Fleet solo
+   * guarda su usuarioId, así que viene de la misma consulta que trae la foto.
+   */
+  readonly cuenta = signal<UsuarioDetalle | null>(null);
 
   readonly enviando = signal(false);
 
@@ -274,19 +280,25 @@ export class ChoferesComponent implements OnInit {
     });
   }
 
-  /** La foto vive en Identity; si no se puede consultar, el detalle se muestra sin foto. */
+  /**
+   * La cuenta del piloto vive en Identity: de ahí salen su foto, su correo y su teléfono. Si no se
+   * puede consultar, el detalle se muestra igual, solo que sin esos datos.
+   */
   private cargarFoto(usuarioId: string): void {
     this.cargandoFoto.set(true);
+    this.cuenta.set(null);
     this.usuariosServicio.detalle(usuarioId).subscribe({
       next: (u) => {
         if (this.viendo()?.usuarioId === usuarioId) {
           this.fotoUrl.set(u.fotoUrl || null);
+          this.cuenta.set(u);
           this.cargandoFoto.set(false);
         }
       },
       error: () => {
         if (this.viendo()?.usuarioId === usuarioId) {
           this.fotoUrl.set(null);
+          this.cuenta.set(null);
           this.cargandoFoto.set(false);
         }
       },

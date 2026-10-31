@@ -67,8 +67,11 @@
         </dl>
 
         <div class="viaje-acciones">
+          <!-- Solo el viaje que toca lleva botón: primero se termina el anterior. -->
           @if (v.estado === 'PROGRAMADO') {
-            <button type="button" class="btn primario" (click)="abrirSalida(v)">Registrar salida</button>
+            @if (esOperable(v)) {
+              <button type="button" class="btn primario" (click)="abrirSalida(v)">Registrar salida</button>
+            }
             @if (v.ventaPorChofer) {
               <!-- Viaje con venta a bordo: la ventanilla se abre con este viaje ya fijado. -->
               <button type="button" class="btn" (click)="venderBoletos(v)">Boletos</button>
@@ -82,6 +85,15 @@
             <button type="button" class="btn chico" (click)="verDetalle(v)">Ver</button>
           }
         </div>
+        @if (v.estado === 'PROGRAMADO' && !esOperable(v)) {
+          <p class="espera-turno">
+            @if (v.sentido === 'REGRESO') {
+              Sale cuando el viaje de ida registre su llegada.
+            } @else {
+              Primero registra el viaje que sale antes que este.
+            }
+          </p>
+        }
       </article>
     }
   </div>

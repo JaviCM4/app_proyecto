@@ -117,26 +117,29 @@
       <span [class]="'insignia ' + clase(a.estado)">{{ texto(a.estado) }}</span>
     </div>
 
-    @if (a.viaje || tieneOrden(a)) {
-      <div class="pestanas" role="tablist">
-        <button type="button" role="tab" [class.activa]="pestana() === 'alquiler'"
-                [attr.aria-selected]="pestana() === 'alquiler'" (click)="pestana.set('alquiler')">
-          El alquiler
+    <div class="pestanas" role="tablist">
+      <button type="button" role="tab" [class.activa]="pestana() === 'alquiler'"
+              [attr.aria-selected]="pestana() === 'alquiler'" (click)="pestana.set('alquiler')">
+        El alquiler
+      </button>
+      <!-- Siempre: en cualquier estado se puede ver a quién acudir por este alquiler. -->
+      <button type="button" role="tab" [class.activa]="pestana() === 'sucursal'"
+              [attr.aria-selected]="pestana() === 'sucursal'" (click)="pestana.set('sucursal')">
+        La sucursal
+      </button>
+      @if (a.viaje) {
+        <button type="button" role="tab" [class.activa]="pestana() === 'bus'"
+                [attr.aria-selected]="pestana() === 'bus'" (click)="pestana.set('bus')">
+          El bus asignado
         </button>
-        @if (a.viaje) {
-          <button type="button" role="tab" [class.activa]="pestana() === 'bus'"
-                  [attr.aria-selected]="pestana() === 'bus'" (click)="pestana.set('bus')">
-            El bus asignado
-          </button>
-        }
-        @if (tieneOrden(a)) {
-          <button type="button" role="tab" [class.activa]="pestana() === 'orden'"
-                  [attr.aria-selected]="pestana() === 'orden'" (click)="pestana.set('orden')">
-            Orden de pago
-          </button>
-        }
-      </div>
-    }
+      }
+      @if (tieneOrden(a)) {
+        <button type="button" role="tab" [class.activa]="pestana() === 'orden'"
+                [attr.aria-selected]="pestana() === 'orden'" (click)="pestana.set('orden')">
+          Orden de pago
+        </button>
+      }
+    </div>
 
     @if (tieneOrden(a) && pestana() === 'orden') {
       @if (ordenDe(a); as orden) {
@@ -194,6 +197,44 @@
 
           <p class="secundario">{{ avisoOrden(a) }}</p>
         </div>
+      }
+    } @else if (pestana() === 'sucursal') {
+      <!-- A dónde llamar o llegar por este alquiler, esté como esté. -->
+      @if (sucursalDelDetalle(); as s) {
+        <div class="sucursal-ficha">
+          <div class="datos-lista">
+            <div><dt>Sucursal</dt><dd>{{ s.nombre }}</dd></div>
+            <div><dt>Código</dt><dd>{{ s.codigo }}</dd></div>
+            <div class="completo"><dt>Dirección</dt><dd>{{ s.direccion }}</dd></div>
+            <div><dt>Municipio</dt><dd>{{ s.municipio }}</dd></div>
+            <div><dt>Departamento</dt><dd>{{ s.departamento }}</dd></div>
+            <div>
+              <dt>Teléfono</dt>
+              <dd>
+                @if (s.telefono) {
+                  <a [href]="'tel:' + s.telefono">{{ s.telefono }}</a>
+                } @else {
+                  —
+                }
+              </dd>
+            </div>
+            <div><dt>Estado</dt><dd>{{ s.activa ? 'Activa' : 'Inactiva' }}</dd></div>
+          </div>
+          <!-- Un solo punto: la sucursal. Sin destino no hay recorrido que trazar, solo su ubicación. -->
+          <app-mapa-recorrido
+            [origenLatitud]="s.latitud"
+            [origenLongitud]="s.longitud"
+            [origen]="s.nombre"
+            [alto]="260"
+            mensajeVacio="Esta sucursal no tiene coordenadas registradas."
+            mensajeIncompleto="" />
+          <p class="secundario">
+            Por cualquier duda de este alquiler —la cotización, el pago o una cancelación— acude a
+            esta sucursal.
+          </p>
+        </div>
+      } @else {
+        <p class="secundario">No se pudieron cargar los datos de la sucursal de este alquiler.</p>
       }
     } @else if (a.viaje && pestana() === 'bus') {
       @if (a.viaje; as v) {

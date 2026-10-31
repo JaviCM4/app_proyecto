@@ -116,7 +116,8 @@ export class ViajesComponent implements OnInit {
    * unidad se va y se regresa.
    */
   readonly formRegreso = this.fb.nonNullable.group({
-    busId: ['', Validators.required],
+    /** No se edita: el regreso va en el mismo bus que la ida (el backend lo valida igual). */
+    busId: [{ value: '', disabled: true }, Validators.required],
     choferId: ['', Validators.required],
     salida: ['', Validators.required],
     llegada: ['', Validators.required],
@@ -328,6 +329,7 @@ export class ViajesComponent implements OnInit {
     }
     const v = this.formViaje.getRawValue();
     const salidaRegreso = this.sumarHoras(v.llegada, 1);
+    // El bus viene bloqueado con el de la ida: es la unidad que se fue la que se regresa.
     this.formRegreso.reset({
       busId: v.busId,
       choferId: v.choferId,

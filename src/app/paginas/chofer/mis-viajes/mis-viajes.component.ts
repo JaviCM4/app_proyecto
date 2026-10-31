@@ -90,6 +90,32 @@ export class MisViajesChoferComponent implements OnInit {
 
   readonly paginaActual = computed(() => paginar(this.filtrados(), this.pagina(), this.tamano()));
 
+  /**
+   * El único viaje que el piloto puede operar ahora: el que trae en ruta o, si no trae ninguno, el
+   * programado que sale primero. Los viajes se hacen en orden, así que en los demás no se muestran
+   * los botones. El backend aplica la misma regla, aquí solo se evita el intento.
+   */
+  readonly viajeOperable = computed<Viaje | null>(() => {
+    const todos = this.viajes();
+    const enRuta = todos.find((v) => v.estado === 'EN_RUTA');
+    if (enRuta) return enRuta;
+    return todos
+      .filter((v) => v.estado === 'PROGRAMADO')
+      .reduce<Viaje | null>(
+        (proximo, v) => (!proximo || this.salida(v) < this.salida(proximo) ? v : proximo),
+        null,
+      );
+  });
+
+  /** Este es el viaje que le toca operar (registrar su salida o su llegada). */
+  esOperable(v: Viaje): boolean {
+    return this.viajeOperable()?.viajeId === v.viajeId;
+  }
+
+  private salida(v: Viaje): number {
+    return new Date(v.fechaSalidaProgramada).getTime();
+  }
+
   ngOnInit(): void {
     this.cargar();
   }

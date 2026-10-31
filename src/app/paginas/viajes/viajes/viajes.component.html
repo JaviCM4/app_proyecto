@@ -200,12 +200,14 @@
       </div>
       <div class="campo">
         <label for="r-bus">Bus</label>
+        <!-- Bloqueado: el regreso va en la misma unidad que se fue de ida. -->
         <select id="r-bus" class="control" formControlName="busId">
           <option value="">Elige el bus…</option>
           @for (b of buses(); track b.busId) {
             <option [value]="b.busId">{{ b.placa }} · {{ b.marca }} {{ b.modelo }}</option>
           }
         </select>
+        <p class="ayuda">Es el mismo bus de la ida: la unidad que se fue es la que se regresa.</p>
       </div>
       <div class="campo">
         <label for="r-chofer">Chofer</label>
