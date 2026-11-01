@@ -132,9 +132,7 @@ export class MisAlquileresComponent implements OnInit {
     this.cargar();
     this.sucursalesServicio.listar().subscribe({
       next: (lista) => this.sucursales.set(lista),
-      error: () => {
-        /* Sin el catálogo el alquiler se ve igual: solo se queda sin los datos de la sucursal. */
-      },
+      error: (e) => this.avisos.error(mensajeError(e, 'No se pudieron cargar los datos de la sucursal.')),
     });
   }
 
