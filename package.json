@@ -8,7 +8,10 @@
     "prebuild": "npm run env",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:unit": "set \"COBERTURA=unitarias\" && ng test --watch=false --browsers=EdgeHeadless --include=\"src/app/**/*.spec.ts\" --code-coverage",
+    "test:integration": "set \"COBERTURA=integracion\" && ng test --watch=false --browsers=EdgeHeadless --include=\"src/integration/**/*.integration.spec.ts\" --code-coverage",
+    "test:coverage": "npm run test:unit && npm run test:integration"
   },
   "private": true,
   "dependencies": {
