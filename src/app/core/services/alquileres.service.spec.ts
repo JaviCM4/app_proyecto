@@ -96,6 +96,20 @@ describe('AlquileresService', () => {
       expect(peticion.request.params.has('desde')).toBeFalse();
       peticion.flush([]);
     });
+
+    it('lista todos los alquileres cuando no se especifican filtros', () => {
+      // Arrange
+      const filtros = undefined;
+
+      // Act
+      servicio.listar(filtros).subscribe();
+
+      // Assert
+      const peticion = http.expectOne(URL_ALQUILERES);
+      expect(peticion.request.method).toBe('GET');
+      expect(peticion.request.params.keys()).toEqual([]);
+      peticion.flush([]);
+    });
   });
 
   describe('detalle', () => {
@@ -139,6 +153,7 @@ describe('AlquileresService', () => {
 
       // Assert
       const peticion = http.expectOne(`${URL_ALQUILERES}/${ALQUILER_ID}/cancelar`);
+      expect(peticion.request.method).toBe('POST');
       expect(peticion.request.body).toEqual(datos);
       peticion.flush({ alquilerId: ALQUILER_ID });
     });
@@ -182,6 +197,7 @@ describe('AlquileresService', () => {
 
       // Assert
       const peticion = http.expectOne(`${URL_ALQUILERES}/${ALQUILER_ID}/asignacion`);
+      expect(peticion.request.method).toBe('POST');
       expect(peticion.request.body).toEqual(datos);
       peticion.flush({ viajeId: 'viaje-1' });
     });

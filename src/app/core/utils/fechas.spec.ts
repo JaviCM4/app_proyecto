@@ -1,4 +1,4 @@
-import { ZONA_GT, ahoraGt, fechaHoraGt, hoyGt } from './fechas';
+import { ZONA_GT, aLocalGt, ahoraGt, fechaHoraGt, hoyGt } from './fechas';
 
 /**
  * Pruebas unitarias de las fechas de negocio.
@@ -11,6 +11,8 @@ const FORMATO_FECHA_HORA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const LOCAL_SIN_ZONA = '2026-10-25T06:00';
 const LOCAL_CON_ZONA = '2026-10-25T06:00:00-06:00';
 const LOCAL_UTC = '2026-10-25T12:00:00Z';
+const FECHA_LOCAL_ESPERADA = '2026-10-25T06:00';
+const FECHA_CORTA = '2026';
 const DIAS_EXTRA = 3;
 
 describe('Fechas de negocio (Guatemala)', () => {
@@ -63,6 +65,33 @@ describe('Fechas de negocio (Guatemala)', () => {
 
       // Assert
       expect(fechaHora).toMatch(formato);
+    });
+  });
+
+  describe('aLocalGt', () => {
+    it('conserva la hora de Guatemala del valor del backend', () => {
+      // Arrange
+      const fecha = LOCAL_CON_ZONA;
+
+      // Act
+      const resultado = aLocalGt(fecha);
+
+      // Assert
+      expect(resultado).toBe(FECHA_LOCAL_ESPERADA);
+    });
+
+    it('devuelve vacío si no hay una fecha completa', () => {
+      // Arrange
+      const fechaNula = null;
+      const fechaCorta = FECHA_CORTA;
+
+      // Act
+      const nula = aLocalGt(fechaNula);
+      const corta = aLocalGt(fechaCorta);
+
+      // Assert
+      expect(nula).toBe('');
+      expect(corta).toBe('');
     });
   });
 

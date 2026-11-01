@@ -678,6 +678,7 @@ describe('Integración: alquileres de buses', () => {
     ): ComponentFixture<MisAlquileresComponent> {
       guardarSesion();
       const fixture = abrir(MisAlquileresComponent);
+      http.expectOne(API_SUCURSALES).flush([SUCURSAL]);
       http.expectOne(API_MIAS).flush(ordenes);
       http.expectOne(API_MIOS).flush(alquileres);
       fixture.detectChanges();
@@ -782,6 +783,65 @@ describe('Integración: alquileres de buses', () => {
         destinoLatitud: null,
         destinoLongitud: null,
       }))).toBeFalse();
+    });
+
+    it('deriva la cancelación de solicitudes cotizadas a la sucursal', () => {
+      // Dado
+      const alquilerCotizado = crearAlquiler({
+        alquilerId: 'alquiler-cotizado',
+        estado: 'COTIZADO',
+        precioConfirmado: 1200,
+      });
+      const fixture = abrirMisAlquileres([ALQUILER_SOLICITADO, alquilerCotizado]);
+      const componente = fixture.componentInstance;
+
+      // Entonces
+      expect(componente.sePuedeCancelar(ALQUILER_SOLICITADO)).toBeFalse();
+      expect(componente.sePuedeCancelar(alquilerCotizado)).toBeFalse();
+      expect(componente.enCotizacion(ALQUILER_SOLICITADO)).toBeTrue();
+      expect(componente.enCotizacion(alquilerCotizado)).toBeTrue();
+      expect(fixture.nativeElement.querySelectorAll('button.peligro')).toHaveSize(0);
+
+      // Cuando
+      pulsar(fixture, '¿Cancelar? Llama a la sucursal');
+      resolverRutas(http);
+
+      // Entonces
+      expect(componente.enDetalle()).toEqual(ALQUILER_SOLICITADO);
+      expect(componente.pestana()).toBe('sucursal');
+      expect((fixture.nativeElement.querySelector('.modal') as HTMLElement).textContent)
+        .toContain(SUCURSAL.telefono);
+
+      // Cuando
+      componente.verDetalle(alquilerCotizado);
+      fixture.detectChanges();
+      pulsar(fixture, 'Llamar a la sucursal');
+      resolverRutas(http);
+
+      // Entonces
+      expect(componente.enDetalle()).toEqual(alquilerCotizado);
+      expect(componente.pestana()).toBe('sucursal');
+      expect((fixture.nativeElement.querySelector('.modal') as HTMLElement).textContent)
+        .toContain(SUCURSAL.telefono);
+    });
+
+    it('avisa cuando no se pueden cargar los datos de contacto de la sucursal', () => {
+      // Dado
+      guardarSesion();
+      abrir(MisAlquileresComponent);
+      http.expectOne(API_SUCURSALES).flush(
+        {},
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+      http.expectOne(API_MIAS).flush([]);
+      http.expectOne(API_MIOS).flush([ALQUILER_SOLICITADO]);
+
+      // Entonces
+      expect(avisos.avisos().some(
+        (aviso) =>
+          aviso.tipo === 'error' &&
+          aviso.texto === 'Ocurrió un problema en el servidor. Intenta de nuevo.',
+      )).toBeTrue();
     });
 
     it('abre el detalle con el bus y el chofer asignados', () => {
@@ -931,6 +991,8 @@ describe('Integración: alquileres de buses', () => {
       elegir(fixture, '#a-bus', BUS.busId);
       elegir(fixture, '#a-chofer', CHOFER.choferId);
       http.expectOne(`${API_USUARIOS}/${CHOFER.usuarioId}`).flush(USUARIO_DETALLE);
+      expect((fixture.nativeElement.querySelector('#a-llegada') as HTMLInputElement).value)
+        .toBe('2026-11-06T20:00');
       escribir(fixture, '#a-llegada', LLEGADA_LOCAL);
       enviar(fixture);
 
@@ -953,6 +1015,49 @@ describe('Integración: alquileres de buses', () => {
           (a) => a.texto === `Viaje creado con el bus ${BUS.placa}. El alquiler quedó asignado.`,
         ),
       ).toBeTrue();
+    });
+
+    it('propone la llegada de ida y vuelta cuando el alquiler no tiene fecha de retorno', () => {
+      // Dado
+      const soloIda = crearAlquiler({
+        ...ALQUILER_PAGADO,
+        alquilerId: 'alquiler-solo-ida',
+        fechaRetorno: null,
+        kmEstimados: 120,
+      });
+      const fixture = abrirAlquileres([soloIda]);
+
+      // Cuando
+      pulsar(fixture, 'Asignar');
+      http.expectOne((peticion) => peticion.url === API_BUSES).flush([BUS]);
+      http.expectOne((peticion) => peticion.url === API_CHOFERES).flush([CHOFER]);
+      fixture.detectChanges();
+
+      // Entonces
+      expect((fixture.nativeElement.querySelector('#a-llegada') as HTMLInputElement).value)
+        .toBe(LLEGADA_LOCAL);
+      expect((fixture.nativeElement.textContent as string)).toContain('solo ida');
+    });
+
+    it('propone al menos una hora de recorrido para una distancia corta', () => {
+      // Dado
+      const soloIdaCorto = crearAlquiler({
+        ...ALQUILER_PAGADO,
+        alquilerId: 'alquiler-solo-ida-corto',
+        fechaRetorno: null,
+        kmEstimados: 10,
+      });
+      const fixture = abrirAlquileres([soloIdaCorto]);
+
+      // Cuando
+      pulsar(fixture, 'Asignar');
+      http.expectOne((peticion) => peticion.url === API_BUSES).flush([BUS]);
+      http.expectOne((peticion) => peticion.url === API_CHOFERES).flush([CHOFER]);
+      fixture.detectChanges();
+
+      // Entonces
+      expect((fixture.nativeElement.querySelector('#a-llegada') as HTMLInputElement).value)
+        .toBe('2026-11-05T09:00');
     });
 
     it('cancela el alquiler y avisa que el reembolso queda en la orden', () => {

@@ -13,7 +13,7 @@ import { ChoferesService } from '../../../core/services/choferes.service';
 import { SucursalesService } from '../../../core/services/sucursales.service';
 import { UsuariosService } from '../../../core/services/usuarios.service';
 import { marcarErroresServidor, mensajeError } from '../../../core/utils/errores-http';
-import { ahoraGt, fechaHoraGt } from '../../../core/utils/fechas';
+import { aLocalGt, ahoraGt, fechaHoraGt } from '../../../core/utils/fechas';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 import { MapaRecorridoComponent } from '../../../shared/components/mapa-recorrido/mapa-recorrido.component';
@@ -296,10 +296,10 @@ export class AlquileresComponent implements OnInit {
 
   /** Suma horas a una fecha del backend y la devuelve como datetime-local. */
   private sumarHoras(fecha: string, horas: number): string {
-    const resultado = new Date(fecha);
+    const resultado = new Date(`${aLocalGt(fecha)}:00Z`);
     if (Number.isNaN(resultado.getTime())) return '';
-    resultado.setHours(resultado.getHours() + horas);
-    return new Date(resultado.getTime() - resultado.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    resultado.setUTCHours(resultado.getUTCHours() + horas);
+    return resultado.toISOString().slice(0, 16);
   }
 
   asignar(): void {
