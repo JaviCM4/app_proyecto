@@ -68,11 +68,14 @@ export class InicioComponent implements OnInit {
   /** Destino y texto se filtran aquí; origen y fechas los filtra el servidor. */
   readonly resultados = computed(() => {
     const { destinoId, texto } = this.aplicados();
-    const rutasDestino = new Set(this.rutas().filter((r) => r.sucursalDestinoId === destinoId).map((r) => r.rutaId));
+    // Un viaje de REGRESO recorre su ruta al revés: su destino es la sucursal de origen de la ruta.
+    const deIda = new Set(this.rutas().filter((r) => r.sucursalDestinoId === destinoId).map((r) => r.rutaId));
+    const deRegreso = new Set(this.rutas().filter((r) => r.sucursalOrigenId === destinoId).map((r) => r.rutaId));
     const buscado = normalizar(texto);
     return this.viajes().filter(
       (v) =>
-        (!destinoId || (v.rutaId !== null && rutasDestino.has(v.rutaId))) &&
+        (!destinoId ||
+          (v.rutaId !== null && (v.sentido === 'REGRESO' ? deRegreso : deIda).has(v.rutaId))) &&
         (!buscado || normalizar(`${v.origenNombre} ${v.destinoNombre} ${v.busPlaca ?? ''}`).includes(buscado)),
     );
   });

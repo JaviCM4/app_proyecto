@@ -1,62 +1,76 @@
-<div class="pagina-encabezado">
-  <div>
-    <h1>Venta en mostrador</h1>
-    <p>Busca el viaje, elige los asientos y cobra en efectivo. La venta queda confirmada al instante.</p>
-  </div>
-  @if (esSistema) {
-    <div class="campo">
-      <label for="sucursal">Sucursal</label>
-      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
-        <option value="">Todas</option>
-        @for (s of sucursales(); track s.sucursalId) {
-          <option [value]="s.sucursalId">{{ s.nombre }}</option>
-        }
-      </select>
+@if (viajeFijo()) {
+  <!-- El piloto entra desde «Mis viajes»: vende solo ese viaje, sin búsqueda. -->
+  <div class="pagina-encabezado">
+    <div>
+      <h1>Boletos del viaje</h1>
+      <p>Vende los asientos que queden libres y cobra en efectivo, igual que en la ventanilla.</p>
     </div>
+    <button type="button" class="btn" (click)="volverAMisViajes()">Volver a Mis viajes</button>
+  </div>
+  @if (buscando()) {
+    <p class="secundario">Abriendo el viaje…</p>
   }
-</div>
+} @else {
+  <div class="pagina-encabezado">
+    <div>
+      <h1>Venta en mostrador</h1>
+      <p>Busca el viaje, elige los asientos y cobra en efectivo. La venta queda confirmada al instante.</p>
+    </div>
+    @if (esSistema) {
+      <div class="campo">
+        <label for="sucursal">Sucursal</label>
+        <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
+          <option value="">Todas</option>
+          @for (s of sucursales(); track s.sucursalId) {
+            <option [value]="s.sucursalId">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+    }
+  </div>
 
-<div class="filtros">
-  @if (esSistema) {
+  <div class="filtros">
+    @if (esSistema) {
+      <div class="campo crece">
+        <label for="sucursal">Sucursal origen</label>
+        <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
+          <option value="">Todas</option>
+          @for (s of sucursales(); track s.sucursalId) {
+            <option [value]="s.sucursalId">{{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+    } @else {
+      <div class="campo crece">
+        <label>Origen (tu sucursal)</label>
+        <span class="control">{{ nombreOrigen() }}</span>
+      </div>
+    }
     <div class="campo crece">
-      <label for="sucursal">Sucursal origen</label>
-      <select id="sucursal" class="control" [ngModel]="sucursalId()" (ngModelChange)="cambiarSucursal($event)">
-        <option value="">Todas</option>
-        @for (s of sucursales(); track s.sucursalId) {
-          <option [value]="s.sucursalId">{{ s.nombre }}</option>
+      <label for="destino">Destino</label>
+      <select id="destino" class="control" [ngModel]="destinoId()" (ngModelChange)="destinoId.set($event)">
+        <option value="">Todos los destinos</option>
+        @for (d of destinos(); track d.id) {
+          <option [value]="d.id">{{ d.nombre }}</option>
         }
       </select>
     </div>
-  } @else {
-    <div class="campo crece">
-      <label>Origen (tu sucursal)</label>
-      <span class="control">{{ nombreOrigen() }}</span>
+    <div class="campo">
+      <label for="fecha">Desde</label>
+      <input id="fecha" type="date" class="control" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" />
     </div>
-  }
-  <div class="campo crece">
-    <label for="destino">Destino</label>
-    <select id="destino" class="control" [ngModel]="destinoId()" (ngModelChange)="destinoId.set($event)">
-      <option value="">Todos los destinos</option>
-      @for (d of destinos(); track d.id) {
-        <option [value]="d.id">{{ d.nombre }}</option>
-      }
-    </select>
+    <div class="campo">
+      <label for="hasta">Hasta</label>
+      <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
+    </div>
+    <div class="campo">
+      <label>&nbsp;</label>
+      <button type="button" class="btn primario" (click)="buscar()" [disabled]="buscando()">
+        {{ buscando() ? 'Buscando…' : 'Buscar' }}
+      </button>
+    </div>
   </div>
-  <div class="campo">
-    <label for="fecha">Desde</label>
-    <input id="fecha" type="date" class="control" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)" />
-  </div>
-  <div class="campo">
-    <label for="hasta">Hasta</label>
-    <input id="hasta" type="date" class="control" [ngModel]="hasta()" (ngModelChange)="hasta.set($event)" />
-  </div>
-  <div class="campo">
-    <label>&nbsp;</label>
-    <button type="button" class="btn primario" (click)="buscar()" [disabled]="buscando()">
-      {{ buscando() ? 'Buscando…' : 'Buscar' }}
-    </button>
-  </div>
-</div>
+}
 
 @if (ventaConfirmada(); as venta) {
   <app-modal
@@ -84,41 +98,43 @@
   </app-modal>
 }
 
-<div class="tabla-contenedor">
-  <table class="tabla">
-    <thead>
-      <tr>
-        <th>Ruta</th>
-        <th>Salida</th>
-        <th>Bus</th>
-        <th>Precio</th>
-        <th class="acciones">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (v of filtrados(); track v.viajeId) {
+@if (!viajeFijo()) {
+  <div class="tabla-contenedor">
+    <table class="tabla">
+      <thead>
         <tr>
-          <td>
-            <strong>{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
-            <div class="secundario">{{ v.estado === 'PROGRAMADO' ? 'Programado' : v.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }} · Capacidad: {{ v.capacidad }}</div>
-          </td>
-          <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</td>
-          <td>{{ v.busPlaca || '—' }}</td>
-          <td>{{ v.precioBoleto | currency }}</td>
-          <td class="acciones">
-            <button type="button" class="btn chico" (click)="elegir(v)">Elegir</button>
-          </td>
+          <th>Ruta</th>
+          <th>Salida</th>
+          <th>Bus</th>
+          <th>Precio</th>
+          <th class="acciones">Acciones</th>
         </tr>
-      } @empty {
-        <tr>
-          <td colspan="5" class="tabla-vacia">
-            {{ buscando() ? 'Buscando viajes…' : 'No hay viajes programados para esa búsqueda (revisa fechas y destino).' }}
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
-</div>
+      </thead>
+      <tbody>
+        @for (v of filtrados(); track v.viajeId) {
+          <tr>
+            <td>
+              <strong>{{ v.origenNombre }} → {{ v.destinoNombre }}</strong>
+              <div class="secundario">{{ v.estado === 'PROGRAMADO' ? 'Programado' : v.estado === 'EN_RUTA' ? 'En ruta' : 'Completado' }} · Capacidad: {{ v.capacidad }}</div>
+            </td>
+            <td>{{ v.fechaSalidaProgramada | date: 'dd/MM/yyyy HH:mm' : zona }}</td>
+            <td>{{ v.busPlaca || '—' }}</td>
+            <td>{{ v.precioBoleto | currency }}</td>
+            <td class="acciones">
+              <button type="button" class="btn chico" (click)="elegir(v)">Elegir</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="5" class="tabla-vacia">
+              {{ buscando() ? 'Buscando viajes…' : 'No hay viajes programados para esa búsqueda (revisa fechas y destino).' }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
 
 <app-modal
   [abierto]="viajeElegido() !== null"

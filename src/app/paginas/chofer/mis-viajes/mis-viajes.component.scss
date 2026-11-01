@@ -211,3 +211,10 @@
 @media (max-width: 900px) {
   .bus-ficha { grid-template-columns: 1fr; }
 }
+
+/* Aviso en los viajes que todavía no le toca operar (primero va el que sale antes). */
+.espera-turno {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--texto-tenue);
+}

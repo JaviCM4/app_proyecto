@@ -119,6 +119,21 @@
           <div><dt>Licencia</dt><dd>{{ d.numeroLicencia }} (Tipo {{ d.tipoLicencia }})</dd></div>
           <div><dt>Vencimiento</dt><dd>{{ d.fechaVencimientoLicencia | date: 'dd/MM/yyyy' : 'UTC' }}</dd></div>
           <div><dt>Salario base</dt><dd>{{ d.salarioBaseViaje | currency }} por viaje</dd></div>
+          <!-- Correo y teléfono salen de su cuenta en Identity, igual que la foto. -->
+          <div>
+            <dt>Correo</dt>
+            <dd>
+              @if (cuenta(); as u) {
+                <a [href]="'mailto:' + u.correo">{{ u.correo }}</a>
+              } @else {
+                <span class="secundario">{{ cargandoFoto() ? 'Cargando…' : 'No disponible' }}</span>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Teléfono</dt>
+            <dd>{{ cuenta()?.telefono || '—' }}</dd>
+          </div>
           <div><dt>Usuario</dt><dd class="secundario">{{ d.usuarioId }}</dd></div>
         </dl>
         <p class="suave">El nombre, el correo y la foto se editan en el perfil de su cuenta (Identity).</p>

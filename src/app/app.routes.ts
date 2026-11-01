@@ -215,10 +215,11 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/compras/mis-compras/mis-compras.component').then((m) => m.MisComprasComponent),
       },
       {
+        // El piloto entra desde «Mis viajes» con ?viaje=<id> cuando el viaje permite venta a bordo.
         path: 'mostrador',
         title: 'Ventanilla',
         canActivate: [rolGuard],
-        data: { roles: ['CAJERO', 'ADMIN_SUCURSAL'] },
+        data: { roles: ['CAJERO', 'ADMIN_SUCURSAL', 'CHOFER'] },
         loadComponent: () => import('./paginas/ventas/mostrador/mostrador.component').then((m) => m.MostradorComponent),
       },
       {
